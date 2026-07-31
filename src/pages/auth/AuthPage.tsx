@@ -567,10 +567,10 @@ async function detectUserRole(userId: string): Promise<'admin' | 'seller' | 'buy
               </Text>
               <HStack spacing={2} flexWrap="wrap">
                 {[
-                  { label: 'Admin',      emoji: '👑', email: 'dev-admin@stock212.dev',    color: 'purple', role: 'admin' as const,    password: 'DevStock212!' },
-                  { label: 'Vendeur',    emoji: '🏭', email: 'dev-seller@stock212.dev',   color: 'blue',   role: 'seller' as const,   password: 'DevStock212!' },
-                  { label: 'Acheteur',   emoji: '🛒', email: 'dev-buyer@stock212.dev',    color: 'green',  role: 'buyer' as const,    password: 'DevStock212!' },
-                  { label: 'Livreur',    emoji: '🚚', email: 'dev-delivery@stock212.dev', color: 'orange', role: 'delivery' as const, password: 'DevStock212!' },
+                  { label: 'Admin',      emoji: '👑', email: 'admin@stock212.com',    color: 'purple', role: 'admin' as const,    password: 'Admin@212' },
+                  { label: 'Vendeur',    emoji: '🏭', email: 'vendeur@stock212.com',   color: 'blue',   role: 'seller' as const,   password: 'Test1234' },
+                  { label: 'Acheteur',   emoji: '🛒', email: 'acheteur@stock212.com',    color: 'green',  role: 'buyer' as const,    password: 'Test1234' },
+                  { label: 'Livreur',    emoji: '🚚', email: 'livreur@stock212.com', color: 'orange', role: 'delivery' as const, password: 'Test1234' },
                   { label: 'Commercial', emoji: '🧑‍💼', email: 'commercial@stock212.com',  color: 'teal',   role: 'agent' as const,    password: 'Test1234' },
                 ].map(({ label, emoji, email: e, color, role, password: pw }) => (
                   <Button
