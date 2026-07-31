@@ -7,7 +7,8 @@ import {
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { type Carrier } from '../../lib/vendorUtils';
+import { type Carrier as CarrierBase } from '../../lib/vendorUtils';
+type Carrier = CarrierBase & { organisation_id?: string | null };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type ShipStatus = 'pending_dispatch' | 'dispatched' | 'in_transit' | 'delivered' | 'failed';
@@ -66,6 +67,7 @@ export default function VendorDeliveries() {
   const [selectedCarrier, setSelectedCarrier] = useState<Carrier | null>(null);
   const [manualTracking, setManualTracking] = useState('');
   const [manual3pl, setManual3pl] = useState({ name: '', phone: '', tracking: '', eta: '' });
+  const [dispatchMode, setDispatchMode] = useState<'carrier' | 'marketplace'>('carrier');
   const [reconcileTarget, setReconcileTarget] = useState<Shipment | null>(null);
   const [dispatching, setDispatching] = useState(false);
   const [flashItems, setFlashItems] = useState<{ type: 'success' | 'error'; content: string }[]>([]);
@@ -174,8 +176,46 @@ export default function VendorDeliveries() {
   const rec = dispatchTarget ? recommend(dispatchTarget, carriers) : null;
 
   async function confirmDispatch() {
-    if (!dispatchTarget || !selectedCarrier || !activeOrg) return;
+    if (!dispatchTarget || !activeOrg) return;
+    if (dispatchMode === 'carrier' && !selectedCarrier) return;
     setDispatching(true);
+
+    // Mode marketplace : le ticket reste "open" et sans carrier,
+    // pour qu'un livreur inscrit sur la plateforme puisse l'accepter
+    // lui-même depuis "Tickets disponibles" (assigned_delivery_id
+    // ne sera rempli qu'au moment de l'acceptation, côté Livreur).
+    if (dispatchMode === 'marketplace') {
+      if (dispatchTarget.id.startsWith('pending-')) {
+        const { error } = await supabase.from('delivery_tickets').insert({
+          ticket_number: `TKT-${Date.now()}`,
+          created_by: user?.id,
+          requester_org_id: activeOrg.id,
+          order_id: dispatchTarget.order_id ?? null,
+          delivery_address: { city: dispatchTarget.city, line1: dispatchTarget.address },
+          parcel_details: {
+            cold_chain: dispatchTarget.is_cold,
+            cod_reconciled: false,
+          },
+          priority: dispatchTarget.is_urgent ? 'express' : 'normal',
+          status: 'open',
+        });
+        if (error) { flash('error', error.message); setDispatching(false); return; }
+      } else {
+        const { error } = await supabase.from('delivery_tickets')
+          .update({ status: 'open', assigned_delivery_id: null })
+          .eq('id', dispatchTarget.id);
+        if (error) { flash('error', error.message); setDispatching(false); return; }
+      }
+      setDispatching(false);
+      setDispatchTarget(null);
+      setSelectedCarrier(null);
+      setManualTracking('');
+      flash('success', 'Livraison publiée sur la marketplace Stock212 — un livreur inscrit pourra l\'accepter.');
+      fetchTickets();
+      return;
+    }
+
+    if (!selectedCarrier) { setDispatching(false); return; }
     const ref = manualTracking || `${selectedCarrier.name.substring(0, 3).toUpperCase()}-${Math.floor(Math.random() * 90000 + 10000)}`;
     const eta = etaFromDays(selectedCarrier.avg_days);
 
@@ -195,6 +235,9 @@ export default function VendorDeliveries() {
           cold_chain: dispatchTarget.is_cold,
         },
         priority: dispatchTarget.is_urgent ? 'express' : 'normal',
+        // Lien réel vers une organisation Livreur inscrite si ce carrier y est rattaché
+        // (colonne organisation_id sur carriers, nullable — external/3PL restent en texte libre).
+        assigned_delivery_id: selectedCarrier.organisation_id ?? null,
         status: 'assigned',
       });
       if (error) { flash('error', error.message); setDispatching(false); return; }
@@ -210,6 +253,7 @@ export default function VendorDeliveries() {
             cold_chain: dispatchTarget.is_cold,
             cod_reconciled: false,
           },
+          assigned_delivery_id: selectedCarrier.organisation_id ?? null,
           assigned_at: new Date().toISOString(),
         })
         .eq('id', dispatchTarget.id);
@@ -436,8 +480,8 @@ export default function VendorDeliveries() {
             <Box float="right">
               <SpaceBetween direction="horizontal" size="xs">
                 <Button variant="link" onClick={() => { setDispatchTarget(null); setSelectedCarrier(null); }}>Annuler</Button>
-                <Button variant="primary" disabled={!selectedCarrier} loading={dispatching} onClick={confirmDispatch}>
-                  Confirmer le dispatch
+                <Button variant="primary" disabled={dispatchMode === 'carrier' && !selectedCarrier} loading={dispatching} onClick={confirmDispatch}>
+                  {dispatchMode === 'marketplace' ? 'Publier sur la marketplace' : 'Confirmer le dispatch'}
                 </Button>
               </SpaceBetween>
             </Box>
@@ -542,7 +586,23 @@ export default function VendorDeliveries() {
                     </SpaceBetween>
                   ),
                 },
+                {
+                  id: 'marketplace',
+                  label: 'Marketplace Stock212',
+                  content: (
+                    <Alert type="info" header="Publier auprès des livreurs inscrits">
+                      La livraison sera visible dans « Tickets disponibles » pour tous les livreurs
+                      inscrits et validés sur Stock212. Le premier à l'accepter en devient responsable —
+                      aucun transporteur n'est choisi manuellement ici.
+                    </Alert>
+                  ),
+                },
               ]}
+              activeTabId={dispatchMode === 'marketplace' ? 'marketplace' : undefined}
+              onChange={({ detail }) => {
+                setDispatchMode(detail.activeTabId === 'marketplace' ? 'marketplace' : 'carrier');
+                if (detail.activeTabId === 'marketplace') setSelectedCarrier(null);
+              }}
             />
           </SpaceBetween>
         </Modal>
