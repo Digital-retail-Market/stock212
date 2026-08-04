@@ -21,9 +21,10 @@ interface Reminder {
   amount: number; due: string; days_late: number;
   status: ReminderStatus; last_sent?: string;
 }
-interface WalletTx {
-  id: string; date: string; label: string; ref: string;
-  type: 'credit' | 'debit'; amount: number; balance: number;
+interface VirementRequest {
+  id: string; amount: number; currency: string;
+  status: 'pending' | 'processed' | 'rejected';
+  requested_at: string; processed_at: string | null;
 }
 
 // ── Helpers DB → UI ───────────────────────────────────────────────────────────
@@ -40,9 +41,8 @@ export default function VendorFinances() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [walletTxs, setWalletTxs] = useState<WalletTx[]>([]);
+  const [virementRequests, setVirementRequests] = useState<VirementRequest[]>([]);
   const [walletBalance, setWalletBalance] = useState(0);
-  const [pendingSettlement, setPendingSettlement] = useState(0);
   const [filter, setFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<InvStatus | 'all'>('all');
@@ -122,24 +122,60 @@ export default function VendorFinances() {
 
   async function fetchWallet() {
     if (!activeOrg) return;
-    const [profileRes, txRes] = await Promise.all([
+
+    // Étape 1 : récupérer les IDs de factures appartenant à ce vendeur
+    // (filtre en 2 temps plutôt qu'un embed imbriqué à 3 niveaux
+    // payments→invoices→orders, dont le filtre PostgREST n'est pas fiable).
+    const { data: myOrders, error: ordersErr } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('seller_org_id', activeOrg.id);
+    if (ordersErr) { flash('error', `Wallet : ${ordersErr.message}`); return; }
+
+    const orderIds = (myOrders ?? []).map((o) => o.id);
+    if (orderIds.length === 0) {
+      setWalletBalance(0);
+      setVirementRequests([]);
+      return;
+    }
+
+    const { data: myInvoices, error: invErr } = await supabase
+      .from('invoices')
+      .select('id')
+      .in('order_id', orderIds);
+    if (invErr) { flash('error', `Wallet : ${invErr.message}`); return; }
+
+    const invoiceIds = (myInvoices ?? []).map((i) => i.id);
+
+    const [paymentsRes, virementsRes] = await Promise.all([
+      invoiceIds.length > 0
+        ? supabase
+            .from('payments')
+            .select('amount, status')
+            .eq('status', 'posted')
+            .in('invoice_id', invoiceIds)
+        : Promise.resolve({ data: [], error: null }),
       supabase
-        .from('seller_profiles')
-        .select('wallet_balance, pending_settlement')
+        .from('virement_requests')
+        .select('id, amount, currency, status, requested_at, processed_at')
         .eq('org_id', activeOrg.id)
-        .single(),
-      supabase
-        .from('wallet_transactions')
-        .select('*')
-        .eq('org_id', activeOrg.id)
-        .order('created_at', { ascending: false })
+        .order('requested_at', { ascending: false })
         .limit(50),
     ]);
-    if (profileRes.data) {
-      setWalletBalance(profileRes.data.wallet_balance ?? 0);
-      setPendingSettlement(profileRes.data.pending_settlement ?? 0);
-    }
-    if (txRes.data) setWalletTxs(txRes.data as WalletTx[]);
+
+    if (paymentsRes.error) { flash('error', `Wallet : ${paymentsRes.error.message}`); return; }
+    if (virementsRes.error) { flash('error', `Virements : ${virementsRes.error.message}`); return; }
+
+    const totalReceived = ((paymentsRes.data ?? []) as Array<{ amount: number }>)
+      .reduce((s, p) => s + p.amount, 0);
+
+    const requests = (virementsRes.data ?? []) as VirementRequest[];
+    const totalWithdrawn = requests
+      .filter((r) => r.status !== 'rejected')
+      .reduce((s, r) => s + r.amount, 0);
+
+    setWalletBalance(Math.max(0, totalReceived - totalWithdrawn));
+    setVirementRequests(requests);
   }
 
   useEffect(() => {
@@ -160,7 +196,15 @@ export default function VendorFinances() {
   const totalOverdue = invoices.filter((i) => i.status === 'overdue').reduce((s, i) => s + i.amount, 0);
   const totalPaid    = invoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
 
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
+
   async function markPaid(inv: Invoice) {
+    // Empêche un double-clic (ou clic pendant le traitement) de créer
+    // un paiement en double — c'est exactement ce qui a pollué les
+    // données de test (3 paiements identiques sur la même facture).
+    if (inv.status === 'paid' || markingPaidId === inv.id) return;
+    setMarkingPaidId(inv.id);
+
     const remaining = inv.amount - inv.amount_paid;
     const [payErr, invErr] = await Promise.all([
       supabase.from('payments').insert({
@@ -170,11 +214,13 @@ export default function VendorFinances() {
       }).then((r) => r.error),
       supabase.from('invoices').update({ status: 'paid', amount_paid: inv.amount }).eq('id', inv.id).then((r) => r.error),
     ]);
+    setMarkingPaidId(null);
     if (payErr || invErr) {
       flash('error', payErr?.message ?? invErr?.message ?? 'Erreur');
     } else {
       setInvoices((prev) => prev.map((i) => i.id === inv.id ? { ...i, status: 'paid' } : i));
       flash('success', `Facture ${inv.number} marquée payée.`);
+      fetchWallet();
     }
   }
 
@@ -209,6 +255,7 @@ export default function VendorFinances() {
     } else {
       flash('success', `Demande de virement de ${fmtEUR(amount)} soumise. Traitement sous 2 jours ouvrables.`);
       setVirementAmount('');
+      fetchWallet();
     }
   }
 
@@ -253,7 +300,7 @@ export default function VendorFinances() {
           </Box>
           <Box>
             <Box variant="awsui-key-label">En attente de settlement</Box>
-            <Box variant="h1" color="text-status-warning">{fmtEUR(pendingSettlement)}</Box>
+            <Box variant="h1" color="text-status-warning">{fmtEUR(totalPending)}</Box>
           </Box>
           <Box>
             <Box variant="awsui-key-label">Factures en attente</Box>
@@ -390,7 +437,12 @@ export default function VendorFinances() {
                             }}
                           />
                           {i.status !== 'paid' && (
-                            <Button variant="normal" onClick={() => markPaid(i)}>
+                            <Button
+                              variant="normal"
+                              loading={markingPaidId === i.id}
+                              disabled={markingPaidId !== null && markingPaidId !== i.id}
+                              onClick={() => markPaid(i)}
+                            >
                               Marquer payée
                             </Button>
                           )}
@@ -458,42 +510,37 @@ export default function VendorFinances() {
             ),
           },
           {
-            id: 'wallet_history',
-            label: 'Historique wallet',
+            id: 'virement_history',
+            label: 'Historique des virements',
             content: (
               <Table
-                header={<Header variant="h3">Journal des mouvements</Header>}
+                header={<Header variant="h3">Demandes de virement</Header>}
                 columnDefinitions={[
-                  { id: 'date', header: 'Date', cell: (t) => new Date(t.date).toLocaleDateString('fr-FR') },
+                  { id: 'date', header: 'Demandé le', cell: (v: VirementRequest) => new Date(v.requested_at).toLocaleDateString('fr-FR') },
+                  { id: 'amount', header: 'Montant', cell: (v: VirementRequest) => <Box fontWeight="bold">{fmtEUR(v.amount)}</Box> },
                   {
-                    id: 'label',
-                    header: 'Opération',
-                    cell: (t) => (
-                      <SpaceBetween size="xxs">
-                        <Box>{t.label}</Box>
-                        <Box variant="small" color="text-body-secondary">Réf : {t.ref}</Box>
-                      </SpaceBetween>
-                    ),
+                    id: 'status',
+                    header: 'Statut',
+                    cell: (v: VirementRequest) => {
+                      const map: Record<VirementRequest['status'], { color: 'blue' | 'green' | 'red'; label: string }> = {
+                        pending: { color: 'blue', label: 'En attente' },
+                        processed: { color: 'green', label: 'Traité' },
+                        rejected: { color: 'red', label: 'Rejeté' },
+                      };
+                      return <Badge color={map[v.status].color}>{map[v.status].label}</Badge>;
+                    },
                   },
                   {
-                    id: 'amount',
-                    header: 'Montant',
-                    cell: (t) => (
-                      <Box
-                        fontWeight="bold"
-                        color={t.type === 'credit' ? 'text-status-success' : 'text-status-error'}
-                      >
-                        {t.type === 'credit' ? '+' : '-'}{fmtEUR(t.amount)}
-                      </Box>
-                    ),
+                    id: 'processed',
+                    header: 'Traité le',
+                    cell: (v: VirementRequest) => v.processed_at ? new Date(v.processed_at).toLocaleDateString('fr-FR') : <Box color="text-body-secondary">—</Box>,
                   },
-                  { id: 'balance', header: 'Solde', cell: (t) => fmtEUR(t.balance) },
                 ]}
-                items={walletTxs}
+                items={virementRequests}
                 empty={
                   <Box textAlign="center" color="inherit">
-                    <b>Aucun mouvement</b>
-                    <Box variant="p" color="inherit">L'historique wallet apparaîtra ici.</Box>
+                    <b>Aucune demande</b>
+                    <Box variant="p" color="inherit">Vos demandes de virement apparaîtront ici.</Box>
                   </Box>
                 }
               />
