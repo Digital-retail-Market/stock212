@@ -48,6 +48,20 @@ const DISPUTE_STATUS: Record<DisputeStatus, { label: string; type: 'pending' | '
 };
 function fmt(n: number) { return `${n.toLocaleString('fr-MA')} MAD`; }
 
+const DISPUTE_TYPE_LABEL: Record<string, string> = {
+  non_conforming: 'Produit non conforme',
+  damaged: 'Produit endommagé',
+  partial_delivery: 'Livraison partielle',
+  late: 'Retard de livraison',
+  billing_error: 'Erreur de facturation',
+};
+// Pas de champ "priorité" en base : heuristique basée sur le type de litige
+// (produit endommagé/non conforme jugés plus urgents qu'un retard ou une
+// erreur de facturation). À ajuster si un vrai champ priority est ajouté.
+function derivePriority(disputeType: string): ClaimPriority {
+  return disputeType === 'damaged' || disputeType === 'non_conforming' ? 'high' : 'normal';
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function returnDbToUI(s: string): ReturnStatus {
   if (s === 'authorized')  return 'approved';
@@ -82,7 +96,7 @@ export default function VendorSAV() {
 
     const [dispRes, retRes] = await Promise.all([
       supabase.from('disputes')
-        .select(`id, dispute_type, status, buyer_description, refund_amount, opened_at,
+        .select(`id, dispute_type, status, buyer_description, refund_amount, opened_at, verdict,
                  orders!inner(id, order_number, seller_org_id, total_ttc)`)
         .eq('orders.seller_org_id', activeOrg.id)
         .order('opened_at', { ascending: false }),
@@ -95,21 +109,42 @@ export default function VendorSAV() {
     ]);
 
     if (dispRes.data) {
-      const uiDisputes: Dispute[] = (dispRes.data as Array<{
+      const allDisputes = dispRes.data as Array<{
         id: string; dispute_type: string; status: string; buyer_description: string | null;
-        refund_amount: number | null; opened_at: string;
+        refund_amount: number | null; opened_at: string; verdict: string | null;
         orders: { order_number: string; total_ttc: number };
-      }>).map((d, i) => ({
-        id: d.id,
-        ref: `LIT-${String(i + 1).padStart(3, '0')}`,
-        buyer: d.orders.order_number,
-        order_ref: d.orders.order_number,
-        amount: d.refund_amount ?? d.orders.total_ttc,
-        reason: d.buyer_description ?? d.dispute_type.replace(/_/g, ' '),
-        arbitre: 'Stock212 Admin',
-        date: d.opened_at,
-        status: disputeDbToUI(d.status),
-      }));
+      }>;
+
+      // Réclamations = pas encore arbitrées par Stock212 (verdict null),
+      // encore négociables directement entre vendeur et acheteur.
+      const uiClaims: Claim[] = allDisputes
+        .filter((d) => d.verdict === null)
+        .map((d, i) => ({
+          id: d.id,
+          ref: `REC-${String(i + 1).padStart(3, '0')}`,
+          buyer: d.orders.order_number,
+          subject: DISPUTE_TYPE_LABEL[d.dispute_type] ?? d.dispute_type,
+          description: d.buyer_description ?? '—',
+          priority: derivePriority(d.dispute_type),
+          date: d.opened_at,
+          status: (d.status === 'closed' ? 'resolved' : d.status) as ClaimStatus,
+        }));
+      setClaims(uiClaims);
+
+      // Litiges = déjà arbitrés par Stock212 (verdict renseigné).
+      const uiDisputes: Dispute[] = allDisputes
+        .filter((d) => d.verdict !== null)
+        .map((d, i) => ({
+          id: d.id,
+          ref: `LIT-${String(i + 1).padStart(3, '0')}`,
+          buyer: d.orders.order_number,
+          order_ref: d.orders.order_number,
+          amount: d.refund_amount ?? d.orders.total_ttc,
+          reason: d.buyer_description ?? DISPUTE_TYPE_LABEL[d.dispute_type] ?? d.dispute_type,
+          arbitre: 'Stock212 Admin',
+          date: d.opened_at,
+          status: disputeDbToUI(d.status),
+        }));
       setDisputes(uiDisputes);
     }
 
@@ -181,13 +216,24 @@ export default function VendorSAV() {
     flash('success', 'Avoir émis avec succès.');
   }
 
-  function resolveClaim(id: string) {
+  async function resolveClaim(id: string) {
+    const { error } = await supabase
+      .from('disputes')
+      .update({ status: 'resolved', closed_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) { flash('error', error.message); return; }
     setClaims((prev) => prev.map((c) => c.id === id ? { ...c, status: 'resolved' } : c));
     setActionTarget(null);
     setNote('');
+    flash('success', 'Réclamation résolue.');
   }
 
-  function processClaim(id: string) {
+  async function processClaim(id: string) {
+    const { error } = await supabase
+      .from('disputes')
+      .update({ status: 'in_progress' })
+      .eq('id', id);
+    if (error) { flash('error', error.message); return; }
     setClaims((prev) => prev.map((c) => c.id === id ? { ...c, status: 'in_progress' } : c));
   }
 

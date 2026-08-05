@@ -59,11 +59,11 @@ export default function VendorSettings() {
   // ── Profil entreprise ────────────────────────────────────────────────────
   const [profile, setProfile] = useState({
     vendor_type: 'grossiste', name: 'Empresa Distribution SARL',
-    ice: '001234567890123', rc: 'RC 98765 / Casablanca', if_num: 'IF 45678901',
+    ice: '001234567890123', vat_number: '', rc: 'RC 98765 / Casablanca', if_num: 'IF 45678901',
     cnss: '7654321', address: '12, Rue Al Massira Al Khadra, Casablanca',
     city: 'Casablanca', postal: '20000', region: 'Grand Casablanca',
     contact: 'Mohamed Alami', phone: '+212 522 001 122',
-    email: 'contact@empresa.ma', website: 'www.empresa.ma', bio: '',
+    website: '', bio: '',
   });
 
   // ── Livraison ────────────────────────────────────────────────────────────
@@ -121,22 +121,25 @@ export default function VendorSettings() {
   useEffect(() => {
     if (!activeOrg) return;
     async function load() {
-      const [orgRes, spRes, membersRes] = await Promise.all([
+      const [orgRes, spRes, membersRes, emailsRes] = await Promise.all([
         supabase.from('organisations').select('*').eq('id', activeOrg!.id).single(),
         supabase.from('seller_profiles').select('*').eq('organisation_id', activeOrg!.id).maybeSingle(),
-        supabase
-          .from('organisation_members')
-          .select('id, team_role, joined_at, profiles(full_name, email)')
-          .eq('organisation_id', activeOrg!.id)
-          .eq('active', true),
+        supabase.rpc('get_organisation_members_with_profile', { org_id: activeOrg!.id }),
+        supabase.rpc('get_organisation_team_emails', { org_id: activeOrg!.id }),
       ]);
+      if (emailsRes.error) console.error('get_organisation_team_emails', emailsRes.error);
+      if (membersRes.error) console.error('get_organisation_members_with_profile', membersRes.error);
+      const emailByUserId = new Map(
+        ((emailsRes.data as Array<{ user_id: string; email: string }>) ?? []).map((e) => [e.user_id, e.email])
+      );
       if (membersRes.data) {
         setTeamMembers(
-          (membersRes.data as Array<{ id: string; team_role: string; joined_at: string; profiles?: { full_name?: string | null; email?: string | null } | null }>)
+          (membersRes.data as Array<{ id: string; user_id: string; team_role: string; joined_at: string; full_name: string | null; active: boolean }>)
+            .filter((m) => m.active)
             .map((m) => ({
               id:          m.id,
-              name:        m.profiles?.full_name ?? 'Utilisateur',
-              email:       m.profiles?.email     ?? '',
+              name:        m.full_name ?? 'Utilisateur',
+              email:       emailByUserId.get(m.user_id) ?? '',
               role:        m.team_role,
               last_active: m.joined_at,
             }))
@@ -146,19 +149,19 @@ export default function VendorSettings() {
         const o = orgRes.data;
         setProfile((p) => ({
           ...p,
-          name:    o.name           ?? p.name,
-          ice:     o.vat_number     ?? p.ice,
-          address: o.address_line1  ?? p.address,
-          city:    o.city           ?? p.city,
-          postal:  o.postal_code    ?? p.postal,
-          region:  o.region         ?? p.region,
-          phone:   o.phone          ?? p.phone,
-          email:   o.email          ?? p.email,
-          website: o.website        ?? p.website,
+          name:       o.name          ?? p.name,
+          ice:        o.ice           ?? p.ice,
+          vat_number: o.vat_number    ?? p.vat_number,
+          address:    o.address_line1 ?? p.address,
+          city:       o.city          ?? p.city,
+          postal:     o.postal_code   ?? p.postal,
+          region:     o.region        ?? p.region,
+          phone:      o.phone         ?? p.phone,
         }));
       }
       if (spRes.data) {
         const sp = spRes.data;
+        setProfile((p) => ({ ...p, website: sp.website ?? p.website }));
         setBank((b) => ({
           ...b,
           iban:           sp.bank_iban         ?? b.iban,
@@ -216,16 +219,24 @@ export default function VendorSettings() {
   async function saveProfile() {
     if (!activeOrg) return;
     setSaving(true);
-    const { error } = await supabase.from('organisations').update({
-      name:         profile.name,
-      vat_number:   profile.ice,
-      address_line1: profile.address,
-      city:         profile.city,
-      postal_code:  profile.postal,
-      region:       profile.region,
-    }).eq('id', activeOrg.id);
+    const [orgRes, spRes] = await Promise.all([
+      supabase.from('organisations').update({
+        name:          profile.name,
+        ice:           profile.ice,
+        vat_number:    profile.vat_number,
+        address_line1: profile.address,
+        city:          profile.city,
+        postal_code:   profile.postal,
+        region:        profile.region,
+        phone:         profile.phone,
+      }).eq('id', activeOrg.id),
+      supabase.from('seller_profiles').upsert({
+        organisation_id: activeOrg.id,
+        website: profile.website,
+      }, { onConflict: 'organisation_id' }),
+    ]);
     setSaving(false);
-    if (error) flash('error', error.message);
+    if (orgRes.error || spRes.error) flash('error', orgRes.error?.message ?? spRes.error?.message ?? 'Erreur');
     else flash('success', 'Profil entreprise enregistré.');
   }
 
@@ -363,14 +374,14 @@ export default function VendorSettings() {
                   <ColumnLayout columns={2}>
                     <FormField label="Raison sociale *"><Input value={profile.name} onChange={({ detail }) => pf('name', detail.value)} /></FormField>
                     <FormField label="ICE *"><Input value={profile.ice} onChange={({ detail }) => pf('ice', detail.value)} /></FormField>
+                    <FormField label="N° TVA"><Input value={profile.vat_number} onChange={({ detail }) => pf('vat_number', detail.value)} /></FormField>
                     <FormField label="Registre de commerce"><Input value={profile.rc} onChange={({ detail }) => pf('rc', detail.value)} /></FormField>
                     <FormField label="Identifiant fiscal"><Input value={profile.if_num} onChange={({ detail }) => pf('if_num', detail.value)} /></FormField>
                     <FormField label="CNSS"><Input value={profile.cnss} onChange={({ detail }) => pf('cnss', detail.value)} /></FormField>
                     <FormField label="Ville"><Input value={profile.city} onChange={({ detail }) => pf('city', detail.value)} /></FormField>
                     <FormField label="Responsable"><Input value={profile.contact} onChange={({ detail }) => pf('contact', detail.value)} /></FormField>
                     <FormField label="Téléphone"><Input value={profile.phone} onChange={({ detail }) => pf('phone', detail.value)} /></FormField>
-                    <FormField label="Email"><Input type="email" value={profile.email} onChange={({ detail }) => pf('email', detail.value)} /></FormField>
-                    <FormField label="Site web"><Input value={profile.website} onChange={({ detail }) => pf('website', detail.value)} /></FormField>
+                    <FormField label="Site web"><Input value={profile.website} onChange={({ detail }) => pf('website', detail.value)} placeholder="https://..." /></FormField>
                   </ColumnLayout>
                   <FormField label="Adresse siège"><Input value={profile.address} onChange={({ detail }) => pf('address', detail.value)} /></FormField>
                   <FormField label="Présentation (300 caractères max)">

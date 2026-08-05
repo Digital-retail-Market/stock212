@@ -33,7 +33,11 @@ interface OnboardingDocument {
   file_url: string;
   file_name: string | null;
   status: string;
+  admin_notes: string | null;
   uploaded_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  reviewer_name?: string | null;
 }
 
 const ORG_TYPE_LABEL: Record<string, string> = {
@@ -62,6 +66,7 @@ export default function AdminApprovals() {
   // Documents KYC de l'organisation sélectionnée
   const [documents, setDocuments] = useState<OnboardingDocument[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [reviewingDocId, setReviewingDocId] = useState<string | null>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
@@ -129,44 +134,73 @@ export default function AdminApprovals() {
         setOwnerEmail((data as string) ?? null);
       });
 
-    setDocumentsLoading(true);
-    supabase
-      .from('onboarding_documents')
-      .select('id, document_type, document_label, file_url, file_name, status, uploaded_at')
-      .eq('organisation_id', selected.id)
-      .order('uploaded_at', { ascending: false })
-      .then(async ({ data, error }) => {
-        if (cancelled) return;
-        setDocumentsLoading(false);
-        if (error) {
-          console.error('onboarding_documents', error);
-          setDocuments([]);
-          return;
-        }
-        const docs = (data as OnboardingDocument[]) ?? [];
-        setDocuments(docs);
-
-        // Génère une URL signée pour chaque document (bucket privé)
-        const entries = await Promise.all(
-          docs.map(async (doc) => {
-            const { data: signed, error: signErr } = await supabase
-              .storage
-              .from(KYC_BUCKET)
-              .createSignedUrl(doc.file_url, 60 * 10); // valide 10 min
-            if (signErr) {
-              console.error('createSignedUrl', doc.file_url, signErr);
-              return [doc.id, ''] as const;
-            }
-            return [doc.id, signed?.signedUrl ?? ''] as const;
-          })
-        );
-        if (!cancelled) {
-          setSignedUrls(Object.fromEntries(entries));
-        }
-      });
-
+    fetchDocuments();
     return () => { cancelled = true; };
+
+    async function fetchDocuments() {
+      setDocumentsLoading(true);
+      const { data, error } = await supabase
+        .from('onboarding_documents')
+        .select('id, document_type, document_label, file_url, file_name, status, admin_notes, uploaded_at, reviewed_at, reviewed_by, reviewer:profiles!reviewed_by(full_name)')
+        .eq('organisation_id', selected!.id)
+        .order('uploaded_at', { ascending: false });
+
+      if (cancelled) return;
+      setDocumentsLoading(false);
+      if (error) {
+        console.error('onboarding_documents', error);
+        setDocuments([]);
+        return;
+      }
+      const docs = ((data ?? []) as Array<Record<string, unknown>>).map((d) => ({
+        ...d,
+        reviewer_name: (d.reviewer as { full_name: string | null } | null)?.full_name ?? null,
+      })) as OnboardingDocument[];
+      setDocuments(docs);
+
+      // Génère une URL signée pour chaque document (bucket privé)
+      const entries = await Promise.all(
+        docs.map(async (doc) => {
+          const { data: signed, error: signErr } = await supabase
+            .storage
+            .from(KYC_BUCKET)
+            .createSignedUrl(doc.file_url, 60 * 10); // valide 10 min
+          if (signErr) {
+            console.error('createSignedUrl', doc.file_url, signErr);
+            return [doc.id, ''] as const;
+          }
+          return [doc.id, signed?.signedUrl ?? ''] as const;
+        })
+      );
+      if (!cancelled) {
+        setSignedUrls(Object.fromEntries(entries));
+      }
+    }
   }, [selected]);
+
+  async function reviewDocument(docId: string, newStatus: 'approved' | 'rejected') {
+    setReviewingDocId(docId);
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from('onboarding_documents')
+      .update({
+        status: newStatus,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: userData.user?.id ?? null,
+      })
+      .eq('id', docId);
+    setReviewingDocId(null);
+    if (error) {
+      setAlert({ type: 'error', msg: `Erreur de vérification du document : ${error.message}` });
+      return;
+    }
+    // Recharge la liste pour refléter le nouveau statut + le nom du vérificateur
+    setDocuments((prev) => prev.map((d) =>
+      d.id === docId
+        ? { ...d, status: newStatus, reviewed_at: new Date().toISOString() }
+        : d
+    ));
+  }
 
   async function approve(org: PendingOrg) {
     setProcessing(true);
@@ -389,6 +423,45 @@ export default function AdminApprovals() {
                         new Date(d.uploaded_at).toLocaleDateString('fr-FR', {
                           day: '2-digit', month: 'short', year: 'numeric',
                         }),
+                    },
+                    {
+                      id: 'reviewed',
+                      header: 'Vérifié par',
+                      cell: (d) =>
+                        d.reviewed_at ? (
+                          <Box>
+                            <Box>{d.reviewer_name ?? 'Admin'}</Box>
+                            <Box variant="small" color="text-body-secondary">
+                              {new Date(d.reviewed_at).toLocaleDateString('fr-FR')}
+                            </Box>
+                          </Box>
+                        ) : (
+                          <Box color="text-status-inactive">Non vérifié</Box>
+                        ),
+                    },
+                    {
+                      id: 'doc_actions',
+                      header: 'Vérifier',
+                      cell: (d) => (
+                        <SpaceBetween direction="horizontal" size="xs">
+                          <Button
+                            variant="inline-link"
+                            disabled={d.status === 'approved'}
+                            loading={reviewingDocId === d.id}
+                            onClick={() => reviewDocument(d.id, 'approved')}
+                          >
+                            Valider
+                          </Button>
+                          <Button
+                            variant="inline-link"
+                            disabled={d.status === 'rejected'}
+                            loading={reviewingDocId === d.id}
+                            onClick={() => reviewDocument(d.id, 'rejected')}
+                          >
+                            Refuser
+                          </Button>
+                        </SpaceBetween>
+                      ),
                     },
                   ]}
                 />
