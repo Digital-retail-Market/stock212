@@ -15,11 +15,14 @@ interface PendingOrg {
   vat_number: string | null;
   country: string;
   city: string | null;
+  region: string | null;
+  address_line1: string | null;
   phone: string | null;
   ice: string | null;
   rc: string | null;
   patente: string | null;
   cnss: string | null;
+  if_number: string | null;
   validation_status: string;
   created_at: string;
   owner_name: string | null;
@@ -75,7 +78,7 @@ export default function AdminApprovals() {
       .from('organisations')
       .select(`
         id, name, org_type, sub_type, siret, vat_number,
-        country, city, phone, ice, rc, patente, cnss,
+        country, city, region, address_line1, phone, ice, rc, patente, cnss, if_number,
         validation_status, created_at,
         organisation_members!inner(
           team_role,
@@ -204,9 +207,14 @@ export default function AdminApprovals() {
 
   async function approve(org: PendingOrg) {
     setProcessing(true);
+    const { data: userData } = await supabase.auth.getUser();
     const { error } = await supabase
       .from('organisations')
-      .update({ validation_status: 'active' })
+      .update({
+        validation_status: 'active',
+        validated_by: userData.user?.id ?? null,
+        validated_at: new Date().toISOString(),
+      })
       .eq('id', org.id);
     setProcessing(false);
     if (error) { setAlert({ type: 'error', msg: error.message }); return; }
@@ -218,9 +226,14 @@ export default function AdminApprovals() {
   async function reject(org: PendingOrg) {
     if (!rejectReason.trim()) return;
     setProcessing(true);
+    const { data: userData } = await supabase.auth.getUser();
     const { error } = await supabase
       .from('organisations')
-      .update({ validation_status: 'rejected' })
+      .update({
+        validation_status: 'rejected',
+        validated_by: userData.user?.id ?? null,
+        validated_at: new Date().toISOString(),
+      })
       .eq('id', org.id);
     setProcessing(false);
     setShowRejectModal(false);
@@ -361,8 +374,11 @@ export default function AdminApprovals() {
                   { label: 'N° TVA',         value: selected.vat_number ?? '—' },
                   { label: 'ICE',            value: selected.ice ?? '—' },
                   { label: 'Patente',        value: selected.patente ?? '—' },
+                  { label: 'IF',              value: selected.if_number ?? '—' },
                   { label: 'CNSS',           value: selected.cnss ?? '—' },
                   { label: 'Pays',           value: selected.country },
+                  { label: 'Région',         value: selected.region ?? '—' },
+                  { label: 'Adresse',        value: selected.address_line1 ?? '—' },
                   { label: 'Ville',          value: selected.city ?? '—' },
                 ]}
               />

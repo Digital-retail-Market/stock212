@@ -125,12 +125,35 @@ export default function OnboardingPage() {
   const [buyerInterests, setBuyerInterests] = useState<string[]>([]);
   const [buyerCreditLimit, setBuyerCreditLimit] = useState('');
   const [buyerPaymentTerm, setBuyerPaymentTerm] = useState('30_days');
+  const [buyerTradeName, setBuyerTradeName] = useState('');
+  const [buyerLegalForm, setBuyerLegalForm] = useState('');
+  const [buyerContactReferent, setBuyerContactReferent] = useState('');
+  const [buyerBusinessType, setBuyerBusinessType] = useState('');
+  const [buyerMonthlyVolume, setBuyerMonthlyVolume] = useState('');
+  const [buyerOrderFrequency, setBuyerOrderFrequency] = useState('monthly');
+  const [buyerUsualSuppliers, setBuyerUsualSuppliers] = useState('');
+  const [buyerPaymentMethod, setBuyerPaymentMethod] = useState('bank_transfer');
+  const [buyerCurrency, setBuyerCurrency] = useState('MAD');
+  const [buyerDeliveryInstructions, setBuyerDeliveryInstructions] = useState('');
   const [bankBic, setBankBic] = useState('');
   const [defaultMoq, setDefaultMoq] = useState('');
   const [defaultFrancoEur, setDefaultFrancoEur] = useState('');
   const [deliveryMethods, setDeliveryMethods] = useState<string[]>([]);
   const [incoterms, setIncoterms] = useState<string[]>([]);
   const [exportCountries, setExportCountries] = useState('');
+  const [sellerTradeName, setSellerTradeName] = useState('');
+  const [sellerLegalForm, setSellerLegalForm] = useState('');
+  const [sellerContactEmail, setSellerContactEmail] = useState('');
+  const [sellerContactReferent, setSellerContactReferent] = useState('');
+  const [sellerSector, setSellerSector] = useState('');
+  const [sellerProductCategories, setSellerProductCategories] = useState('');
+  const [sellerBrands, setSellerBrands] = useState('');
+  const [sellerDeliveryZones, setSellerDeliveryZones] = useState('');
+  const [sellerShippingMode, setSellerShippingMode] = useState('flat_rate');
+  const [sellerShippingFlatFee, setSellerShippingFlatFee] = useState('');
+  const [sellerShippingPercentage, setSellerShippingPercentage] = useState('');
+  const [sellerShippingMinFee, setSellerShippingMinFee] = useState('');
+  const [sellerShippingMaxFee, setSellerShippingMaxFee] = useState('');
   const [vehicleTypes, setVehicleTypes] = useState<string[]>([]);
   const [fleetSize, setFleetSize] = useState('');
   const [deliveryPhone, setDeliveryPhone] = useState('');
@@ -277,6 +300,26 @@ export default function OnboardingPage() {
           interest_categories: buyerInterests,
           default_payment_terms: buyerPaymentTerm,
           credit_limit: buyerCreditLimit ? parseFloat(buyerCreditLimit) : null,
+          trade_name: buyerTradeName || null,
+          legal_form: buyerLegalForm || null,
+          contact_referent: buyerContactReferent || null,
+          business_type: buyerBusinessType || null,
+          monthly_volume_mad: buyerMonthlyVolume ? parseFloat(buyerMonthlyVolume) : null,
+          order_frequency: buyerOrderFrequency,
+          usual_suppliers: buyerUsualSuppliers || null,
+          preferred_payment_method: buyerPaymentMethod,
+          currency: buyerCurrency,
+        });
+        // Adresse de livraison par défaut, créée à partir de l'adresse du
+        // siège saisie à l'étape 2 — l'acheteur pourra en ajouter d'autres
+        // plus tard depuis son espace.
+        await supabase.from('buyer_delivery_addresses').insert({
+          organisation_id: org.id,
+          label: 'Adresse principale',
+          address_line1: addressLine1 || '',
+          city: city || null,
+          is_default: true,
+          instructions: buyerDeliveryInstructions || null,
         });
       } else if (selectedRole === 'seller') {
         await supabase.from('seller_profiles').insert({
@@ -295,6 +338,23 @@ export default function OnboardingPage() {
           default_export_countries: exportCountries
             ? exportCountries.split(',').map((s) => s.trim()).filter(Boolean)
             : [],
+          trade_name: sellerTradeName || null,
+          legal_form: sellerLegalForm || null,
+          contact_email: sellerContactEmail || null,
+          contact_referent: sellerContactReferent || null,
+          sector: sellerSector || null,
+          product_categories: sellerProductCategories
+            ? sellerProductCategories.split(',').map((s) => s.trim()).filter(Boolean)
+            : [],
+          brands_represented: sellerBrands || null,
+          delivery_zones: sellerDeliveryZones
+            ? sellerDeliveryZones.split(',').map((s) => s.trim()).filter(Boolean)
+            : [],
+          shipping_fee_mode: sellerShippingMode,
+          shipping_flat_fee: sellerShippingFlatFee ? parseFloat(sellerShippingFlatFee) : null,
+          shipping_percentage_rate: sellerShippingPercentage ? parseFloat(sellerShippingPercentage) : null,
+          shipping_min_fee: sellerShippingMinFee ? parseFloat(sellerShippingMinFee) : null,
+          shipping_max_fee: sellerShippingMaxFee ? parseFloat(sellerShippingMaxFee) : null,
         });
       } else if (selectedRole === 'delivery') {
         await supabase.from('delivery_profiles').insert({
@@ -631,10 +691,273 @@ export default function OnboardingPage() {
                     <Input value={buyerCreditLimit} onChange={(e) => setBuyerCreditLimit(e.target.value)}
                       type="number" placeholder="Ex : 50000" rounded="sm" fontSize="sm" fontFamily="mono" />
                   </FormControl>
+
+                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={2}>
+                    Identité complémentaire
+                  </Text>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Nom commercial <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
+                      </FormLabel>
+                      <Input value={buyerTradeName} onChange={(e) => setBuyerTradeName(e.target.value)}
+                        placeholder="Enseigne affichée" rounded="sm" fontSize="sm" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Forme juridique
+                      </FormLabel>
+                      <Select value={buyerLegalForm} onChange={(e) => setBuyerLegalForm(e.target.value)}
+                        rounded="sm" fontSize="sm" placeholder="Sélectionner...">
+                        <option value="SARL">SARL</option>
+                        <option value="SA">SA</option>
+                        <option value="auto_entrepreneur">Auto-entrepreneur</option>
+                        <option value="autre">Autre</option>
+                      </Select>
+                    </FormControl>
+                  </HStack>
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                      textTransform="uppercase" letterSpacing="0.05em">
+                      Contact référent <Text as="span" fontWeight="400" textTransform="none">(nom et poste)</Text>
+                    </FormLabel>
+                    <Input value={buyerContactReferent} onChange={(e) => setBuyerContactReferent(e.target.value)}
+                      placeholder="Ex : Fatima Zahra — Responsable achats" rounded="sm" fontSize="sm" />
+                  </FormControl>
+
+                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={2}>
+                    Profil d'achat
+                  </Text>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Type d'établissement
+                      </FormLabel>
+                      <Select value={buyerBusinessType} onChange={(e) => setBuyerBusinessType(e.target.value)}
+                        rounded="sm" fontSize="sm" placeholder="Sélectionner...">
+                        <option value="restaurant">Restaurant</option>
+                        <option value="supermarche">Supermarché</option>
+                        <option value="hotel">Hôtel</option>
+                        <option value="grossiste">Grossiste</option>
+                        <option value="autre">Autre</option>
+                      </Select>
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Volume d'achat mensuel <Text as="span" fontWeight="400" textTransform="none">(MAD, estimation)</Text>
+                      </FormLabel>
+                      <Input value={buyerMonthlyVolume} onChange={(e) => setBuyerMonthlyVolume(e.target.value)}
+                        type="number" placeholder="Ex : 30000" rounded="sm" fontSize="sm" fontFamily="mono" />
+                    </FormControl>
+                  </HStack>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Fréquence de commande
+                      </FormLabel>
+                      <Select value={buyerOrderFrequency} onChange={(e) => setBuyerOrderFrequency(e.target.value)}
+                        rounded="sm" fontSize="sm">
+                        <option value="weekly">Hebdomadaire</option>
+                        <option value="biweekly">Bimensuelle</option>
+                        <option value="monthly">Mensuelle</option>
+                      </Select>
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Fournisseurs habituels <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
+                      </FormLabel>
+                      <Input value={buyerUsualSuppliers} onChange={(e) => setBuyerUsualSuppliers(e.target.value)}
+                        placeholder="Noms séparés par virgule" rounded="sm" fontSize="sm" />
+                    </FormControl>
+                  </HStack>
+
+                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={2}>
+                    Paiement & livraison
+                  </Text>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Mode de paiement préféré
+                      </FormLabel>
+                      <Select value={buyerPaymentMethod} onChange={(e) => setBuyerPaymentMethod(e.target.value)}
+                        rounded="sm" fontSize="sm">
+                        <option value="bank_transfer">Virement</option>
+                        <option value="cheque">Chèque</option>
+                        <option value="bill_of_exchange">Traite</option>
+                        <option value="card">Carte bancaire</option>
+                      </Select>
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Devise
+                      </FormLabel>
+                      <Select value={buyerCurrency} onChange={(e) => setBuyerCurrency(e.target.value)}
+                        rounded="sm" fontSize="sm">
+                        <option value="MAD">MAD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                      </Select>
+                    </FormControl>
+                  </HStack>
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                      textTransform="uppercase" letterSpacing="0.05em">
+                      Instructions de livraison <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
+                    </FormLabel>
+                    <Input value={buyerDeliveryInstructions} onChange={(e) => setBuyerDeliveryInstructions(e.target.value)}
+                      placeholder="Accès, horaires, contact sur site..." rounded="sm" fontSize="sm" />
+                  </FormControl>
                 </>
               )}
               {selectedRole === 'seller' && (
                 <VStack spacing={5} w="full">
+
+                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start">
+                    Identité complémentaire
+                  </Text>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Nom commercial <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
+                      </FormLabel>
+                      <Input value={sellerTradeName} onChange={(e) => setSellerTradeName(e.target.value)}
+                        placeholder="Nom affiché sur la plateforme" rounded="sm" fontSize="sm" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Forme juridique
+                      </FormLabel>
+                      <Select value={sellerLegalForm} onChange={(e) => setSellerLegalForm(e.target.value)}
+                        rounded="sm" fontSize="sm" placeholder="Sélectionner...">
+                        <option value="SARL">SARL</option>
+                        <option value="SA">SA</option>
+                        <option value="auto_entrepreneur">Auto-entrepreneur</option>
+                        <option value="autre">Autre</option>
+                      </Select>
+                    </FormControl>
+                  </HStack>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Email de contact <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
+                      </FormLabel>
+                      <Input value={sellerContactEmail} onChange={(e) => setSellerContactEmail(e.target.value)}
+                        type="email" placeholder="contact@entreprise.ma" rounded="sm" fontSize="sm" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Contact référent <Text as="span" fontWeight="400" textTransform="none">(nom et poste)</Text>
+                      </FormLabel>
+                      <Input value={sellerContactReferent} onChange={(e) => setSellerContactReferent(e.target.value)}
+                        placeholder="Ex : Karim Idrissi — Responsable commercial" rounded="sm" fontSize="sm" />
+                    </FormControl>
+                  </HStack>
+
+                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={2}>
+                    Activité & catalogue
+                  </Text>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Secteur <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
+                      </FormLabel>
+                      <Input value={sellerSector} onChange={(e) => setSellerSector(e.target.value)}
+                        placeholder="Agroalimentaire, FMCG, Hygiène..." rounded="sm" fontSize="sm" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Catégories produits <Text as="span" fontWeight="400" textTransform="none">(séparées par virgule)</Text>
+                      </FormLabel>
+                      <Input value={sellerProductCategories} onChange={(e) => setSellerProductCategories(e.target.value)}
+                        placeholder="Laitiers, Boissons, Épicerie..." rounded="sm" fontSize="sm" />
+                    </FormControl>
+                  </HStack>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Marques représentées <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
+                      </FormLabel>
+                      <Input value={sellerBrands} onChange={(e) => setSellerBrands(e.target.value)}
+                        placeholder="Liste des marques distribuées" rounded="sm" fontSize="sm" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Zones de livraison <Text as="span" fontWeight="400" textTransform="none">(régions, séparées par virgule)</Text>
+                      </FormLabel>
+                      <Input value={sellerDeliveryZones} onChange={(e) => setSellerDeliveryZones(e.target.value)}
+                        placeholder="Casablanca-Settat, Rabat-Salé..." rounded="sm" fontSize="sm" />
+                    </FormControl>
+                  </HStack>
+
+                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={2}>
+                    Tarification de livraison
+                  </Text>
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                      textTransform="uppercase" letterSpacing="0.05em">
+                      Mode de frais de port
+                    </FormLabel>
+                    <Select value={sellerShippingMode} onChange={(e) => setSellerShippingMode(e.target.value)}
+                      rounded="sm" fontSize="sm">
+                      <option value="flat_rate">Montant fixe</option>
+                      <option value="free_above_threshold">Gratuit au-delà d'un seuil</option>
+                      <option value="percentage">Pourcentage du montant</option>
+                      <option value="free_always">Toujours gratuit</option>
+                      <option value="negotiated">Négocié au cas par cas</option>
+                    </Select>
+                  </FormControl>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Frais fixes <Text as="span" fontWeight="400" textTransform="none">(MAD, si montant fixe)</Text>
+                      </FormLabel>
+                      <Input value={sellerShippingFlatFee} onChange={(e) => setSellerShippingFlatFee(e.target.value)}
+                        type="number" placeholder="Ex : 50" rounded="sm" fontSize="sm" fontFamily="mono" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Taux % <Text as="span" fontWeight="400" textTransform="none">(si pourcentage)</Text>
+                      </FormLabel>
+                      <Input value={sellerShippingPercentage} onChange={(e) => setSellerShippingPercentage(e.target.value)}
+                        type="number" placeholder="Ex : 5" rounded="sm" fontSize="sm" fontFamily="mono" />
+                    </FormControl>
+                  </HStack>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Charge minimale <Text as="span" fontWeight="400" textTransform="none">(MAD, optionnel)</Text>
+                      </FormLabel>
+                      <Input value={sellerShippingMinFee} onChange={(e) => setSellerShippingMinFee(e.target.value)}
+                        type="number" placeholder="Ex : 20" rounded="sm" fontSize="sm" fontFamily="mono" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Charge maximale <Text as="span" fontWeight="400" textTransform="none">(MAD, optionnel)</Text>
+                      </FormLabel>
+                      <Input value={sellerShippingMaxFee} onChange={(e) => setSellerShippingMaxFee(e.target.value)}
+                        type="number" placeholder="Ex : 200" rounded="sm" fontSize="sm" fontFamily="mono" />
+                    </FormControl>
+                  </HStack>
 
                   {/* Description boutique */}
                   <FormControl>
