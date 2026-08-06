@@ -329,15 +329,17 @@ export function ExtraRemiseBlock({ campaigns }: { campaigns: ExtraRemiseCampaign
 // ═══════════════════════════════════════════════════════════════════════════════
 // 4. RecommandePourVous — RecommandéPourVous
 // ═══════════════════════════════════════════════════════════════════════════════
-export function RecommandePourVous({ products }: { products: Product[] }) {
+export function RecommandePourVous({ products, eyebrow = 'Sélection pour vous', title = 'Recommandé pour vous' }: {
+  products: Product[]; eyebrow?: string; title?: string;
+}) {
   const navigate = useNavigate();
   if (products.length === 0) return null;
   return (
     <Box bg="white" pt={8} pb={6} style={{ borderBottom: `8px solid ${C.bgAlt}` }}>
       <Box maxW="1400px" mx="auto" px={{ base: 4, md: 6 }}>
         <SectionHead
-          eyebrow="Sélection pour vous"
-          title="Recommandé pour vous"
+          eyebrow={eyebrow}
+          title={title}
           accentColor="#6366f1"
           onAction={() => navigate('/catalog')}
           right={

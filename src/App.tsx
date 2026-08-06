@@ -1,11 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ChakraProvider, extendTheme, Spinner, Flex } from '@chakra-ui/react';
+import { CacheProvider } from '@emotion/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import '@cloudscape-design/global-styles/index.css';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ComparatorProvider } from './contexts/ComparatorContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { createDirCache } from './lib/emotionCache';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PageTransition } from './components/PageTransition';
 
@@ -1153,24 +1156,36 @@ function AppRoutes() {
   );
 }
 
+function ThemedApp() {
+  const { dir } = useLanguage();
+  const cache = useMemo(() => createDirCache(dir), [dir]);
+  return (
+    <CacheProvider value={cache}>
+      <ChakraProvider theme={chakraTheme}>
+        <ErrorBoundary>
+          <ComparatorProvider>
+            <PageTransition>
+              <Suspense fallback={<LoadingScreen />}>
+                <AppRoutes />
+              </Suspense>
+            </PageTransition>
+          </ComparatorProvider>
+        </ErrorBoundary>
+      </ChakraProvider>
+    </CacheProvider>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ChakraProvider theme={chakraTheme}>
-        <ErrorBoundary>
-          <BrowserRouter>
-            <AuthProvider>
-              <ComparatorProvider>
-                <PageTransition>
-                  <Suspense fallback={<LoadingScreen />}>
-                    <AppRoutes />
-                  </Suspense>
-                </PageTransition>
-              </ComparatorProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </ErrorBoundary>
-      </ChakraProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <LanguageProvider>
+            <ThemedApp />
+          </LanguageProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }

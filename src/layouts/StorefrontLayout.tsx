@@ -15,15 +15,20 @@ import {
   Search, ShoppingCart, ChevronDown, Package, Menu as MenuIcon,
   LayoutDashboard, LogOut, Settings, Star, Truck, Phone, Mail,
   Facebook, Twitter, Linkedin, Instagram, Home, Globe,
-  ChevronRight, Lock, Scale, X, Shield, FileText,
+  ChevronRight, Lock, Scale, X, FileText,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useComparator } from '../contexts/ComparatorContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import type { SupportedLang } from '../i18n';
 import { getCatStyle } from '../lib/categoryIcons';
+import { getCategoryLabel } from '../lib/categoryLabel';
 import { useCart } from '../hooks/useCart';
 import { CartDrawer } from '../components/CartDrawer';
 import { NotificationBell } from '../components/NotificationBell';
+import MobileBottomNav from './MobileBottomNav';
 import type { Product, Category } from '../types';
 
 // ─── brand colour tokens (mirrors HomePage C tokens) ─────────────────────────
@@ -92,7 +97,7 @@ function CategoryMegaMenu({ roots, children: subs }: { roots: Category[]; childr
               return (
                 <Box key={root.id} px={4} py={3} cursor="pointer"
                   bg={isActive ? 'white' : 'transparent'}
-                  style={{ borderLeft: `3px solid ${isActive ? N.navy : 'transparent'}` }}
+                  borderStart="3px solid" borderColor={isActive ? N.navy : 'transparent'}
                   onMouseEnter={() => setActiveId(root.id)}
                   onClick={() => navigate(`/catalog?category=${root.id}`)}
                   transition="all 0.15s" _hover={{ bg: 'white' }}>
@@ -425,12 +430,13 @@ export function AllCategoriesModal({ isOpen, onClose, roots, subCategories }: {
   isOpen: boolean; onClose: () => void; roots: Category[]; subCategories: Category[];
 }) {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
       <ModalOverlay backdropFilter="blur(4px)" />
       <ModalContent rounded="2xl" mx={4}>
-        <ModalHeader borderBottom="1px" borderColor="gray.100">Toutes les catégories</ModalHeader>
-        <ModalCloseButton top={4} right={4} />
+        <ModalHeader borderBottom="1px" borderColor="gray.100">{t('categories.seeAll')}</ModalHeader>
+        <ModalCloseButton top={4} insetEnd={4} />
         <ModalBody py={6}>
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
             {roots.map((root) => {
@@ -444,9 +450,9 @@ export function AllCategoriesModal({ isOpen, onClose, roots, subCategories }: {
                       <RI size={16} color={color} />
                     </Flex>
                     <Text fontWeight="bold" color="gray.800" _groupHover={{ color: 'blue.600' }}
-                      transition="color 0.15s">{root.name}</Text>
+                      transition="color 0.15s">{getCategoryLabel(root, i18n.language)}</Text>
                   </HStack>
-                  <VStack align="start" spacing={0} pl={2}>
+                  <VStack align="start" spacing={0} ps={2}>
                     {subCategories.filter((s) => s.parent_id === root.id).map((sub) => {
                       const { Icon: SI, color: sc } = getCatStyle(sub.name);
                       return (
@@ -454,7 +460,7 @@ export function AllCategoriesModal({ isOpen, onClose, roots, subCategories }: {
                           _hover={{ bg: 'blue.50', color: 'blue.600' }} transition="all 0.15s"
                           onClick={() => { navigate(`/catalog?category=${sub.id}`); onClose(); }}>
                           <SI size={13} color={sc} />
-                          <Text fontSize="sm" color="gray.600">{sub.name}</Text>
+                          <Text fontSize="sm" color="gray.600">{getCategoryLabel(sub, i18n.language)}</Text>
                         </HStack>
                       );
                     })}
@@ -533,6 +539,37 @@ export function CategoryBreadcrumb({ category, roots, subCategories, productName
   );
 }
 
+// ─── LangSwitcher ─────────────────────────────────────────────────────────────
+export function LangSwitcher({ variant = 'dark' }: { variant?: 'dark' | 'light' }) {
+  const { lang, setLang } = useLanguage();
+  const opts: { key: SupportedLang; label: string }[] = [
+    { key: 'fr', label: 'FR' },
+    { key: 'ar', label: 'العربية' },
+  ];
+  const isDark = variant === 'dark';
+  return (
+    <HStack spacing={0} rounded="full" p="2px"
+      bg={isDark ? 'rgba(255,255,255,0.08)' : 'gray.100'}
+      border="1px solid" borderColor={isDark ? 'rgba(255,255,255,0.15)' : 'gray.200'}>
+      {opts.map((o) => {
+        const active = lang === o.key;
+        return (
+          <Box key={o.key} as="button" type="button" onClick={() => setLang(o.key)}
+            px={2.5} py="4px" rounded="full" fontSize="11px" fontWeight="700"
+            minH="28px" display="flex" alignItems="center"
+            style={{
+              background: active ? N.amber : 'transparent',
+              color: active ? 'white' : isDark ? 'rgba(255,255,255,0.75)' : '#475569',
+            }}
+            transition="all 0.15s">
+            {o.label}
+          </Box>
+        );
+      })}
+    </HStack>
+  );
+}
+
 // ─── ComparatorFloat ──────────────────────────────────────────────────────────
 function ComparatorFloat() {
   const { items } = useComparator();
@@ -553,11 +590,13 @@ function ComparatorFloat() {
 
 // ─── StorefrontLayout ─────────────────────────────────────────────────────────
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const { user, profile, activeOrg, signOut } = useAuth();
   const navigate = useNavigate();
   const loc = useLocation();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: isCartOpen, onOpen: onCartOpen, onClose: onCartClose } = useDisclosure();
+  const { isOpen: isMobSearchOpen, onOpen: onMobSearchOpen, onClose: onMobSearchClose } = useDisclosure();
   const { count: cartCount } = useCart();
   const { items: compItems } = useComparator();
   const [roots, setRoots] = useState<Category[]>([]);
@@ -583,24 +622,11 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
 }
   return (
     <Box minH="100vh" bg="gray.50">
-      {/* Announcement bar — trust signals */}
-      <Box style={{ background: `linear-gradient(90deg, #0a1929 0%, ${N.navy} 50%, #0a1929 100%)` }} py={1.5} px={4}>
-        <Flex maxW="1400px" mx="auto" justify="space-between" align="center" flexWrap="wrap" gap={2}>
-          <HStack spacing={6} display={{ base: 'none', md: 'flex' }}>
-            <HStack spacing={1.5}>
-              <Shield size={11} color="rgba(255,255,255,0.65)" />
-              <Text color="blue.100" fontSize="xs" fontWeight="medium">Vendeurs vérifiés</Text>
-            </HStack>
-            <HStack spacing={1.5}>
-              <Truck size={11} color="rgba(255,255,255,0.65)" />
-              <Text color="blue.100" fontSize="xs" fontWeight="medium">Chaîne du froid ATP certifiée</Text>
-            </HStack>
-            <HStack spacing={1.5}>
-              <Star size={11} color="rgba(255,255,255,0.65)" />
-              <Text color="blue.100" fontSize="xs" fontWeight="medium">Prix dégressifs — MOQ transparent</Text>
-            </HStack>
-          </HStack>
-          <HStack spacing={4} ml={{ base: 'auto', md: '0' }}>
+      {/* Announcement bar — contact + langue (desktop) */}
+      <Box display={{ base: 'none', md: 'block' }}
+        style={{ background: `linear-gradient(90deg, #0a1929 0%, ${N.navy} 50%, #0a1929 100%)` }} py={1.5} px={4}>
+        <Flex maxW="1400px" mx="auto" justify="flex-end" align="center" gap={4}>
+          <HStack spacing={4}>
             <HStack spacing={1} color="blue.200" fontSize="xs">
               <Phone size={10} />
               <Text>+33 1 XX XX XX XX</Text>
@@ -610,6 +636,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               <Text>contact@stock212.com</Text>
             </HStack>
           </HStack>
+          <LangSwitcher variant="dark" />
         </Flex>
       </Box>
 
@@ -663,6 +690,20 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
 
           {/* Spacer on mobile */}
           <Box flex={1} display={{ base: 'block', md: 'none' }} />
+
+          {/* Search icon — mobile, opens overlay */}
+          <IconButton
+            aria-label={t('header.searchPlaceholder')}
+            icon={<Search size={18} />}
+            variant="ghost"
+            display={{ base: 'flex', md: 'none' }}
+            rounded="full"
+            size="sm"
+            minW="44px" minH="44px"
+            color="gray.600"
+            _hover={{ bg: 'gray.100' }}
+            onClick={onMobSearchOpen}
+          />
 
           {/* Right actions */}
           <HStack spacing={1} flexShrink={0}>
@@ -998,6 +1039,10 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
           </DrawerHeader>
           <DrawerBody px={0}>
             <VStack align="stretch" spacing={0}>
+              {/* Langue */}
+              <Flex px={4} py={3} borderBottom="1px" borderColor="gray.100" justify="flex-end">
+                <LangSwitcher variant="light" />
+              </Flex>
               {/* Search bar mobile */}
               <Box px={4} py={3} borderBottom="1px" borderColor="gray.100">
                 <SearchAutocomplete size="sm" />
@@ -1120,6 +1165,19 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
       {/* Cart Drawer */}
       <CartDrawer isOpen={isCartOpen} onClose={onCartClose} />
 
+      {/* Mobile search overlay */}
+      {isMobSearchOpen && (
+        <Box position="fixed" inset={0} zIndex={400} bg="white" display={{ base: 'block', md: 'none' }}>
+          <Flex align="center" gap={2} px={4} h="60px" borderBottom="1px" borderColor="gray.100">
+            <Box flex={1}>
+              <SearchAutocomplete size="md" />
+            </Box>
+            <IconButton aria-label="Fermer" icon={<X size={18} />} variant="ghost" rounded="full"
+              minW="44px" minH="44px" onClick={onMobSearchClose} />
+          </Flex>
+        </Box>
+      )}
+
       {/* Bannière validation en attente */}
       {activeOrg?.validation_status === 'pending' && (
         <Box bg="blue.700" px={4} py={2.5}>
@@ -1145,8 +1203,8 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
 
       {/* Page content — homepage gets full-bleed (no maxW / px) */}
       {loc.pathname === '/'
-        ? <Box bg="white">{children}</Box>
-        : <Box maxW="1400px" mx="auto" px={4} py={6}>{children}</Box>
+        ? <Box bg="white" pb={{ base: '58px', md: 0 }}>{children}</Box>
+        : <Box maxW="1400px" mx="auto" px={4} py={6} pb={{ base: '70px', md: 6 }}>{children}</Box>
       }
 
       {/* Comparator floating button */}
@@ -1230,6 +1288,9 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
           </Flex>
         </Box>
       </Box>
+
+      {/* Nav basse mobile */}
+      <MobileBottomNav onOpenCart={onCartOpen} />
     </Box>
   );
 }
