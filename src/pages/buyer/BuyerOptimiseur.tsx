@@ -6,6 +6,7 @@ import {
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { withErrorToast, useFlashToast } from '../../lib/errorToast';
 
 interface CartLine {
   id: string; ean: string; productName: string; qty: number;
@@ -62,7 +63,7 @@ export default function BuyerOptimiseur() {
   const [loading,   setLoading]       = useState(false);
   const [results,   setResults]       = useState<OptimResult[] | null>(null);
   const [error,     setError]         = useState('');
-  const [cartMsg,   setCartMsg]       = useState('');
+  const { toast, flashItems } = useFlashToast();
   const [applying,  setApplying]      = useState(false);
 
   const sugTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -265,55 +266,61 @@ export default function BuyerOptimiseur() {
     if (!activeOrg) return;
     setApplying(true);
 
-    // Get or create the active live cart
-    const { data: cartRows } = await supabase
-      .from('carts')
-      .select('id')
-      .eq('buyer_org_id', activeOrg.id)
-      .eq('status', 'active')
-      .eq('is_template', false)
-      .order('created_at', { ascending: false })
-      .limit(1);
-    let cart: { id: string } | null = cartRows?.[0] ?? null;
+    await withErrorToast(
+      toast,
+      async () => {
+        // Get or create the active live cart
+        const { data: cartRows } = await supabase
+          .from('carts')
+          .select('id')
+          .eq('buyer_org_id', activeOrg.id)
+          .eq('status', 'active')
+          .eq('is_template', false)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        let cart: { id: string } | null = cartRows?.[0] ?? null;
 
-    if (!cart) {
-      const { data: newCart, error: cartErr } = await supabase
-        .from('carts')
-        .insert({ buyer_org_id: activeOrg.id, status: 'active', is_template: false })
-        .select('id')
-        .single();
-      if (cartErr || !newCart) {
-        setError(`Impossible de créer le panier${cartErr ? ` : ${cartErr.message}` : ''}`);
-        setApplying(false);
-        return;
+        if (!cart) {
+          const { data: newCart, error: cartErr } = await supabase
+            .from('carts')
+            .insert({ buyer_org_id: activeOrg.id, status: 'active', is_template: false })
+            .select('id')
+            .single();
+          if (cartErr || !newCart) {
+            throw new Error(cartErr?.message ?? 'Impossible de créer le panier');
+          }
+          cart = newCart;
+        }
+
+        // Replace cart contents with optimizer selection
+        const { error: deleteErr } = await supabase.from('cart_items').delete().eq('cart_id', cart.id);
+        if (deleteErr) throw new Error(deleteErr.message);
+
+        for (const g of groups) {
+          for (const l of g.lines) {
+            const { error: insertErr } = await supabase.from('cart_items').insert({
+              cart_id: cart.id,
+              product_id: l.productId,
+              quantity: l.qty,
+              unit_price_computed: l.unitPrice,
+            });
+            if (insertErr) throw new Error(insertErr.message);
+          }
+        }
+      },
+      { errorTitle: "Impossible d'appliquer la sélection", successTitle: 'Panier mis à jour avec la sélection optimisée !' },
+    ).then((result) => {
+      if (result !== undefined) {
+        setTimeout(() => navigate('/checkout'), 1200);
       }
-      cart = newCart;
-    }
+    });
 
-    // Replace cart contents with optimizer selection
-    await supabase.from('cart_items').delete().eq('cart_id', cart.id);
-
-    for (const g of groups) {
-      for (const l of g.lines) {
-        await supabase.from('cart_items').insert({
-          cart_id: cart.id,
-          product_id: l.productId,
-          quantity: l.qty,
-          unit_price_computed: l.unitPrice,
-        });
-      }
-    }
-
-    setCartMsg('Panier mis à jour avec la sélection optimisée !');
-    setTimeout(() => { setCartMsg(''); navigate('/checkout'); }, 2000);
     setApplying(false);
   }
 
   return (
     <SpaceBetween size="m">
-      {cartMsg && (
-        <Flashbar items={[{ type: 'success', content: cartMsg, dismissible: true, onDismiss: () => setCartMsg('') }]} />
-      )}
+      {flashItems.length > 0 && <Flashbar items={flashItems} />}
 
       <Header
         variant="h1"

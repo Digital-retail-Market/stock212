@@ -6,6 +6,7 @@ import {
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
 
 interface EanRef { id: string; ean: string; name: string; images: string[]; manufacturer_name: string | null; temperature: string }
 
@@ -136,18 +137,14 @@ export default function BuyerComparateur() {
 
   async function addToCart(productId: string, moq: number, unitPrice: number) {
     if (!activeOrg) return;
-    const { data: ex } = await supabase.from('cart_items').select('id, quantity')
-      .eq('buyer_org_id', activeOrg.id).eq('product_id', productId).is('cart_id', null).maybeSingle();
-    if (ex) {
-      await supabase.from('cart_items').update({ quantity: ex.quantity + Math.max(moq, qty) }).eq('id', ex.id);
-    } else {
-      await supabase.from('cart_items').insert({
-        buyer_org_id: activeOrg.id, product_id: productId,
-        quantity: Math.max(moq, qty), unit_price: unitPrice, cart_id: null,
-      });
-    }
-    setCartMsg('Ajouté au panier');
-    setTimeout(() => setCartMsg(''), 3000);
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId,
+      quantity: Math.max(moq, qty),
+      unitPrice,
+    });
+    setCartMsg(error ? `Erreur : ${error}` : 'Ajouté au panier');
+    setTimeout(() => setCartMsg(''), error ? 4000 : 3000);
   }
 
   // Sort offers: best price first (at selected qty)

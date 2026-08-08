@@ -123,18 +123,17 @@ export default function OnboardingPage() {
   const [maxWeight, setMaxWeight] = useState('');
   const [coldChain, setColdChain] = useState(false);
   const [buyerInterests, setBuyerInterests] = useState<string[]>([]);
-  const [buyerCreditLimit, setBuyerCreditLimit] = useState('');
-  const [buyerPaymentTerm, setBuyerPaymentTerm] = useState('30_days');
-  const [buyerTradeName, setBuyerTradeName] = useState('');
-  const [buyerLegalForm, setBuyerLegalForm] = useState('');
   const [buyerContactReferent, setBuyerContactReferent] = useState('');
-  const [buyerBusinessType, setBuyerBusinessType] = useState('');
-  const [buyerMonthlyVolume, setBuyerMonthlyVolume] = useState('');
-  const [buyerOrderFrequency, setBuyerOrderFrequency] = useState('monthly');
-  const [buyerUsualSuppliers, setBuyerUsualSuppliers] = useState('');
-  const [buyerPaymentMethod, setBuyerPaymentMethod] = useState('bank_transfer');
-  const [buyerCurrency, setBuyerCurrency] = useState('MAD');
   const [buyerDeliveryInstructions, setBuyerDeliveryInstructions] = useState('');
+  const [orgPhone2, setOrgPhone2] = useState('');
+  const [buyerContactEmail, setBuyerContactEmail] = useState('');
+  const [buyerContactPhone, setBuyerContactPhone] = useState('');
+  const [buyerWebsite, setBuyerWebsite] = useState('');
+  const [buyerYearsActive, setBuyerYearsActive] = useState('');
+  const [buyerOutletCount, setBuyerOutletCount] = useState('');
+  const [buyerStoreSurface, setBuyerStoreSurface] = useState('');
+  const [buyerDeliveryZone, setBuyerDeliveryZone] = useState('');
+  const [buyerDeliveryAddress, setBuyerDeliveryAddress] = useState('');
   const [bankBic, setBankBic] = useState('');
   const [defaultMoq, setDefaultMoq] = useState('');
   const [defaultFrancoEur, setDefaultFrancoEur] = useState('');
@@ -275,6 +274,7 @@ export default function OnboardingPage() {
           address_line1: addressLine1 || null,
           region: region || null,
           phone: orgPhone || null,
+          phone_2: selectedRole === 'buyer' ? (orgPhone2 || null) : null,
           ice: ice || null,
           rc: rcNumber || null,
           patente: patente || null,
@@ -298,28 +298,16 @@ export default function OnboardingPage() {
         await supabase.from('buyer_profiles').insert({
           organisation_id: org.id,
           interest_categories: buyerInterests,
-          default_payment_terms: buyerPaymentTerm,
-          credit_limit: buyerCreditLimit ? parseFloat(buyerCreditLimit) : null,
-          trade_name: buyerTradeName || null,
-          legal_form: buyerLegalForm || null,
-          contact_referent: buyerContactReferent || null,
-          business_type: buyerBusinessType || null,
-          monthly_volume_mad: buyerMonthlyVolume ? parseFloat(buyerMonthlyVolume) : null,
-          order_frequency: buyerOrderFrequency,
-          usual_suppliers: buyerUsualSuppliers || null,
-          preferred_payment_method: buyerPaymentMethod,
-          currency: buyerCurrency,
-        });
-        // Adresse de livraison par défaut, créée à partir de l'adresse du
-        // siège saisie à l'étape 2 — l'acheteur pourra en ajouter d'autres
-        // plus tard depuis son espace.
-        await supabase.from('buyer_delivery_addresses').insert({
-          organisation_id: org.id,
-          label: 'Adresse principale',
-          address_line1: addressLine1 || '',
-          city: city || null,
-          is_default: true,
-          instructions: buyerDeliveryInstructions || null,
+          contact_name: buyerContactReferent || null,
+          contact_email: buyerContactEmail || null,
+          contact_phone: buyerContactPhone || null,
+          website: buyerWebsite || null,
+          years_active: buyerYearsActive ? parseInt(buyerYearsActive) : null,
+          outlet_count: buyerOutletCount ? parseInt(buyerOutletCount) : null,
+          store_surface: buyerStoreSurface || null,
+          delivery_zone: buyerDeliveryZone || null,
+          delivery_address: buyerDeliveryAddress || null,
+          delivery_instructions: buyerDeliveryInstructions || null,
         });
       } else if (selectedRole === 'seller') {
         await supabase.from('seller_profiles').insert({
@@ -544,12 +532,14 @@ export default function OnboardingPage() {
                     <option value="TN">Tunisie</option>
                   </Select>
                 </FormControl>
-                <FormControl>
-                  <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                    textTransform="uppercase" letterSpacing="0.05em">Code postal</FormLabel>
-                  <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)}
-                    placeholder="75001" rounded="sm" fontSize="sm" />
-                </FormControl>
+                {selectedRole !== 'buyer' && (
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                      textTransform="uppercase" letterSpacing="0.05em">Code postal</FormLabel>
+                    <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)}
+                      placeholder="75001" rounded="sm" fontSize="sm" />
+                  </FormControl>
+                )}
               </HStack>
               <FormControl>
                 <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
@@ -572,11 +562,23 @@ export default function OnboardingPage() {
                 </FormControl>
                 <FormControl>
                   <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                    textTransform="uppercase" letterSpacing="0.05em">Téléphone</FormLabel>
+                    textTransform="uppercase" letterSpacing="0.05em">
+                    Téléphone {selectedRole === 'buyer' && '1 (Mobile)'}
+                  </FormLabel>
                   <Input value={orgPhone} onChange={(e) => setOrgPhone(e.target.value)}
                     placeholder="+212 5 00 00 00 00" rounded="sm" fontSize="sm" fontFamily="mono" />
                 </FormControl>
               </HStack>
+              {selectedRole === 'buyer' && (
+                <FormControl>
+                  <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                    textTransform="uppercase" letterSpacing="0.05em">
+                    Téléphone 2 (Fixe) <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
+                  </FormLabel>
+                  <Input value={orgPhone2} onChange={(e) => setOrgPhone2(e.target.value)}
+                    placeholder="+212 5 22 00 00 00" rounded="sm" fontSize="sm" fontFamily="mono" maxW="260px" />
+                </FormControl>
+              )}
               <HStack w="full" spacing={3}>
                 <FormControl>
                   <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
@@ -605,27 +607,31 @@ export default function OnboardingPage() {
                       <Input value={ice} onChange={(e) => setIce(e.target.value)}
                         placeholder="001234567000012" rounded="sm" fontSize="sm" fontFamily="mono" />
                     </FormControl>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">RC</FormLabel>
-                      <Input value={rcNumber} onChange={(e) => setRcNumber(e.target.value)}
-                        placeholder="123456" rounded="sm" fontSize="sm" fontFamily="mono" />
-                    </FormControl>
+                    {selectedRole !== 'buyer' && (
+                      <FormControl>
+                        <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                          textTransform="uppercase" letterSpacing="0.05em">RC</FormLabel>
+                        <Input value={rcNumber} onChange={(e) => setRcNumber(e.target.value)}
+                          placeholder="123456" rounded="sm" fontSize="sm" fontFamily="mono" />
+                      </FormControl>
+                    )}
                   </HStack>
-                  <HStack w="full" spacing={3}>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">IF</FormLabel>
-                      <Input value={ifNumber} onChange={(e) => setIfNumber(e.target.value)}
-                        placeholder="12345678" rounded="sm" fontSize="sm" fontFamily="mono" />
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">Patente</FormLabel>
-                      <Input value={patente} onChange={(e) => setPatente(e.target.value)}
-                        placeholder="12345678" rounded="sm" fontSize="sm" fontFamily="mono" />
-                    </FormControl>
-                  </HStack>
+                  {selectedRole !== 'buyer' && (
+                    <HStack w="full" spacing={3}>
+                      <FormControl>
+                        <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                          textTransform="uppercase" letterSpacing="0.05em">IF</FormLabel>
+                        <Input value={ifNumber} onChange={(e) => setIfNumber(e.target.value)}
+                          placeholder="12345678" rounded="sm" fontSize="sm" fontFamily="mono" />
+                      </FormControl>
+                      <FormControl>
+                        <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                          textTransform="uppercase" letterSpacing="0.05em">Patente</FormLabel>
+                        <Input value={patente} onChange={(e) => setPatente(e.target.value)}
+                          placeholder="12345678" rounded="sm" fontSize="sm" fontFamily="mono" />
+                      </FormControl>
+                    </HStack>
+                  )}
                   {selectedRole !== 'buyer' && (
                     <FormControl>
                       <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
@@ -647,7 +653,67 @@ export default function OnboardingPage() {
               </Text>
               {selectedRole === 'buyer' && (
                 <>
-                  <Text fontSize="sm" color="gray.500" alignSelf="start" lineHeight={1.6}>
+                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start">
+                    Contact commercial
+                  </Text>
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                      textTransform="uppercase" letterSpacing="0.05em">
+                      Contact référent <Text as="span" fontWeight="400" textTransform="none">(nom et poste, optionnel)</Text>
+                    </FormLabel>
+                    <Input value={buyerContactReferent} onChange={(e) => setBuyerContactReferent(e.target.value)}
+                      placeholder="Ex : Fatima Zahra — Responsable achats" rounded="sm" fontSize="sm" />
+                  </FormControl>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Email de contact
+                      </FormLabel>
+                      <Input value={buyerContactEmail} onChange={(e) => setBuyerContactEmail(e.target.value)}
+                        type="email" placeholder="achats@monentreprise.ma" rounded="sm" fontSize="sm" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Téléphone de contact
+                      </FormLabel>
+                      <Input value={buyerContactPhone} onChange={(e) => setBuyerContactPhone(e.target.value)}
+                        placeholder="+212 6 00 00 00 00" rounded="sm" fontSize="sm" fontFamily="mono" />
+                    </FormControl>
+                  </HStack>
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                      textTransform="uppercase" letterSpacing="0.05em">
+                      Site web <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
+                    </FormLabel>
+                    <Input value={buyerWebsite} onChange={(e) => setBuyerWebsite(e.target.value)}
+                      placeholder="https://www.monentreprise.ma" rounded="sm" fontSize="sm" />
+                  </FormControl>
+
+                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={3}>
+                    Activité
+                  </Text>
+                  <HStack w="full" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Ancienneté <Text as="span" fontWeight="400" textTransform="none">(années)</Text>
+                      </FormLabel>
+                      <Input value={buyerYearsActive} onChange={(e) => setBuyerYearsActive(e.target.value)}
+                        type="number" placeholder="Ex : 5" rounded="sm" fontSize="sm" fontFamily="mono" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                        textTransform="uppercase" letterSpacing="0.05em">
+                        Points de vente
+                      </FormLabel>
+                      <Input value={buyerOutletCount} onChange={(e) => setBuyerOutletCount(e.target.value)}
+                        type="number" placeholder="Ex : 3" rounded="sm" fontSize="sm" fontFamily="mono" />
+                    </FormControl>
+                  </HStack>
+
+                  <Text fontSize="sm" color="gray.500" alignSelf="start" lineHeight={1.6} mt={2}>
                     Sélectionnez les catégories de produits qui vous intéressent :
                   </Text>
                   <SimpleGrid columns={2} spacing={2} w="full">
@@ -670,143 +736,34 @@ export default function OnboardingPage() {
                     ))}
                   </SimpleGrid>
 
-                  <FormControl mt={2}>
+                  <FormControl mt={1}>
                     <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
                       textTransform="uppercase" letterSpacing="0.05em">
-                      Condition de paiement souhaitée
+                      Surface magasin <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
                     </FormLabel>
-                    <Select value={buyerPaymentTerm} onChange={(e) => setBuyerPaymentTerm(e.target.value)}
-                      rounded="sm" fontSize="sm">
-                      <option value="prepayment">Comptant / Prépaiement</option>
-                      <option value="30_days">30 jours</option>
-                      <option value="60_days">60 jours</option>
-                      <option value="90_days">90 jours</option>
-                    </Select>
+                    <Input value={buyerStoreSurface} onChange={(e) => setBuyerStoreSurface(e.target.value)}
+                      placeholder="Ex : 150 m² ou 3 palettes" rounded="sm" fontSize="sm" />
+                  </FormControl>
+
+                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={3}>
+                    Livraison
+                  </Text>
+                  <FormControl isRequired>
+                    <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
+                      textTransform="uppercase" letterSpacing="0.05em">
+                      Zone de livraison souhaitée
+                    </FormLabel>
+                    <Input value={buyerDeliveryZone} onChange={(e) => setBuyerDeliveryZone(e.target.value)}
+                      placeholder="Casablanca-Settat, Rabat-Salé-Kénitra..." rounded="sm" fontSize="sm" />
                   </FormControl>
                   <FormControl>
                     <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
                       textTransform="uppercase" letterSpacing="0.05em">
-                      Plafond de crédit souhaité <Text as="span" fontWeight="400" textTransform="none">(optionnel, MAD)</Text>
+                      Adresse de livraison <Text as="span" fontWeight="400" textTransform="none">(si différente du siège)</Text>
                     </FormLabel>
-                    <Input value={buyerCreditLimit} onChange={(e) => setBuyerCreditLimit(e.target.value)}
-                      type="number" placeholder="Ex : 50000" rounded="sm" fontSize="sm" fontFamily="mono" />
+                    <Input value={buyerDeliveryAddress} onChange={(e) => setBuyerDeliveryAddress(e.target.value)}
+                      placeholder="Entrepôt, point de vente séparé..." rounded="sm" fontSize="sm" />
                   </FormControl>
-
-                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={2}>
-                    Identité complémentaire
-                  </Text>
-                  <HStack w="full" spacing={3}>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">
-                        Nom commercial <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
-                      </FormLabel>
-                      <Input value={buyerTradeName} onChange={(e) => setBuyerTradeName(e.target.value)}
-                        placeholder="Enseigne affichée" rounded="sm" fontSize="sm" />
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">
-                        Forme juridique
-                      </FormLabel>
-                      <Select value={buyerLegalForm} onChange={(e) => setBuyerLegalForm(e.target.value)}
-                        rounded="sm" fontSize="sm" placeholder="Sélectionner...">
-                        <option value="SARL">SARL</option>
-                        <option value="SA">SA</option>
-                        <option value="auto_entrepreneur">Auto-entrepreneur</option>
-                        <option value="autre">Autre</option>
-                      </Select>
-                    </FormControl>
-                  </HStack>
-                  <FormControl>
-                    <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                      textTransform="uppercase" letterSpacing="0.05em">
-                      Contact référent <Text as="span" fontWeight="400" textTransform="none">(nom et poste)</Text>
-                    </FormLabel>
-                    <Input value={buyerContactReferent} onChange={(e) => setBuyerContactReferent(e.target.value)}
-                      placeholder="Ex : Fatima Zahra — Responsable achats" rounded="sm" fontSize="sm" />
-                  </FormControl>
-
-                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={2}>
-                    Profil d'achat
-                  </Text>
-                  <HStack w="full" spacing={3}>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">
-                        Type d'établissement
-                      </FormLabel>
-                      <Select value={buyerBusinessType} onChange={(e) => setBuyerBusinessType(e.target.value)}
-                        rounded="sm" fontSize="sm" placeholder="Sélectionner...">
-                        <option value="restaurant">Restaurant</option>
-                        <option value="supermarche">Supermarché</option>
-                        <option value="hotel">Hôtel</option>
-                        <option value="grossiste">Grossiste</option>
-                        <option value="autre">Autre</option>
-                      </Select>
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">
-                        Volume d'achat mensuel <Text as="span" fontWeight="400" textTransform="none">(MAD, estimation)</Text>
-                      </FormLabel>
-                      <Input value={buyerMonthlyVolume} onChange={(e) => setBuyerMonthlyVolume(e.target.value)}
-                        type="number" placeholder="Ex : 30000" rounded="sm" fontSize="sm" fontFamily="mono" />
-                    </FormControl>
-                  </HStack>
-                  <HStack w="full" spacing={3}>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">
-                        Fréquence de commande
-                      </FormLabel>
-                      <Select value={buyerOrderFrequency} onChange={(e) => setBuyerOrderFrequency(e.target.value)}
-                        rounded="sm" fontSize="sm">
-                        <option value="weekly">Hebdomadaire</option>
-                        <option value="biweekly">Bimensuelle</option>
-                        <option value="monthly">Mensuelle</option>
-                      </Select>
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">
-                        Fournisseurs habituels <Text as="span" fontWeight="400" textTransform="none">(optionnel)</Text>
-                      </FormLabel>
-                      <Input value={buyerUsualSuppliers} onChange={(e) => setBuyerUsualSuppliers(e.target.value)}
-                        placeholder="Noms séparés par virgule" rounded="sm" fontSize="sm" />
-                    </FormControl>
-                  </HStack>
-
-                  <Text fontWeight="600" color="gray.700" fontSize="sm" alignSelf="start" mt={2}>
-                    Paiement & livraison
-                  </Text>
-                  <HStack w="full" spacing={3}>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">
-                        Mode de paiement préféré
-                      </FormLabel>
-                      <Select value={buyerPaymentMethod} onChange={(e) => setBuyerPaymentMethod(e.target.value)}
-                        rounded="sm" fontSize="sm">
-                        <option value="bank_transfer">Virement</option>
-                        <option value="cheque">Chèque</option>
-                        <option value="bill_of_exchange">Traite</option>
-                        <option value="card">Carte bancaire</option>
-                      </Select>
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
-                        textTransform="uppercase" letterSpacing="0.05em">
-                        Devise
-                      </FormLabel>
-                      <Select value={buyerCurrency} onChange={(e) => setBuyerCurrency(e.target.value)}
-                        rounded="sm" fontSize="sm">
-                        <option value="MAD">MAD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="USD">USD</option>
-                      </Select>
-                    </FormControl>
-                  </HStack>
                   <FormControl>
                     <FormLabel fontSize="xs" color="gray.600" fontWeight="600"
                       textTransform="uppercase" letterSpacing="0.05em">
@@ -1442,7 +1399,8 @@ export default function OnboardingPage() {
               isDisabled={
                 (step === 1 && !selectedRole) ||
                 (step === 2 && selectedRole === 'commercial' && !commercialFullName) ||
-                (step === 2 && selectedRole !== 'commercial' && !orgName)
+                (step === 2 && selectedRole !== 'commercial' && !orgName) ||
+                (step === 3 && selectedRole === 'buyer' && !buyerDeliveryZone)
               }
               rounded="md"
               bg="blue.800"

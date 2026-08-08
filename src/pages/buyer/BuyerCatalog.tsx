@@ -7,6 +7,7 @@ import {
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
 
 interface CatalogProduct {
   id: string; name: string; ean: string | null;
@@ -139,26 +140,16 @@ export default function BuyerCatalog() {
     if (!activeOrg) return;
     const price = basePrice(product.price_tiers);
     if (!price) return;
-    const { data: existing } = await supabase
-      .from('cart_items')
-      .select('id, quantity')
-      .eq('buyer_org_id', activeOrg.id)
-      .eq('product_id', product.id)
-      .is('cart_id', null)
-      .maybeSingle();
-
-    if (existing) {
-      await supabase.from('cart_items')
-        .update({ quantity: existing.quantity + product.moq })
-        .eq('id', existing.id);
-    } else {
-      await supabase.from('cart_items').insert({
-        buyer_org_id: activeOrg.id,
-        product_id: product.id,
-        quantity: product.moq,
-        unit_price: price,
-        cart_id: null,
-      });
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId: product.id,
+      quantity: product.moq,
+      unitPrice: price,
+    });
+    if (error) {
+      setCartMsg(`Erreur : ${error}`);
+      setTimeout(() => setCartMsg(''), 4000);
+      return;
     }
     setCartMsg(`${product.name.slice(0, 30)} ajouté au panier`);
     setTimeout(() => setCartMsg(''), 3000);
