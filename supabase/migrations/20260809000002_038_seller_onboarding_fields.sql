@@ -1,0 +1,26 @@
+-- Migration 038 — Champs onboarding Vendeur (identité commerciale, catalogue,
+-- tarification livraison, qualité/conformité — spec équipe validée)
+
+ALTER TABLE seller_profiles
+  ADD COLUMN IF NOT EXISTS trade_name                text,
+  ADD COLUMN IF NOT EXISTS contact_email              text,
+  ADD COLUMN IF NOT EXISTS contact_referent           text,
+  ADD COLUMN IF NOT EXISTS contact_phone              text,
+  ADD COLUMN IF NOT EXISTS years_active               integer,
+  ADD COLUMN IF NOT EXISTS product_categories         text[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS brands_represented         text,
+  ADD COLUMN IF NOT EXISTS delivery_zones             text[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS shipping_fee_mode          text,
+  ADD COLUMN IF NOT EXISTS shipping_flat_fee          numeric(12,2),
+  ADD COLUMN IF NOT EXISTS shipping_percentage_rate   numeric(5,2),
+  ADD COLUMN IF NOT EXISTS shipping_min_fee           numeric(12,2),
+  ADD COLUMN IF NOT EXISTS shipping_max_fee           numeric(12,2),
+  ADD COLUMN IF NOT EXISTS production_capacity        text,
+  ADD COLUMN IF NOT EXISTS exclusive_distribution     boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS onssa_approved             boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS onssa_number               text,
+  ADD COLUMN IF NOT EXISTS iso22000_certified         boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS iso9001_certified          boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS halal_certified            boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS halal_certifying_body      text,
+  ADD COLUMN IF NOT EXISTS lot_traceability           boolean NOT NULL DEFAULT false;

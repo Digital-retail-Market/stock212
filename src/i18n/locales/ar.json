@@ -1,0 +1,77 @@
+{
+  "common": {
+    "seeAll": "عرض الكل",
+    "seeMore": "المزيد",
+    "loading": "جاري التحميل...",
+    "price": "السعر",
+    "onQuote": "على أساس عرض السعر",
+    "currency": "درهم"
+  },
+  "header": {
+    "searchPlaceholder": "ابحث عن منتجات، علامات تجارية...",
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب",
+    "myAccount": "حسابي",
+    "cart": "السلة",
+    "menu": "القائمة"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "catalog": "الكتالوج",
+    "cart": "السلة",
+    "promotions": "العروض",
+    "account": "الحساب",
+    "brands": "العلامات التجارية",
+    "shops": "المتاجر",
+    "bestDeals": "أفضل العروض",
+    "howItWorks": "كيف يعمل"
+  },
+  "hero": {
+    "eyebrow": "منصة B2B · مواد استهلاكية",
+    "title1": "المرجع B2B",
+    "title2": "للمهنيين",
+    "titleAccent": "في قطاع المواد الاستهلاكية",
+    "cta": "تصفح الكتالوج",
+    "secondaryLogged": "مساحتي",
+    "secondaryAnon": "إنشاء حساب"
+  },
+  "trust": {
+    "verified": "بائعون موثوقون",
+    "verifiedDesc": "كل بائع يتم التحقق منه قبل النشر",
+    "freshDelivery": "توصيل يضمن الطزاجة",
+    "freshDeliveryDesc": "منتجات تُنقل في سلسلة تبريد من الانطلاق حتى الوصول",
+    "bulkPrice": "السعر ينخفض كلما اشتريت أكثر",
+    "bulkPriceDesc": "أسعار تنازلية معروضة بوضوح على كل منتج"
+  },
+  "categories": {
+    "title": "الفئات",
+    "seeAll": "جميع الفئات"
+  },
+  "sections": {
+    "flashDeals": "عروض اليوم",
+    "promoDestock": "عروض وتصفية المخزون",
+    "marketLeaders": "المراجع الرائدة في السوق المغربي",
+    "partnerBrands": "علاماتنا الشريكة",
+    "sponsored": "اختيار الشركاء",
+    "topRated": "الأعلى تقييماً من طرف المشترين",
+    "destocking": "تصفية المخزون",
+    "limitedQty": "كميات محدودة",
+    "popular": "المنتجات الأكثر طلباً",
+    "thermalZones": "فئات درجة الحرارة",
+    "comparator": "المقارنة"
+  },
+  "badges": {
+    "new": "جديد",
+    "promo": "عرض",
+    "destock": "تصفية",
+    "certified": "معتمد",
+    "minQty": "الحد الأدنى"
+  },
+  "bottomNav": {
+    "home": "الرئيسية",
+    "catalog": "الكتالوج",
+    "cart": "السلة",
+    "promotions": "العروض",
+    "account": "الحساب"
+  }
+}

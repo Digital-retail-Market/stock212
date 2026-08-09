@@ -1,0 +1,77 @@
+{
+  "common": {
+    "seeAll": "Voir tout",
+    "seeMore": "Voir plus",
+    "loading": "Chargement...",
+    "price": "Prix",
+    "onQuote": "Sur devis",
+    "currency": "MAD"
+  },
+  "header": {
+    "searchPlaceholder": "Rechercher produits, marques...",
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "myAccount": "Mon compte",
+    "cart": "Panier",
+    "menu": "Menu"
+  },
+  "nav": {
+    "home": "Accueil",
+    "catalog": "Catalogue",
+    "cart": "Panier",
+    "promotions": "Promotions",
+    "account": "Compte",
+    "brands": "Marques",
+    "shops": "Boutiques",
+    "bestDeals": "Best Deals",
+    "howItWorks": "Comment ça marche"
+  },
+  "hero": {
+    "eyebrow": "Marketplace B2B · FMCG",
+    "title1": "La référence B2B",
+    "title2": "pour les professionnels",
+    "titleAccent": "du FMCG",
+    "cta": "Explorer le catalogue",
+    "secondaryLogged": "Mon espace",
+    "secondaryAnon": "Créer un compte"
+  },
+  "trust": {
+    "verified": "Vendeurs vérifiés",
+    "verifiedDesc": "Chaque vendeur est contrôlé avant mise en ligne",
+    "freshDelivery": "Livraison garantie fraîche",
+    "freshDeliveryDesc": "Produits transportés au froid du départ à l'arrivée",
+    "bulkPrice": "Le prix baisse quand vous achetez plus",
+    "bulkPriceDesc": "Tarifs dégressifs affichés clairement sur chaque produit"
+  },
+  "categories": {
+    "title": "Catégories",
+    "seeAll": "Toutes les catégories"
+  },
+  "sections": {
+    "flashDeals": "Offres du jour",
+    "promoDestock": "Promotions & Déstockage",
+    "marketLeaders": "Références dominantes du marché marocain",
+    "partnerBrands": "Nos marques partenaires",
+    "sponsored": "Sélection partenaires",
+    "topRated": "Mieux évalués par nos acheteurs",
+    "destocking": "Stocks à écouler",
+    "limitedQty": "Quantités limitées",
+    "popular": "Produits populaires",
+    "thermalZones": "Segments thermiques",
+    "comparator": "Comparateur"
+  },
+  "badges": {
+    "new": "Nouveau",
+    "promo": "Promo",
+    "destock": "Déstockage",
+    "certified": "Certifié",
+    "minQty": "Qté min."
+  },
+  "bottomNav": {
+    "home": "Accueil",
+    "catalog": "Catalogue",
+    "cart": "Panier",
+    "promotions": "Promos",
+    "account": "Compte"
+  }
+}
