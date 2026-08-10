@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
 import { useComparator } from '../../contexts/ComparatorContext';
 import { useProductCampaigns } from '../../hooks/useMarketingStorefront';
 import ProductCampaignPanel from '../../components/marketing/ProductCampaignPanel';
@@ -234,19 +235,13 @@ export default function ProductDetailPage() {
     if (!product) return;
     setAddingToCart(true);
     try {
-      const { data: cartRows } = await supabase.from('carts').select('id')
-        .eq('buyer_org_id', activeOrg.id).eq('status', 'active').eq('is_template', false)
-        .order('created_at', { ascending: false }).limit(1);
-      let cart: { id: string } | null = cartRows?.[0] ?? null;
-      if (!cart) {
-        const { data: nc } = await supabase.from('carts').insert({ buyer_org_id: activeOrg.id }).select('id').single();
-        cart = nc;
-      }
-      if (!cart) throw new Error('Impossible de créer le panier');
-      await supabase.from('cart_items').upsert({
-        cart_id: cart.id, product_id: product.id, quantity: qty,
-        unit_price_computed: overridePrice ?? activeTier?.unit_price ?? null,
-      }, { onConflict: 'cart_id,product_id' });
+      const { error } = await addToCartShared({
+        buyerOrgId: activeOrg.id,
+        productId: product.id,
+        quantity: qty,
+        unitPrice: overridePrice ?? activeTier?.unit_price ?? null,
+      });
+      if (error) throw new Error(error);
       toast({ title: 'Ajouté au panier', description: `${qty} × ${product.name}`, status: 'success', duration: 3000 });
     } catch (e: unknown) {
       toast({ title: 'Erreur', description: (e as { message?: string })?.message, status: 'error', duration: 5000 });

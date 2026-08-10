@@ -6,6 +6,7 @@ import {
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
 
 interface DestockProduct {
   id: string; name: string; ean: string | null; images: string[];
@@ -135,19 +136,14 @@ export default function BuyerDestockage() {
 
   async function addToCart(productId: string, moq: number, unitPrice: number | null) {
     if (!activeOrg || !unitPrice) return;
-    const { data: ex } = await supabase
-      .from('cart_items').select('id, quantity')
-      .eq('buyer_org_id', activeOrg.id).eq('product_id', productId).is('cart_id', null).maybeSingle();
-    if (ex) {
-      await supabase.from('cart_items').update({ quantity: ex.quantity + moq }).eq('id', ex.id);
-    } else {
-      await supabase.from('cart_items').insert({
-        buyer_org_id: activeOrg.id, product_id: productId,
-        quantity: moq, unit_price: unitPrice, cart_id: null,
-      });
-    }
-    setCartMsg('Produit ajouté au panier');
-    setTimeout(() => setCartMsg(''), 3000);
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId,
+      quantity: moq,
+      unitPrice,
+    });
+    setCartMsg(error ? `Erreur : ${error}` : 'Produit ajouté au panier');
+    setTimeout(() => setCartMsg(''), error ? 4000 : 3000);
   }
 
   // Filtered & sorted DLC

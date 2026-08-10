@@ -66,12 +66,21 @@ export default function CheckoutPage() {
   for (const item of items) {
     const orgId   = (item.products as Record<string, unknown> & { organisations?: { id: string; name: string } })?.organisations?.id ?? 'unknown';
     const orgName = (item.products as Record<string, unknown> & { organisations?: { id: string; name: string } })?.organisations?.name ?? 'Vendeur';
-    const currency = item.products?.currency ?? 'EUR';
+    // MAD par défaut (marché cible V1 = Maroc, cf. cahier des charges §1.1) ;
+    // le multi-devise réel (conversion) est explicitement hors périmètre V1
+    // (roadmap §17, prévu en V3), donc pas de repli sur EUR ici.
+    const currency = item.products?.currency ?? 'MAD';
     if (!bySeller[orgId]) bySeller[orgId] = { org_id: orgId, name: orgName, currency, items: [] };
     bySeller[orgId].items.push(item);
   }
 
   const sellerOrgIds = Object.keys(bySeller).filter((id) => id !== 'unknown');
+
+  // Le checkout ne sait pas convertir entre devises (hors périmètre V1) : si
+  // le panier mélange des vendeurs facturant dans des devises différentes,
+  // on bloque plutôt que d'afficher un total additionné à tort.
+  const distinctCurrencies = Array.from(new Set(Object.values(bySeller).map((g) => g.currency)));
+  const hasMixedCurrencies = distinctCurrencies.length > 1;
 
   // Pre-load default delivery address + delivery options
   useEffect(() => {
@@ -115,7 +124,7 @@ export default function CheckoutPage() {
     const tier = getApplicableTier(i.products?.price_tiers ?? [], i.quantity);
     return s + (tier ? tier.unit_price * i.quantity : 0);
   }, 0);
-  const currency = items[0]?.products?.currency ?? '€';
+  const currency = hasMixedCurrencies ? null : (distinctCurrencies[0] ?? 'MAD');
 
   // Delivery cost per vendor (live, from vendor_delivery_config)
   const vendorDeliveryCosts: Record<string, number> = {};
@@ -152,6 +161,14 @@ export default function CheckoutPage() {
       toast({ title: 'Corriger les quantités MOQ avant de continuer', status: 'warning', duration: 3000, position: 'bottom-right' });
       return;
     }
+    if (hasMixedCurrencies) {
+      toast({
+        title: 'Devises mélangées dans le panier',
+        description: 'Le paiement multi-devises n\'est pas encore disponible. Passez commande séparément pour chaque groupe de devise.',
+        status: 'warning', duration: 5000, isClosable: true, position: 'bottom-right',
+      });
+      return;
+    }
     if (deliveryMethod === 'partner_carrier' && !selectedCarrierId) {
       toast({ title: 'Veuillez sélectionner un transporteur partenaire', status: 'warning', duration: 3000, position: 'bottom-right' });
       return;
@@ -159,75 +176,28 @@ export default function CheckoutPage() {
 
     setPlacing(true);
     try {
-      const nums: string[] = [];
       const deliveryAddress = {
         line1: address.line1, city: address.city,
         postal_code: address.postal_code, country: address.country,
       };
 
-      for (const group of Object.values(bySeller)) {
-        const groupTotal = group.items.reduce((s, i) => {
-          const tier = getApplicableTier(i.products?.price_tiers ?? [], i.quantity);
-          return s + (tier ? tier.unit_price * i.quantity : 0);
-        }, 0);
+      if (!cartId) throw new Error('Panier introuvable');
 
-        const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-        nums.push(orderNumber);
+      const { data: createdOrders, error: rpcError } = await supabase.rpc('place_multi_vendor_order', {
+        p_cart_id: cartId,
+        p_payment_terms: paymentTerms,
+        p_payment_method: 'bank_transfer',
+        p_delivery_address: deliveryAddress,
+        p_billing_address: deliveryAddress,
+        p_delivery_preference: deliveryPref,
+        p_delivery_method: deliveryMethod,
+        p_carrier_org_id: deliveryMethod === 'partner_carrier' ? selectedCarrierId : null,
+        p_notes: notes || null,
+      });
 
-        const deliveryFee = vendorDeliveryCosts[group.org_id] ?? 0;
+      if (rpcError) throw rpcError;
 
-        const { error: orderErr } = await supabase.from('orders').insert({
-          order_number:        orderNumber,
-          buyer_org_id:        activeOrg.id,
-          seller_org_id:       group.org_id,
-          status:              'pending',
-          total_ht:            Math.round(groupTotal * 100) / 100,
-          total_taxes:         Math.round(groupTotal * 0.2 * 100) / 100,
-          total_ttc:           Math.round(groupTotal * 1.2 * 100) / 100,
-          currency:            group.currency,
-          payment_terms:       paymentTerms,
-          payment_method:      'bank_transfer',
-          delivery_address:    deliveryAddress,
-          billing_address:     deliveryAddress,
-          delivery_preference: deliveryPref,
-          delivery_method:     deliveryMethod,
-          carrier_org_id:      deliveryMethod === 'partner_carrier' ? selectedCarrierId : null,
-          notes:               notes || null,
-          cart_id:             cartId ?? null,
-          delivery_fee_mad:    Math.round(deliveryFee * 100) / 100,
-        });
-
-        if (orderErr) throw orderErr;
-
-        // Insert order lines
-        const { data: orderData } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('order_number', orderNumber)
-          .single();
-
-        if (!orderData) throw new Error('Commande non trouvée après insertion');
-
-        const lines = group.items.map((item) => {
-          const tier = getApplicableTier(item.products?.price_tiers ?? [], item.quantity);
-          const unitPrice = tier ? tier.unit_price : (item.unit_price_computed ?? 0);
-          return {
-            order_id:           orderData.id,
-            product_id:         item.product_id,
-            variant_id:         item.variant_id ?? null,
-            product_name_snap:  item.products?.name ?? 'Produit',
-            quantity:           item.quantity,
-            unit_price_ht:      Math.round(unitPrice * 10000) / 10000,
-            line_total_ht:      Math.round(unitPrice * item.quantity * 10000) / 10000,
-          };
-        });
-        const { error: linesErr } = await supabase.from('order_lines').insert(lines);
-        if (linesErr) throw linesErr;
-      }
-
-      if (cartId) {
-        await supabase.from('carts').update({ status: 'converted' }).eq('id', cartId);
-      }
+      const nums = (createdOrders as { order_number: string }[] | null)?.map((o) => o.order_number) ?? [];
 
       setOrderNumbers(nums);
       setDone(true);
@@ -551,7 +521,7 @@ export default function CheckoutPage() {
                               {item.products?.name} × {item.quantity}
                             </Text>
                             <Text fontSize="sm" fontWeight="semibold" color="gray.800" flexShrink={0}>
-                              {tier ? (tier.unit_price * item.quantity).toFixed(2) : '—'} {item.products?.currency}
+                              {tier ? (tier.unit_price * item.quantity).toFixed(2) : '—'} {item.products?.currency ?? 'MAD'}
                             </Text>
                           </HStack>
                         );
@@ -596,9 +566,19 @@ export default function CheckoutPage() {
                 </Text>
               </HStack>
 
+              {hasMixedCurrencies && (
+                <HStack px={3} py={2.5} bg="red.50" border="1px" borderColor="red.200" rounded="xl" spacing={2} align="start">
+                  <AlertTriangle size={14} color="var(--chakra-colors-red-500)" style={{ marginTop: 2, flexShrink: 0 }} />
+                  <Text fontSize="xs" color="red.700">
+                    Ce panier mélange plusieurs devises ({distinctCurrencies.join(', ')}). Le paiement multi-devises
+                    n'est pas encore disponible — commandez séparément les vendeurs facturant en {distinctCurrencies[1] ?? 'devise différente'}.
+                  </Text>
+                </HStack>
+              )}
+
               <HStack justify="space-between">
                 <Text fontWeight="semibold" color="gray.700">Produits HT</Text>
-                <Text fontWeight="bold">{grandTotal.toFixed(2)} {currency}</Text>
+                <Text fontWeight="bold">{hasMixedCurrencies ? '—' : `${grandTotal.toFixed(2)} ${currency}`}</Text>
               </HStack>
               {totalDeliveryFee > 0 && (
                 <HStack justify="space-between">
@@ -608,7 +588,7 @@ export default function CheckoutPage() {
               )}
               <HStack justify="space-between">
                 <Text fontSize="sm" color="gray.500">TVA 20%</Text>
-                <Text fontSize="sm" color="gray.500">{(grandTotal * 0.2).toFixed(2)} {currency}</Text>
+                <Text fontSize="sm" color="gray.500">{hasMixedCurrencies ? '—' : `${(grandTotal * 0.2).toFixed(2)} ${currency}`}</Text>
               </HStack>
               <HStack justify="space-between" px={3} py={2} bg="blue.50" rounded="xl">
                 <VStack align="start" spacing={0}>
@@ -618,7 +598,7 @@ export default function CheckoutPage() {
                   )}
                 </VStack>
                 <Text fontWeight="800" fontSize="lg" color="blue.700">
-                  {(grandTotal * 1.2 + totalDeliveryFee).toFixed(2)} {currency}
+                  {hasMixedCurrencies ? '—' : `${(grandTotal * 1.2 + totalDeliveryFee).toFixed(2)} ${currency}`}
                 </Text>
               </HStack>
 
@@ -634,7 +614,7 @@ export default function CheckoutPage() {
                 size="lg"
                 rounded="xl"
                 leftIcon={<CreditCard size={18} />}
-                isDisabled={hasMoqViolation || placing || (deliveryMethod === 'partner_carrier' && !selectedCarrierId)}
+                isDisabled={hasMoqViolation || hasMixedCurrencies || placing || (deliveryMethod === 'partner_carrier' && !selectedCarrierId)}
                 isLoading={placing}
                 loadingText="Création des commandes..."
                 onClick={placeOrders}
