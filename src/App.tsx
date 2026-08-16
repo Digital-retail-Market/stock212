@@ -80,6 +80,7 @@ const AdminCategories         = lazy(() => import('./pages/admin/AdminCategories
 const AdminBrands             = lazy(() => import('./pages/admin/AdminBrands'));
 const AdminSuppliers          = lazy(() => import('./pages/admin/AdminSuppliers'));
 const AdminBusinessCategories = lazy(() => import('./pages/admin/AdminBusinessCategories'));
+const AdminOnboardingFields   = lazy(() => import('./pages/admin/AdminOnboardingFields'));
 const AdminContent            = lazy(() => import('./pages/admin/AdminContent'));
 const AdminStats              = lazy(() => import('./pages/admin/AdminStats'));
 const AdminOrganisations      = lazy(() => import('./pages/admin/AdminOrganisations'));
@@ -1057,6 +1058,16 @@ function AppRoutes() {
           <RequireAdmin>
             <AdminLayout breadcrumbs={[{ text: 'Admin', href: '/admin' }, { text: 'Types d\'acteurs', href: '/admin/business-categories' }]}>
               <AdminBusinessCategories />
+            </AdminLayout>
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/admin/onboarding-fields"
+        element={
+          <RequireAdmin>
+            <AdminLayout breadcrumbs={[{ text: 'Admin', href: '/admin' }, { text: 'Champs onboarding', href: '/admin/onboarding-fields' }]}>
+              <AdminOnboardingFields />
             </AdminLayout>
           </RequireAdmin>
         }
