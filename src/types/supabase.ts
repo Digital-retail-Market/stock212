@@ -350,6 +350,7 @@ export type Database = {
           city: string
           created_at: string
           id: string
+          instructions: string | null
           is_default: boolean
           label: string
           organisation_id: string
@@ -361,6 +362,7 @@ export type Database = {
           city?: string
           created_at?: string
           id?: string
+          instructions?: string | null
           is_default?: boolean
           label: string
           organisation_id: string
@@ -372,6 +374,7 @@ export type Database = {
           city?: string
           created_at?: string
           id?: string
+          instructions?: string | null
           is_default?: boolean
           label?: string
           organisation_id?: string
@@ -391,25 +394,55 @@ export type Database = {
       }
       buyer_profiles: {
         Row: {
+          contact_email: string | null
+          contact_phone: string | null
+          contact_referent: string | null
           created_at: string
           credit_limit: number | null
+          custom_fields: Json
           default_payment_terms: string | null
+          delivery_zone: string | null
           interest_categories: string[] | null
           organisation_id: string
+          phone_secondary: string | null
+          points_of_sale: number | null
+          store_surface_m2: number | null
+          website: string | null
+          years_active: number | null
         }
         Insert: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          contact_referent?: string | null
           created_at?: string
           credit_limit?: number | null
+          custom_fields?: Json
           default_payment_terms?: string | null
+          delivery_zone?: string | null
           interest_categories?: string[] | null
           organisation_id: string
+          phone_secondary?: string | null
+          points_of_sale?: number | null
+          store_surface_m2?: number | null
+          website?: string | null
+          years_active?: number | null
         }
         Update: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          contact_referent?: string | null
           created_at?: string
           credit_limit?: number | null
+          custom_fields?: Json
           default_payment_terms?: string | null
+          delivery_zone?: string | null
           interest_categories?: string[] | null
           organisation_id?: string
+          phone_secondary?: string | null
+          points_of_sale?: number | null
+          store_surface_m2?: number | null
+          website?: string | null
+          years_active?: number | null
         }
         Relationships: [
           {
@@ -1120,6 +1153,7 @@ export type Database = {
           avg_rating: number | null
           base_rate: number | null
           created_at: string
+          custom_fields: Json
           delivery_type: string
           fleet_size: number | null
           organisation_id: string
@@ -1137,6 +1171,7 @@ export type Database = {
           avg_rating?: number | null
           base_rate?: number | null
           created_at?: string
+          custom_fields?: Json
           delivery_type?: string
           fleet_size?: number | null
           organisation_id: string
@@ -1154,6 +1189,7 @@ export type Database = {
           avg_rating?: number | null
           base_rate?: number | null
           created_at?: string
+          custom_fields?: Json
           delivery_type?: string
           fleet_size?: number | null
           organisation_id?: string
@@ -2036,6 +2072,57 @@ export type Database = {
           },
         ]
       }
+      onboarding_field_definitions: {
+        Row: {
+          created_at: string
+          display_order: number
+          enabled: boolean
+          field_key: string
+          field_type: string
+          id: string
+          is_system_field: boolean
+          label: string
+          options: Json | null
+          required: boolean
+          role: string
+          section: string
+          storage_target: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          field_key: string
+          field_type: string
+          id?: string
+          is_system_field?: boolean
+          label: string
+          options?: Json | null
+          required?: boolean
+          role: string
+          section?: string
+          storage_target?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          field_key?: string
+          field_type?: string
+          id?: string
+          is_system_field?: boolean
+          label?: string
+          options?: Json | null
+          required?: boolean
+          role?: string
+          section?: string
+          storage_target?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_lines: {
         Row: {
           created_at: string
@@ -2301,6 +2388,7 @@ export type Database = {
       organisation_members: {
         Row: {
           active: boolean
+          custom_fields: Json
           id: string
           joined_at: string
           organisation_id: string
@@ -2309,6 +2397,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          custom_fields?: Json
           id?: string
           joined_at?: string
           organisation_id: string
@@ -2317,6 +2406,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          custom_fields?: Json
           id?: string
           joined_at?: string
           organisation_id?: string
@@ -3890,54 +3980,129 @@ export type Database = {
           avg_rating: number | null
           bank_bic: string | null
           bank_iban: string | null
+          brands_represented: string | null
           certifications: string[] | null
+          contact_email: string | null
+          contact_phone: string | null
+          contact_referent: string | null
           created_at: string
+          custom_fields: Json
           default_delivery_methods: string[] | null
           default_export_countries: string[] | null
           default_franco_eur: number | null
           default_incoterms: string[] | null
           default_moq: number | null
           default_prep_days: number | null
+          delivery_zones: string[] | null
           description: string | null
+          exclusive_distribution: boolean
+          halal_certified: boolean
+          halal_certifying_body: string | null
+          iso22000_certified: boolean
+          iso22000_doc_url: string | null
+          iso9001_certified: boolean
+          iso9001_doc_url: string | null
+          lot_traceability: boolean
+          onssa_approved: boolean
+          onssa_number: string | null
           organisation_id: string
+          product_categories: string[] | null
+          production_capacity: string | null
           review_count: number | null
+          shipping_fee_mode: string | null
+          shipping_flat_fee: number | null
+          shipping_max_fee: number | null
+          shipping_min_fee: number | null
+          shipping_percentage_rate: number | null
+          trade_name: string | null
           website: string | null
+          years_active: number | null
         }
         Insert: {
           accepted_payment_terms?: string[] | null
           avg_rating?: number | null
           bank_bic?: string | null
           bank_iban?: string | null
+          brands_represented?: string | null
           certifications?: string[] | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          contact_referent?: string | null
           created_at?: string
+          custom_fields?: Json
           default_delivery_methods?: string[] | null
           default_export_countries?: string[] | null
           default_franco_eur?: number | null
           default_incoterms?: string[] | null
           default_moq?: number | null
           default_prep_days?: number | null
+          delivery_zones?: string[] | null
           description?: string | null
+          exclusive_distribution?: boolean
+          halal_certified?: boolean
+          halal_certifying_body?: string | null
+          iso22000_certified?: boolean
+          iso22000_doc_url?: string | null
+          iso9001_certified?: boolean
+          iso9001_doc_url?: string | null
+          lot_traceability?: boolean
+          onssa_approved?: boolean
+          onssa_number?: string | null
           organisation_id: string
+          product_categories?: string[] | null
+          production_capacity?: string | null
           review_count?: number | null
+          shipping_fee_mode?: string | null
+          shipping_flat_fee?: number | null
+          shipping_max_fee?: number | null
+          shipping_min_fee?: number | null
+          shipping_percentage_rate?: number | null
+          trade_name?: string | null
           website?: string | null
+          years_active?: number | null
         }
         Update: {
           accepted_payment_terms?: string[] | null
           avg_rating?: number | null
           bank_bic?: string | null
           bank_iban?: string | null
+          brands_represented?: string | null
           certifications?: string[] | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          contact_referent?: string | null
           created_at?: string
+          custom_fields?: Json
           default_delivery_methods?: string[] | null
           default_export_countries?: string[] | null
           default_franco_eur?: number | null
           default_incoterms?: string[] | null
           default_moq?: number | null
           default_prep_days?: number | null
+          delivery_zones?: string[] | null
           description?: string | null
+          exclusive_distribution?: boolean
+          halal_certified?: boolean
+          halal_certifying_body?: string | null
+          iso22000_certified?: boolean
+          iso22000_doc_url?: string | null
+          iso9001_certified?: boolean
+          iso9001_doc_url?: string | null
+          lot_traceability?: boolean
+          onssa_approved?: boolean
+          onssa_number?: string | null
           organisation_id?: string
+          product_categories?: string[] | null
+          production_capacity?: string | null
           review_count?: number | null
+          shipping_fee_mode?: string | null
+          shipping_flat_fee?: number | null
+          shipping_max_fee?: number | null
+          shipping_min_fee?: number | null
+          shipping_percentage_rate?: number | null
+          trade_name?: string | null
           website?: string | null
+          years_active?: number | null
         }
         Relationships: [
           {

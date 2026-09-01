@@ -16,7 +16,6 @@ import {
   Spinner,
   Select,
   Flashbar,
-  Container,
   ExpandableSection,
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
@@ -127,6 +126,8 @@ export default function AdminDeliveryValidation() {
   const [rejectionNote, setRejectionNote] = useState('');
   const [requestDocType, setRequestDocType] = useState('');
   const [requestDocMessage, setRequestDocMessage] = useState('');
+  const [issueDocId, setIssueDocId] = useState<string | null>(null);
+  const [issueNote, setIssueNote] = useState('');
 
   // Flashbar
   const [flashItems, setFlashItems] = useState<{ type: 'success' | 'error'; content: string; id: string }[]>([]);
@@ -615,10 +616,7 @@ export default function AdminDeliveryValidation() {
                             <Button
                               variant="inline-link"
                               disabled={d.status === 'issue_detected'}
-                              onClick={() => {
-                                const note = window.prompt('Note sur le problème :') ?? '';
-                                markDocStatus(d.id, 'issue_detected', note);
-                              }}
+                              onClick={() => { setIssueNote(''); setIssueDocId(d.id); }}
                             >
                               ⚠ Signaler
                             </Button>
@@ -770,6 +768,41 @@ export default function AdminDeliveryValidation() {
               />
             </FormField>
           </SpaceBetween>
+        </Modal>
+      )}
+
+      {issueDocId && (
+        <Modal
+          visible
+          size="medium"
+          onDismiss={() => setIssueDocId(null)}
+          header="Signaler un problème sur le document"
+          footer={
+            <Box float="right">
+              <SpaceBetween direction="horizontal" size="xs">
+                <Button variant="link" onClick={() => setIssueDocId(null)}>Annuler</Button>
+                <Button
+                  variant="primary"
+                  loading={processing}
+                  onClick={async () => {
+                    await markDocStatus(issueDocId, 'issue_detected', issueNote.trim());
+                    setIssueDocId(null);
+                  }}
+                >
+                  Signaler
+                </Button>
+              </SpaceBetween>
+            </Box>
+          }
+        >
+          <FormField label="Note sur le problème (optionnel)">
+            <Textarea
+              value={issueNote}
+              onChange={({ detail }) => setIssueNote(detail.value)}
+              placeholder="Ex : document illisible, expiré, informations manquantes…"
+              rows={3}
+            />
+          </FormField>
         </Modal>
       )}
     </SpaceBetween>

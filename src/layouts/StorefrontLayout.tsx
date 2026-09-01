@@ -15,7 +15,7 @@ import {
   Search, ShoppingCart, ChevronDown, Package, Menu as MenuIcon,
   LayoutDashboard, LogOut, Settings, Star, Truck, Phone, Mail,
   Facebook, Twitter, Linkedin, Instagram, Home, Globe,
-  ChevronRight, Lock, Scale, X, FileText,
+  ChevronRight, Lock, Scale, X, FileText, Heart,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
@@ -26,6 +26,7 @@ import type { SupportedLang } from '../i18n';
 import { getCatStyle } from '../lib/categoryIcons';
 import { getCategoryLabel } from '../lib/categoryLabel';
 import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 import { CartDrawer } from '../components/CartDrawer';
 import { NotificationBell } from '../components/NotificationBell';
 import MobileBottomNav from './MobileBottomNav';
@@ -242,7 +243,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
       <form onSubmit={handleSubmit}>
         <InputGroup>
           <InputLeftElement w="auto" pl={1} pointerEvents="all" h={inputH}>
-            <Menu isOpen={catMenuOpen} onClose={() => setCatMenuOpen(false)}>
+            <Menu isLazy isOpen={catMenuOpen} onClose={() => setCatMenuOpen(false)}>
               <MenuButton as={Button} size="xs" variant="ghost"
                 color={selectedCat ? 'blue.600' : 'gray.400'}
                 rightIcon={<ChevronDown size={10} />}
@@ -599,6 +600,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
   const { isOpen: isMobSearchOpen, onOpen: onMobSearchOpen, onClose: onMobSearchClose } = useDisclosure();
   const { count: cartCount } = useCart();
   const { items: compItems } = useComparator();
+  const wishlistCount = useWishlist().count;
   const [roots, setRoots] = useState<Category[]>([]);
   const [subs, setSubs] = useState<Category[]>([]);
 
@@ -621,7 +623,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
   return '/buyer';
 }
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="gray.50">
       {/* Announcement bar — contact + langue (desktop) */}
       <Box display={{ base: 'none', md: 'block' }}
         style={{ background: `linear-gradient(90deg, #0a1929 0%, ${N.navy} 50%, #0a1929 100%)` }} py={1.5} px={4}>
@@ -711,6 +713,34 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               <>
                 <NotificationBell />
 
+                {/* Favoris — acheteurs uniquement */}
+                {(!activeOrg || activeOrg.org_type === 'buyer') && (
+                  <Box position="relative" display="inline-flex">
+                    <Tooltip label="Mes favoris" placement="bottom" hasArrow openDelay={400}>
+                      <IconButton
+                        aria-label="Mes favoris"
+                        icon={<Heart size={17} fill={wishlistCount > 0 ? '#e11d48' : 'none'} color={wishlistCount > 0 ? '#e11d48' : 'currentColor'} />}
+                        variant="ghost"
+                        rounded="full"
+                        size="sm"
+                        color="gray.500"
+                        _hover={{ bg: 'red.50', color: 'red.500' }}
+                        onClick={() => navigate('/buyer/wishlist')}
+                      />
+                    </Tooltip>
+                    {wishlistCount > 0 && (
+                      <Badge
+                        position="absolute" top="-3px" right="-3px"
+                        bg="#e11d48" color="white" rounded="full" fontSize="8px"
+                        minW="15px" h="15px" lineHeight="15px" textAlign="center"
+                        pointerEvents="none" fontWeight="700"
+                      >
+                        {wishlistCount}
+                      </Badge>
+                    )}
+                  </Box>
+                )}
+
                 {/* Cart — masqué pour les livreurs */}
                 {activeOrg?.org_type !== 'delivery' && (
                   <Box position="relative" display="inline-flex">
@@ -740,7 +770,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 )}
 
                 {/* User menu */}
-                <Menu>
+                <Menu isLazy>
                   <MenuButton>
                     <HStack
                       spacing={2} cursor="pointer"
@@ -977,9 +1007,13 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
           >
             {([
               { to: '/buyer',               label: 'Accueil',       exact: true  },
+              { to: '/buyer/catalog',       label: 'Catalogue',     exact: false },
+              { to: '/buyer/destockage',    label: 'Déstockage',    exact: false },
               { to: '/buyer/orders',        label: 'Commandes',     exact: false },
               { to: '/buyer/quotes',        label: 'Devis',         exact: false },
               { to: '/buyer/carts',         label: 'Paniers',       exact: false },
+              { to: '/buyer/compare',       label: 'Comparateur',   exact: false },
+              { to: '/buyer/optimizer',     label: 'Optimiseur',    exact: false },
               { to: '/buyer/ean-catalogue', label: 'Réf. EAN',      exact: false },
               { to: '/buyer/wishlist',      label: 'Favoris',       exact: false },
               { to: '/buyer/insights',      label: 'Insights',      exact: false },
@@ -1004,6 +1038,12 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                     transition="all 0.15s"
                   >
                     {label}
+                    {to === '/buyer/wishlist' && wishlistCount > 0 && (
+                      <Box as="span" ml={1} px={1.5} fontSize="10px" fontWeight="700"
+                        borderRadius="full" style={{ background: N.amber, color: 'white' }}>
+                        {wishlistCount}
+                      </Box>
+                    )}
                   </Box>
                 </Link>
               );
@@ -1201,45 +1241,42 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         </Box>
       )}
 
-      {/* Page content — homepage gets full-bleed (no maxW / px) */}
+      {/* Page content — homepage gets full-bleed (no maxW / px) — flex="1" pousse le footer en bas */}
       {loc.pathname === '/'
-        ? <Box bg="white" pb={{ base: '58px', md: 0 }}>{children}</Box>
-        : <Box maxW="1400px" mx="auto" px={4} py={6} pb={{ base: '70px', md: 6 }}>{children}</Box>
+        ? <Box flex="1" bg="white" pb={{ base: '58px', md: 0 }}>{children}</Box>
+        : <Box flex="1" w="100%" maxW="1400px" mx="auto" px={4} py={6} pb={{ base: '70px', md: 6 }}>{children}</Box>
       }
 
       {/* Comparator floating button */}
       <ComparatorFloat />
 
       {/* Footer */}
-      <Box bg="gray.900" mt={16}>
-        <Box maxW="1400px" mx="auto" px={4} pt={12} pb={8}>
-          <Flex direction={{ base: 'column', md: 'row' }} gap={10} justify="space-between">
-            <VStack align="start" spacing={4} maxW="260px">
-              <Box bg="white" rounded="xl" p={2.5} display="inline-flex"
-                style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}>
-                <Image
-                  src="/logos.png"
-                  alt="Stock212"
-                  h="168px"
-                  w="auto"
-                  objectFit="contain"
-                />
-              </Box>
+      <Box bg="gray.900" mt={12}>
+        <Box maxW="1400px" mx="auto" px={4} pt={9} pb={6}>
+          <Flex direction={{ base: 'column', md: 'row' }} gap={8} justify="space-between">
+            <VStack align="start" spacing={3} maxW="260px">
+              <Image
+                src="/stock212_logo_white.png"
+                alt="Stock212"
+                h="120px"
+                w="auto"
+                objectFit="contain"
+              />
               <Text color="gray.400" fontSize="sm" lineHeight={1.7}>
-                La marketplace B2B de référence pour les professionnels FMCG en Europe et en Afrique.
+                La marketplace B2B de référence pour les professionnels FMCG en Afrique.
               </Text>
               <HStack spacing={3}>
                 {[Facebook, Twitter, Linkedin, Instagram].map((Icon, i) => (
-                  <Flex key={i} w={8} h={8} bg="gray.800" rounded="lg" align="center" justify="center"
+                  <Flex key={i} w={7} h={7} bg="gray.800" rounded="lg" align="center" justify="center"
                     cursor="pointer" _hover={{ bg: N.amber }} transition="background 0.2s">
-                    <Icon size={15} color="#9CA3AF" />
+                    <Icon size={14} color="#9CA3AF" />
                   </Flex>
                 ))}
               </HStack>
             </VStack>
 
-            <Flex gap={10} flexWrap="wrap">
-              <VStack align="start" spacing={3}>
+            <Flex gap={8} flexWrap="wrap">
+              <VStack align="start" spacing={2}>
                 <Text color="white" fontWeight="semibold" fontSize="sm">Plateforme</Text>
                 {[
                   { to: '/catalog', label: 'Catalogue produits' },
@@ -1253,7 +1290,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 ))}
               </VStack>
 
-              <VStack align="start" spacing={3}>
+              <VStack align="start" spacing={2}>
                 <Text color="white" fontWeight="semibold" fontSize="sm">Compte</Text>
                 {[
                   { to: '/auth', label: 'Se connecter' },
@@ -1267,7 +1304,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 ))}
               </VStack>
 
-              <VStack align="start" spacing={3}>
+              <VStack align="start" spacing={2}>
                 <Text color="white" fontWeight="semibold" fontSize="sm">Contact</Text>
                 <HStack spacing={2}><Mail size={13} color="#6B7280" /><Text color="gray.400" fontSize="sm">contact@stock212.com</Text></HStack>
                 <HStack spacing={2}><Phone size={13} color="#6B7280" /><Text color="gray.400" fontSize="sm">+33 1 XX XX XX XX</Text></HStack>
@@ -1276,7 +1313,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
           </Flex>
         </Box>
         <Box borderTop="1px" borderColor="gray.800">
-          <Flex maxW="1400px" mx="auto" px={4} py={5} justify="space-between" align="center" flexWrap="wrap" gap={3}>
+          <Flex maxW="1400px" mx="auto" px={4} py={4} justify="space-between" align="center" flexWrap="wrap" gap={3}>
             <Text color="gray.500" fontSize="xs">© {new Date().getFullYear()} Stock212. Tous droits réservés.</Text>
             <HStack spacing={5} fontSize="xs">
               {[{ to: '/legal/cgv', label: 'CGV' }, { to: '/legal/privacy', label: 'Confidentialité' }, { to: '/legal/mentions', label: 'Mentions légales' }].map(({ to, label }) => (
@@ -1291,6 +1328,6 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
 
       {/* Nav basse mobile */}
       <MobileBottomNav onOpenCart={onCartOpen} />
-    </Box>
+    </Flex>
   );
 }

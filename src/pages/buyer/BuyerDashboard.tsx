@@ -5,7 +5,7 @@ import {
   Badge, Button, SimpleGrid, Skeleton, Avatar, Divider,
 } from '@chakra-ui/react';
 import {
-  ShoppingBag, FileText, Truck, Bell, ArrowRight, Package,
+  ShoppingBag, FileText, Bell, ArrowRight, Package,
   Clock, Search, Plus, ChevronRight, TrendingUp, CheckCircle,
   AlertCircle, RefreshCw, Heart, BarChart2, CreditCard,
   User, ShoppingCart, ArrowUpRight,
@@ -66,14 +66,15 @@ function KpiCard({
 }: {
   label: string; value: string | number; sub: string;
   icon: React.ElementType; iconBg: string; iconColor: string;
-  loading: boolean; onClick: () => void;
+  loading: boolean; onClick?: () => void;
 }) {
+  const clickable = typeof onClick === 'function';
   return (
     <Box
       bg="white" rounded="2xl" p={5}
       style={{ border: `1px solid ${C.border}` }}
-      cursor="pointer" onClick={onClick}
-      _hover={{ shadow: 'md', borderColor: C.amberBorder, transform: 'translateY(-2px)' }}
+      cursor={clickable ? 'pointer' : 'default'} onClick={onClick}
+      _hover={clickable ? { shadow: 'md', borderColor: C.amberBorder, transform: 'translateY(-2px)' } : undefined}
       transition="all 0.18s"
     >
       <Flex justify="space-between" align="start" mb={3}>
@@ -195,7 +196,7 @@ export default function BuyerDashboard() {
               style={{ background: C.amber, color: 'white', border: `1px solid #b56b10` }}
               leftIcon={<Package size={14} />}
               _hover={{ opacity: 0.9 }}
-              onClick={() => navigate('/catalog')}
+              onClick={() => navigate('/buyer/catalog')}
             >
               Explorer le catalogue
             </Button>
@@ -231,7 +232,6 @@ export default function BuyerDashboard() {
           value={unreadNotifs > 0 ? unreadNotifs : notifications.length}
           sub={unreadNotifs > 0 ? `${unreadNotifs} non lue${unreadNotifs > 1 ? 's' : ''}` : 'Toutes lues'}
           icon={Bell} iconBg="#fff7ed" iconColor="#c2410c"
-          onClick={() => {}}
         />
       </SimpleGrid>
 
@@ -304,7 +304,7 @@ export default function BuyerDashboard() {
                     <Text fontSize="sm" style={{ color: C.muted }}>Aucune commande</Text>
                     <Button size="sm" rounded="full" fontWeight="700"
                       style={{ background: C.navy, color: 'white' }}
-                      onClick={() => navigate('/catalog')}>
+                      onClick={() => navigate('/buyer/catalog')}>
                       Commencer vos achats
                     </Button>
                   </Flex>
@@ -349,7 +349,7 @@ export default function BuyerDashboard() {
                               leftIcon={<RefreshCw size={11} />}
                               style={{ color: C.navy }}
                               _hover={{ bg: C.bgAlt }}
-                              onClick={e => { e.stopPropagation(); navigate('/catalog'); }}
+                              onClick={e => { e.stopPropagation(); navigate('/buyer/catalog'); }}
                             >
                               Réorder
                             </Button>
@@ -573,7 +573,7 @@ export default function BuyerDashboard() {
             style={{ background: C.amber, color: 'white', border: `1px solid #b56b10` }}
             rightIcon={<ArrowUpRight size={14} />}
             _hover={{ opacity: 0.9 }}
-            onClick={() => navigate('/catalog')}
+            onClick={() => navigate('/buyer/catalog')}
           >
             Explorer le catalogue
           </Button>

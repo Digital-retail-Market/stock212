@@ -202,7 +202,7 @@ export default function MesCommandesPage() {
       description: 'Redirection vers le catalogue pour sélectionner vos produits.',
       status: 'info', duration: 3000, position: 'top-right',
     });
-    navigate('/catalog');
+    navigate('/buyer/catalog');
   }
 
   async function handlePDF(order: Order) {
@@ -233,7 +233,7 @@ export default function MesCommandesPage() {
         <Button size="sm" fontWeight="700" rounded="full"
           style={{ background: C.navy, color: 'white' }}
           leftIcon={<ShoppingBag size={14} />} _hover={{ opacity: 0.9 }}
-          onClick={() => navigate('/catalog')}>
+          onClick={() => navigate('/buyer/catalog')}>
           Nouvelle commande
         </Button>
       </Flex>
@@ -337,7 +337,7 @@ export default function MesCommandesPage() {
             </Text>
             {!search && statusFilter === 'all' && (
               <Button size="sm" mt={1} fontWeight="700" rounded="full"
-                style={{ background: C.navy, color: 'white' }} onClick={() => navigate('/catalog')}>
+                style={{ background: C.navy, color: 'white' }} onClick={() => navigate('/buyer/catalog')}>
                 Parcourir le catalogue
               </Button>
             )}

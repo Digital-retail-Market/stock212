@@ -1,9 +1,13 @@
 export type OrgType = 'buyer' | 'seller' | 'delivery';
 
 export interface VendorDeliveryConfig {
-  org_id: string;
-  free_delivery_threshold: number;
-  delivery_fee_default: number;
+  seller_org_id: string;
+  delivery_mode: 'flat_rate' | 'free_above_threshold' | 'percentage' | 'free_always' | 'negotiated';
+  flat_rate_mad: number;
+  free_threshold_mad: number | null;
+  percentage_rate: number | null;
+  min_charge_mad: number | null;
+  max_charge_mad: number | null;
 }
 
 export type AdminRole = 'superadmin' | 'moderator' | 'finance_admin' | 'support' | 'data_viewer';
@@ -72,6 +76,7 @@ export interface BusinessCategory {
   name: string;
   description: string | null;
   active: boolean;
+  display_order: number;
 }
 
 export interface Category {

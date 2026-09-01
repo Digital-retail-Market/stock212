@@ -1,13 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  SpaceBetween, Header, Button, Box, Badge, Input, Select,
-  FormField, Container, Spinner, Pagination, Checkbox,
+  SpaceBetween, Header, Button, Box, Input, Select,
+  Container, Spinner, Pagination, Checkbox,
   ExpandableSection, Alert, Flashbar,
 } from '@cloudscape-design/components';
+import { Heart } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { addToCart as addToCartShared } from '../../lib/cart';
+import { lowestTierPrice } from '../../lib/pricing';
+import { useWishlist } from '../../hooks/useWishlist';
 
 interface CatalogProduct {
   id: string; name: string; ean: string | null;
@@ -15,11 +18,36 @@ interface CatalogProduct {
   is_new: boolean; is_on_promotion: boolean; is_sponsored: boolean;
   certifications: string[]; short_description: string | null;
   avg_rating: number; review_count: number; seller_org_id: string;
+  created_at: string;
   organisations: { id: string; name: string } | null;
   categories: { id: string; name: string } | null;
+  brands: { id: string; name: string } | null;
   price_tiers: { qty_min: number; unit_price: number }[];
 }
+
+/**
+ * Un « produit » du point de vue acheteur = un article (EAN) proposé par
+ * potentiellement plusieurs fournisseurs. On regroupe les lignes `products`
+ * par EAN : une carte = un produit, l'exploration ouvre le comparateur qui
+ * classe tous les fournisseurs (dont le « meilleur choix »).
+ */
+interface GroupedProduct {
+  key: string;            // ean ou, à défaut, id
+  ean: string | null;
+  representative: CatalogProduct; // offre la moins chère du groupe
+  offerCount: number;     // nombre de fournisseurs
+  vendorNames: string[];
+  minPrice: number | null;
+  maxRating: number;
+  totalReviews: number;
+  newestAt: string;
+  isNew: boolean;
+  isPromo: boolean;
+  isSponsored: boolean;
+}
 interface Category { id: string; name: string; parent_id: string | null }
+
+const FETCH_WINDOW = 600; // lignes fournisseurs max récupérées avant regroupement
 
 const TEMP_OPTIONS = [
   { label: 'Ambiant',    value: 'ambient'      },
@@ -45,10 +73,7 @@ function tempColor(t: string): React.CSSProperties['color'] {
   return t === 'ambient' ? '#854d0e' : t === 'refrigerated' ? '#075985'
        : t === 'frozen'  ? '#1e3a5f' : '#166534';
 }
-function basePrice(tiers: { qty_min: number; unit_price: number }[]) {
-  if (!tiers?.length) return null;
-  return [...tiers].sort((a, b) => a.qty_min - b.qty_min)[0].unit_price;
-}
+const basePrice = lowestTierPrice;
 function starRating(avg: number) {
   return '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
 }
@@ -56,11 +81,12 @@ function starRating(avg: number) {
 export default function BuyerCatalog() {
   const navigate = useNavigate();
   const { activeOrg } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const [loading,    setLoading]    = useState(true);
-  const [products,   setProducts]   = useState<CatalogProduct[]>([]);
+  const [groups,     setGroups]     = useState<GroupedProduct[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [windowFull, setWindowFull] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [cartMsg,    setCartMsg]    = useState('');
 
@@ -76,6 +102,7 @@ export default function BuyerCatalog() {
 
   // Compare
   const [compareList, setCompareList] = useState<CatalogProduct[]>([]);
+  const wishlist = useWishlist();
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -104,35 +131,70 @@ export default function BuyerCatalog() {
     let q = supabase
       .from('products')
       .select(`id, name, ean, images, temperature, moq,
-        is_new, is_on_promotion, is_sponsored,
+        is_new, is_on_promotion, is_sponsored, created_at,
         certifications, short_description, avg_rating, review_count, seller_org_id,
         organisations!seller_org_id (id, name),
         categories (id, name),
-        price_tiers (qty_min, unit_price)`, { count: 'exact' })
+        brands (id, name),
+        price_tiers (qty_min, unit_price)`)
       .eq('status', 'active');
 
-    if (search.trim())         q = q.ilike('name', `%${search.trim()}%`);
+    if (search.trim())         q = q.or(`name.ilike.%${search.trim()}%,ean.ilike.%${search.trim()}%`);
     if (categoryId)            q = q.eq('category_id', categoryId);
     if (temperatures.length)   q = q.in('temperature', temperatures);
     if (onlyPromo)             q = q.eq('is_on_promotion', true);
     if (onlyNew)               q = q.eq('is_new', true);
 
-    if      (sort === 'rating')     q = q.order('avg_rating',    { ascending: false });
-    else if (sort === 'newest')     q = q.order('created_at',    { ascending: false });
-    else                            q = q.order('is_sponsored',  { ascending: false })
-                                        .order('is_new',         { ascending: false });
+    // On récupère une fenêtre large puis on regroupe par EAN côté client.
+    q = q.order('is_sponsored', { ascending: false }).range(0, FETCH_WINDOW - 1);
+    const { data } = await q;
+    const rows = (data ?? []) as unknown as CatalogProduct[];
+    setWindowFull(rows.length >= FETCH_WINDOW);
 
-    q = q.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
-    const { data, count } = await q;
+    // ── Regroupement par EAN (fallback id) ──────────────────────────────────
+    const map = new Map<string, CatalogProduct[]>();
+    for (const r of rows) {
+      const key = r.ean?.trim() || `id:${r.id}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
+    }
 
-    let list = (data ?? []) as CatalogProduct[];
+    let grouped: GroupedProduct[] = [...map.entries()].map(([key, offers]) => {
+      const priced = [...offers].sort(
+        (a, b) => (basePrice(a.price_tiers) ?? Infinity) - (basePrice(b.price_tiers) ?? Infinity),
+      );
+      const representative = priced[0];
+      const prices = offers.map(o => basePrice(o.price_tiers)).filter((p): p is number => p != null);
+      return {
+        key,
+        ean: representative.ean,
+        representative,
+        offerCount: offers.length,
+        vendorNames: [...new Set(offers.map(o => o.organisations?.name).filter(Boolean) as string[])],
+        minPrice: prices.length ? Math.min(...prices) : null,
+        maxRating: Math.max(0, ...offers.map(o => o.avg_rating ?? 0)),
+        totalReviews: offers.reduce((s, o) => s + (o.review_count ?? 0), 0),
+        newestAt: offers.reduce((m, o) => (o.created_at > m ? o.created_at : m), ''),
+        isNew: offers.some(o => o.is_new),
+        isPromo: offers.some(o => o.is_on_promotion),
+        isSponsored: offers.some(o => o.is_sponsored),
+      };
+    });
 
-    // Client-side price sort (requires price_tiers data)
-    if (sort === 'price_asc')  list = list.sort((a, b) => (basePrice(a.price_tiers) ?? 99999) - (basePrice(b.price_tiers) ?? 99999));
-    if (sort === 'price_desc') list = list.sort((a, b) => (basePrice(b.price_tiers) ?? 0) - (basePrice(a.price_tiers) ?? 0));
+    // ── Tri des produits regroupés ─────────────────────────────────────────
+    if (sort === 'price_asc')       grouped.sort((a, b) => (a.minPrice ?? Infinity) - (b.minPrice ?? Infinity));
+    else if (sort === 'price_desc') grouped.sort((a, b) => (b.minPrice ?? 0) - (a.minPrice ?? 0));
+    else if (sort === 'rating')     grouped.sort((a, b) => b.maxRating - a.maxRating);
+    else if (sort === 'newest')     grouped.sort((a, b) => b.newestAt.localeCompare(a.newestAt));
+    else                            grouped.sort((a, b) =>
+                                      (Number(b.isSponsored) - Number(a.isSponsored)) ||
+                                      (Number(b.isNew) - Number(a.isNew)) ||
+                                      (b.offerCount - a.offerCount));
 
-    setProducts(list);
-    setTotalCount(count ?? 0);
+    setTotalCount(grouped.length);
+    // Pagination des groupes côté client.
+    grouped = grouped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    setGroups(grouped);
     setLoading(false);
   }
 
@@ -181,14 +243,7 @@ export default function BuyerCatalog() {
 
       <Header
         variant="h1"
-        description={`${totalCount} produit${totalCount !== 1 ? 's' : ''} disponible${totalCount !== 1 ? 's' : ''}`}
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => navigate('/buyer/destockage')} iconName="remove">Déstockage</Button>
-            <Button onClick={() => navigate('/buyer/compare')} iconName="search">Comparateur</Button>
-            <Button variant="primary" onClick={() => navigate('/buyer/optimizer')} iconName="settings">Optimiseur</Button>
-          </SpaceBetween>
-        }
+        description={`${totalCount} produit${totalCount !== 1 ? 's' : ''}${windowFull ? '+ (affinez la recherche)' : ''} — chaque produit regroupe tous ses fournisseurs`}
       >
         Catalogue
       </Header>
@@ -325,7 +380,7 @@ export default function BuyerCatalog() {
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
                 <Spinner size="large" />
               </div>
-            ) : products.length === 0 ? (
+            ) : groups.length === 0 ? (
               <Box textAlign="center" color="text-body-secondary" padding="xxxl">
                 Aucun produit pour ces critères.
               </Box>
@@ -335,14 +390,16 @@ export default function BuyerCatalog() {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
                 gap: 16,
               }}>
-                {products.map(p => (
+                {groups.map(g => (
                   <ProductCard
-                    key={p.id}
-                    product={p}
-                    isComparing={compareList.some(c => c.id === p.id)}
-                    onCompare={() => toggleCompare(p)}
-                    onAddToCart={() => addToCart(p)}
-                    onView={() => navigate(`/buyer/compare?ean=${p.ean ?? p.id}`)}
+                    key={g.key}
+                    group={g}
+                    isComparing={compareList.some(c => c.id === g.representative.id)}
+                    isFav={wishlist.has(g.representative.id)}
+                    onCompare={() => toggleCompare(g.representative)}
+                    onToggleFav={() => wishlist.toggle(g.representative.id)}
+                    onAddToCart={() => addToCart(g.representative)}
+                    onView={() => navigate(`/buyer/compare?ean=${g.ean ?? g.representative.id}`)}
                   />
                 ))}
               </div>
@@ -365,17 +422,21 @@ export default function BuyerCatalog() {
   );
 }
 
-// ── Product card ────────────────────────────────────────────────────────────
+// ── Product card (un produit = un EAN, tous fournisseurs confondus) ─────────
 function ProductCard({
-  product, isComparing, onCompare, onAddToCart, onView,
+  group, isComparing, isFav, onCompare, onToggleFav, onAddToCart, onView,
 }: {
-  product: CatalogProduct;
+  group: GroupedProduct;
   isComparing: boolean;
+  isFav: boolean;
   onCompare: () => void;
+  onToggleFav: () => void;
   onAddToCart: () => void;
   onView: () => void;
 }) {
-  const price = basePrice(product.price_tiers);
+  const product = group.representative;
+  const price = group.minPrice;
+  const multiVendor = group.offerCount > 1;
   const [hover, setHover] = useState(false);
 
   return (
@@ -402,15 +463,29 @@ function ProductCard({
         }
         {/* Badges overlay */}
         <div style={{ position: 'absolute', top: 6, left: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {product.is_sponsored && <span style={{ background: '#7c3aed', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>SPONSORISÉ</span>}
-          {product.is_new && <span style={{ background: '#0284c7', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>NOUVEAU</span>}
-          {product.is_on_promotion && <span style={{ background: '#dc2626', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>PROMO</span>}
+          {group.isSponsored && <span style={{ background: '#7c3aed', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>SPONSORISÉ</span>}
+          {group.isNew && <span style={{ background: '#0284c7', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>NOUVEAU</span>}
+          {group.isPromo && <span style={{ background: '#dc2626', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>PROMO</span>}
         </div>
         {/* Temperature */}
         <div style={{ position: 'absolute', top: 6, right: 6, background: '#fff', border: '1px solid #e5e7eb',
             borderRadius: 4, fontSize: 10, fontWeight: 600, padding: '2px 6px', color: tempColor(product.temperature) }}>
           {tempLabel(product.temperature)}
         </div>
+        {/* Favori */}
+        <button
+          aria-label={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          onClick={e => { e.stopPropagation(); onToggleFav(); }}
+          style={{
+            position: 'absolute', bottom: 6, left: 6,
+            width: 26, height: 26, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: '#fff', border: `1px solid ${isFav ? '#e11d48' : '#d1d5db'}`,
+            cursor: 'pointer', padding: 0,
+          }}
+        >
+          <Heart size={13} color={isFav ? '#e11d48' : '#9ca3af'} fill={isFav ? '#e11d48' : 'none'} />
+        </button>
         {/* Compare checkbox */}
         <div style={{ position: 'absolute', bottom: 6, right: 6 }}>
           <button
@@ -430,9 +505,16 @@ function ProductCard({
 
       {/* Body */}
       <div style={{ padding: '10px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {/* Vendor */}
-        <div style={{ fontSize: 11, color: '#d97706', fontWeight: 600, textTransform: 'uppercase' }}>
-          {product.organisations?.name ?? '—'}
+        {/* Marque + nombre de fournisseurs */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: '#d97706', fontWeight: 600, textTransform: 'uppercase',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {product.brands?.name ?? product.organisations?.name ?? '—'}
+          </span>
+          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+            background: multiVendor ? '#eff6ff' : '#f3f4f6', color: multiVendor ? '#0972d3' : '#6b7280' }}>
+            {group.offerCount} fournisseur{multiVendor ? 's' : ''}
+          </span>
         </div>
         {/* Name */}
         <div
@@ -443,10 +525,10 @@ function ProductCard({
         >
           {product.name}
         </div>
-        {/* Rating */}
-        {product.review_count > 0 && (
+        {/* Rating (meilleure note parmi les fournisseurs) */}
+        {group.totalReviews > 0 && (
           <div style={{ fontSize: 11, color: '#d97706' }}>
-            {starRating(product.avg_rating)} <span style={{ color: '#6b7280' }}>({product.review_count})</span>
+            {starRating(group.maxRating)} <span style={{ color: '#6b7280' }}>({group.totalReviews})</span>
           </div>
         )}
         {/* Certifications */}
@@ -458,16 +540,18 @@ function ProductCard({
             ))}
           </div>
         )}
-        {/* MOQ + Price */}
+        {/* Prix mini + fourchette fournisseurs */}
         <div style={{ marginTop: 'auto', paddingTop: 8, borderTop: '1px solid #f3f4f6' }}>
           {price != null ? (
             <div>
               <div style={{ fontSize: 17, fontWeight: 800, color: '#0f1b2d' }}>
+                {multiVendor && <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>dès </span>}
                 {price.toLocaleString('fr-MA', { minimumFractionDigits: 2 })} MAD
               </div>
               <div style={{ fontSize: 11, color: '#6b7280' }}>
-                à partir de {product.moq} unité{product.moq > 1 ? 's' : ''}
-                {product.price_tiers.length > 1 && ` · ${product.price_tiers.length} paliers`}
+                {multiVendor
+                  ? `${group.offerCount} offres · ${group.vendorNames.slice(0, 2).join(', ')}${group.vendorNames.length > 2 ? '…' : ''}`
+                  : `à partir de ${product.moq} unité${product.moq > 1 ? 's' : ''}`}
               </div>
             </div>
           ) : (
@@ -479,25 +563,28 @@ function ProductCard({
       {/* Actions */}
       <div style={{ padding: '8px 12px', borderTop: '1px solid #f3f4f6', display: 'flex', gap: 6 }}>
         <button
-          onClick={onAddToCart}
-          disabled={!price}
-          style={{
-            flex: 1, background: price ? '#0972d3' : '#e5e7eb',
-            color: price ? '#fff' : '#9ca3af',
-            border: 'none', borderRadius: 6, padding: '7px 0',
-            fontWeight: 700, fontSize: 12, cursor: price ? 'pointer' : 'not-allowed',
-          }}
-        >
-          + Ajouter au panier
-        </button>
-        <button
           onClick={onView}
           style={{
-            background: '#f3f4f6', border: 'none', borderRadius: 6,
-            padding: '7px 10px', fontWeight: 600, fontSize: 12, cursor: 'pointer', color: '#374151',
+            flex: 1, background: '#0972d3', color: '#fff',
+            border: 'none', borderRadius: 6, padding: '7px 0',
+            fontWeight: 700, fontSize: 12, cursor: 'pointer',
           }}
         >
-          ≡
+          {multiVendor ? `Voir les ${group.offerCount} offres` : 'Voir l’offre'}
+        </button>
+        <button
+          onClick={onAddToCart}
+          disabled={!price}
+          title="Ajouter la moins chère au panier"
+          style={{
+            background: price ? '#f3f4f6' : '#e5e7eb',
+            color: price ? '#374151' : '#9ca3af',
+            border: 'none', borderRadius: 6,
+            padding: '7px 10px', fontWeight: 700, fontSize: 12,
+            cursor: price ? 'pointer' : 'not-allowed',
+          }}
+        >
+          + Panier
         </button>
       </div>
     </div>

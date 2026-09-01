@@ -81,7 +81,7 @@ export async function withErrorToast<T>(
  *   return <Flashbar items={flashItems} />;
  */
 export function useFlashToast() {
-  const [flashItems, setFlashItems] = useState
+  const [flashItems, setFlashItems] = useState<
     { id: string; type: 'success' | 'error' | 'warning' | 'info'; content: string; dismissible: true; onDismiss: () => void }[]
   >([]);
 

@@ -15,7 +15,7 @@ function PromoCodeChip({ promo }: { promo: PromoCampaign }) {
   const code = promo.code ?? promo.name.toUpperCase().replace(/\s/g, '');
 
   const copy = () => {
-    navigator.clipboard.writeText(code).catch(() => {});
+    navigator.clipboard.writeText(code).catch(() => {/* copie best-effort : navigateur peut bloquer l'API clipboard */});
     setCopied(true);
     toast({ title: `Code "${code}" copié !`, description: promo.discount_pct ? `-${promo.discount_pct}%` : undefined, status: 'success', duration: 2000, isClosable: true });
     setTimeout(() => setCopied(false), 2500);

@@ -18,7 +18,7 @@ const PRIORITY_CATEGORIES = [
 ];
 
 // Marques de référence dominantes sur le marché marocain FMCG
-const DOMINANT_BRANDS = ['Aïcha', 'Koutoubia', 'Copag'];
+const DOMINANT_BRANDS = ['Carolin', 'WC Net', 'Aquafresh'];
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -284,8 +284,16 @@ export default function HomePage() {
           });
       });
 
-    supabase.from('brands').select('*').limit(16)
-      .then(({ data }) => setBrands((data as Brand[]) ?? []));
+    // Seules les marques effectivement portées par un produit actif apparaissent
+    // dans le bandeau — évite d'afficher des marques orphelines (ex. anciens
+    // fournisseurs de démo retirés de la plateforme).
+    supabase.from('products').select('brand_id').eq('status', 'active').not('brand_id', 'is', null)
+      .then(({ data }) => {
+        const brandIds = [...new Set((data ?? []).map((p) => p.brand_id))];
+        if (brandIds.length === 0) return;
+        supabase.from('brands').select('*').in('id', brandIds).limit(16)
+          .then(({ data: brandData }) => setBrands((brandData as Brand[]) ?? []));
+      });
   }, []);
 
   // Sous-catégories triées : celles restockées par ce public en premier, le reste ensuite
@@ -466,7 +474,21 @@ export default function HomePage() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════
-          RÉASSURANCE — une ligne, pas une section
+          MARQUES PARTENAIRES — bandeau défilant
+      ══════════════════════════════════════════════════════════════ */}
+      {brands.length > 0 && (
+        <Box bg="white" py={7}>
+          <Container>
+            <Heading size="sm" fontWeight="800" mb={4} textAlign="center" style={{ color: C.muted }}>
+              {t('sections.partnerBrands')}
+            </Heading>
+          </Container>
+          <BrandMarquee brands={brands} />
+        </Box>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          RÉASSURANCE — une ligne, pas une section — dernière section avant le footer
       ══════════════════════════════════════════════════════════════ */}
       <Box style={{ background: C.bgWarm }}>
         <Container>
@@ -487,20 +509,6 @@ export default function HomePage() {
           </Flex>
         </Container>
       </Box>
-
-      {/* ══════════════════════════════════════════════════════════════
-          MARQUES PARTENAIRES — bandeau défilant, dernière section avant le footer
-      ══════════════════════════════════════════════════════════════ */}
-      {brands.length > 0 && (
-        <Box bg="white" py={7}>
-          <Container>
-            <Heading size="sm" fontWeight="800" mb={4} textAlign="center" style={{ color: C.muted }}>
-              {t('sections.partnerBrands')}
-            </Heading>
-          </Container>
-          <BrandMarquee brands={brands} />
-        </Box>
-      )}
     </Box>
   );
 }

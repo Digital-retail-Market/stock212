@@ -38,11 +38,6 @@ interface OptimResult {
   recommended: boolean;
 }
 
-function bestOffer(offers: VendorOffer[], qty: number) {
-  const sorted = offers.filter(o => o.qty <= qty).sort((a, b) => a.unitPrice - b.unitPrice);
-  return sorted[0] ?? offers.sort((a, b) => a.unitPrice - b.unitPrice)[0] ?? null;
-}
-
 function buildGroup(vendorOffers: { vendorId: string; vendorName: string; lines: VendorOffer[]; qtys: Record<string, number>; deliveryFreeAbove: number | null; deliveryFee: number | null }): VendorGroup {
   const lines = vendorOffers.lines.map(o => {
     const qty = vendorOffers.qtys[o.ean] ?? o.moq;
@@ -120,12 +115,35 @@ export default function BuyerOptimiseur() {
     const vendorIds = [...new Set((products as any[]).map(p => p.seller_org_id))];
     const { data: deliveryConfigs } = await supabase
       .from('vendor_delivery_config')
-      .select('org_id, free_delivery_threshold, delivery_fee_default')
-      .in('org_id', vendorIds);
+      .select('seller_org_id, delivery_mode, flat_rate_mad, free_threshold_mad, percentage_rate, min_charge_mad')
+      .in('seller_org_id', vendorIds);
 
+    // Ramène chaque politique de livraison au modèle { seuil franco, forfait }
+    // utilisé par l'optimiseur. Cf. vendor_delivery_config (migration 029).
     const dcMap: Record<string, { free: number | null; fee: number | null }> = {};
-    for (const c of (deliveryConfigs ?? []) as any[]) {
-      dcMap[c.org_id] = { free: c.free_delivery_threshold, fee: c.delivery_fee_default };
+    type DcRow = {
+      seller_org_id: string; delivery_mode: string;
+      flat_rate_mad: number | null; free_threshold_mad: number | null;
+      percentage_rate: number | null; min_charge_mad: number | null;
+    };
+    for (const c of (deliveryConfigs ?? []) as DcRow[]) {
+      let free: number | null = null;
+      let fee = 0;
+      switch (c.delivery_mode) {
+        case 'free_always':
+        case 'negotiated':
+          free = 0; fee = 0; break;
+        case 'flat_rate':
+          free = null; fee = c.flat_rate_mad ?? 0; break;
+        case 'free_above_threshold':
+          free = c.free_threshold_mad ?? null; fee = c.flat_rate_mad ?? 0; break;
+        case 'percentage':
+          // Pas de seuil franco : on approxime par la charge minimale.
+          free = null; fee = c.min_charge_mad ?? Math.round((c.percentage_rate ?? 0.05) * 1000); break;
+        default:
+          free = null; fee = c.flat_rate_mad ?? 0;
+      }
+      dcMap[c.seller_org_id] = { free, fee };
     }
 
     // Build offers list
@@ -190,9 +208,9 @@ export default function BuyerOptimiseur() {
     const scenC: VendorGroup[] = scenA.length > 1 ? consolidate(scenA, allOffers, qtyMap, dcMap) : scenA;
 
     const grand = (groups: VendorGroup[]) => ({
-      total: groups.reduce((s, g) => s + g.total, 0),
-      delivery: groups.reduce((s, g) => s + g.delivery, 0),
-      products: groups.reduce((s, g) => s + g.subtotal, 0),
+      grandTotal: groups.reduce((s, g) => s + g.total, 0),
+      grandDelivery: groups.reduce((s, g) => s + g.delivery, 0),
+      grandProducts: groups.reduce((s, g) => s + g.subtotal, 0),
     });
 
     const gA = grand(scenA), gB = grand(scenB), gC = grand(scenC);
@@ -325,12 +343,6 @@ export default function BuyerOptimiseur() {
       <Header
         variant="h1"
         description="Trouvez la combinaison vendeurs/livraisons qui minimise votre coût total d'approvisionnement"
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => navigate('/buyer/catalog')}>← Catalogue</Button>
-            <Button onClick={() => navigate('/buyer/compare')}>Comparateur</Button>
-          </SpaceBetween>
-        }
       >
         Optimiseur de commandes
       </Header>

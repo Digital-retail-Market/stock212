@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Button, Flex, FormControl, FormLabel, Heading, Input,
-  Text, VStack, HStack, Alert, AlertIcon, useToast,
+  Text, VStack, HStack, Alert, AlertIcon, useToast, Image,
   InputGroup, InputRightElement, InputLeftElement, IconButton,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter,
   useDisclosure, Divider,
 } from '@chakra-ui/react';
 import {
-  Eye, EyeOff, Package, Mail, Lock, User,
+  Eye, EyeOff, Mail, Lock, User,
   Shield, CheckCircle, Globe, TrendingUp, ArrowRight,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -131,16 +131,7 @@ function BrandPanel() {
 
       {/* Logo */}
       <HStack spacing={3} position="relative" mb={8}>
-        <Flex
-          w={9} h={9}
-          bg="blue.700"
-          border="1px" borderColor="blue.600"
-          rounded="sm"
-          align="center" justify="center"
-          flexShrink={0}
-        >
-          <Package size={18} color="white" />
-        </Flex>
+        <Image src="/navlogo_white.png" alt="Stock212" h="36px" w="auto" objectFit="contain" flexShrink={0} />
         <Box>
           <Text fontWeight="800" fontSize="lg" lineHeight={1} letterSpacing="-0.02em">Stock212</Text>
           <Text fontSize="11px" color="blue.300" letterSpacing="0.06em" textTransform="uppercase">
@@ -339,14 +330,7 @@ async function detectUserRole(userId: string): Promise<'admin' | 'seller' | 'buy
         <Box w="full" maxW="400px">
           {/* Mobile logo */}
           <HStack spacing={3} mb={8} display={{ base: 'flex', lg: 'none' }}>
-            <Flex
-              w={8} h={8}
-              bg="blue.800"
-              rounded="sm"
-              align="center" justify="center"
-            >
-              <Package size={17} color="white" />
-            </Flex>
+            <Image src="/navlogo.png" alt="Stock212" h="32px" w="auto" objectFit="contain" flexShrink={0} />
             <Box>
               <Text fontWeight="800" fontSize="md" color="gray.900" lineHeight={1}
                 letterSpacing="-0.02em">Stock212</Text>

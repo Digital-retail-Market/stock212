@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Box, Button, Header, SpaceBetween, StatusIndicator,
   Table, TextFilter, Select, Modal, ColumnLayout,
-  Badge, Flashbar, Spinner, Input, Textarea,
+  Badge, Flashbar, Input, Textarea,
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
 
@@ -122,7 +122,7 @@ export default function AdminDeliveryAssignment() {
       .order('priority', { ascending: false })
       .order('created_at', { ascending: true });
 
-    const mapped: PendingTicket[] = (rawTickets ?? []).map((t: RawTicket) => ({
+    const mapped: PendingTicket[] = ((rawTickets ?? []) as unknown as RawTicket[]).map((t) => ({
       id: t.id,
       ticket_number: t.ticket_number,
       status: t.status,
@@ -170,7 +170,7 @@ export default function AdminDeliveryAssignment() {
       `)
       .eq('validation_status', 'validated');
 
-    const list: DeliveryActor[] = (data ?? []).map((a: RawActor) => ({
+    const list: DeliveryActor[] = ((data ?? []) as unknown as RawActor[]).map((a) => ({
       id: a.organisation_id,
       name: (a.organisations as { name: string } | null)?.name ?? '—',
       delivery_type: a.delivery_type ?? 'independent',
@@ -248,7 +248,7 @@ export default function AdminDeliveryAssignment() {
   return (
     <Box>
       {flash && (
-        <Box mb={3}>
+        <Box margin={{ bottom: 's' }}>
           <Flashbar
             items={[{
               type: flash.type,
@@ -303,7 +303,7 @@ export default function AdminDeliveryAssignment() {
             header: 'Ticket',
             cell: (t) => (
               <Box>
-                <Box fontWeight="bold" fontSize="sm">{t.ticket_number}</Box>
+                <Box fontWeight="bold" fontSize="body-s">{t.ticket_number}</Box>
                 <Badge color={PRIORITY_COLOR[t.priority] ?? 'grey'}>
                   {t.priority === 'express' ? 'Express' : 'Normal'}
                 </Badge>
@@ -316,8 +316,8 @@ export default function AdminDeliveryAssignment() {
             header: 'Commande',
             cell: (t) => (
               <Box>
-                <Box fontSize="sm">{t.order_number}</Box>
-                <Box fontSize="xs" color="#687078">{METHOD_LABEL[t.delivery_method] ?? t.delivery_method}</Box>
+                <Box fontSize="body-s">{t.order_number}</Box>
+                <Box fontSize="body-s" color="text-body-secondary">{METHOD_LABEL[t.delivery_method] ?? t.delivery_method}</Box>
               </Box>
             ),
           },
@@ -326,8 +326,8 @@ export default function AdminDeliveryAssignment() {
             header: 'Acheteur → Vendeur',
             cell: (t) => (
               <Box>
-                <Box fontSize="sm" fontWeight="600">{t.buyer_name}</Box>
-                <Box fontSize="xs" color="#687078">depuis {t.seller_name}</Box>
+                <Box fontSize="body-s" fontWeight="bold">{t.buyer_name}</Box>
+                <Box fontSize="body-s" color="text-body-secondary">depuis {t.seller_name}</Box>
               </Box>
             ),
           },
@@ -348,8 +348,8 @@ export default function AdminDeliveryAssignment() {
             header: 'Enlèvement → Livraison',
             cell: (t) => (
               <Box>
-                <Box fontSize="xs">{addrLine(t.pickup_address)}</Box>
-                <Box fontSize="xs" color="#687078">{addrLine(t.delivery_address)}</Box>
+                <Box fontSize="body-s">{addrLine(t.pickup_address)}</Box>
+                <Box fontSize="body-s" color="text-body-secondary">{addrLine(t.delivery_address)}</Box>
               </Box>
             ),
           },
@@ -373,7 +373,6 @@ export default function AdminDeliveryAssignment() {
             cell: (t) => (
               <Button
                 variant="primary"
-                size="sm"
                 onClick={() => { setSelected(t); setAssignModalOpen(true); }}
                 iconName="user-profile"
               >
@@ -414,30 +413,30 @@ export default function AdminDeliveryAssignment() {
             {/* Ticket summary */}
             <ColumnLayout columns={3} borders="vertical">
               <Box>
-                <Box fontSize="xs" color="#687078" mb={1}>COMMANDE</Box>
+                <Box fontSize="body-s" color="text-body-secondary" margin={{ bottom: 'xxs' }}>COMMANDE</Box>
                 <Box fontWeight="bold">{selected.order_number}</Box>
-                <Box fontSize="xs">{selected.buyer_name} → {selected.seller_name}</Box>
+                <Box fontSize="body-s">{selected.buyer_name} → {selected.seller_name}</Box>
               </Box>
               <Box>
-                <Box fontSize="xs" color="#687078" mb={1}>ENLÈVEMENT</Box>
-                <Box fontSize="sm">{addrLine(selected.pickup_address)}</Box>
+                <Box fontSize="body-s" color="text-body-secondary" margin={{ bottom: 'xxs' }}>ENLÈVEMENT</Box>
+                <Box fontSize="body-s">{addrLine(selected.pickup_address)}</Box>
               </Box>
               <Box>
-                <Box fontSize="xs" color="#687078" mb={1}>LIVRAISON</Box>
-                <Box fontSize="sm">{addrLine(selected.delivery_address)}</Box>
+                <Box fontSize="body-s" color="text-body-secondary" margin={{ bottom: 'xxs' }}>LIVRAISON</Box>
+                <Box fontSize="body-s">{addrLine(selected.delivery_address)}</Box>
               </Box>
             </ColumnLayout>
 
             {/* Actor selection */}
             <Box>
-              <Box fontSize="sm" fontWeight="bold" mb={2}>
+              <Box fontSize="body-s" fontWeight="bold" margin={{ bottom: 'xs' }}>
                 Partenaires disponibles ({suitableActors.length})
                 {selected.requires_cold && (
-                  <Badge color="red" style={{ marginLeft: 8 }}>Chaîne du froid requise</Badge>
+                  <> <Badge color="red">Chaîne du froid requise</Badge></>
                 )}
               </Box>
               {suitableActors.length === 0 ? (
-                <Box color="#be1c1c" fontSize="sm">
+                <Box color="text-status-error" fontSize="body-s">
                   Aucun livreur validé ne correspond aux contraintes (zone / chaîne du froid).
                 </Box>
               ) : (
@@ -454,8 +453,8 @@ export default function AdminDeliveryAssignment() {
                       header: 'Livreur',
                       cell: (a) => (
                         <Box>
-                          <Box fontWeight="600" fontSize="sm">{a.name}</Box>
-                          <Box fontSize="xs" color="#687078">{a.delivery_type === 'logistics_company' ? 'Société 3PL' : 'Indépendant'}</Box>
+                          <Box fontWeight="bold" fontSize="body-s">{a.name}</Box>
+                          <Box fontSize="body-s" color="text-body-secondary">{a.delivery_type === 'logistics_company' ? 'Société 3PL' : 'Indépendant'}</Box>
                         </Box>
                       ),
                     },
@@ -495,7 +494,7 @@ export default function AdminDeliveryAssignment() {
             {/* Price + note */}
             <ColumnLayout columns={2}>
               <Box>
-                <Box fontSize="sm" fontWeight="bold" mb={1}>Prix accepté (MAD)</Box>
+                <Box fontSize="body-s" fontWeight="bold" margin={{ bottom: 'xxs' }}>Prix accepté (MAD)</Box>
                 <Input
                   type="number"
                   value={acceptedPrice}
@@ -504,7 +503,7 @@ export default function AdminDeliveryAssignment() {
                 />
               </Box>
               <Box>
-                <Box fontSize="sm" fontWeight="bold" mb={1}>Note interne</Box>
+                <Box fontSize="body-s" fontWeight="bold" margin={{ bottom: 'xxs' }}>Note interne</Box>
                 <Textarea
                   value={assignNote}
                   onChange={({ detail }) => setAssignNote(detail.value)}

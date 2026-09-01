@@ -6,7 +6,7 @@ import {
   Truck, CreditCard, Tag, Bookmark, Building2, Barcode, Briefcase,
   Megaphone, Settings, FileText, ClipboardList, BarChart3,
   LogOut, Store, Bell, UserCircle, ChevronDown, ChevronRight,
-  ClipboardCheck,
+  ClipboardCheck, SlidersHorizontal,
 } from 'lucide-react';
 
 interface NavItem {
@@ -41,6 +41,7 @@ const NAV: NavSection[] = [
       { label: 'Fournisseurs',     href: '/admin/suppliers',          icon: <Building2 size={15} /> },
       { label: 'Références EAN',   href: '/admin/ean-references',     icon: <Barcode size={15} /> },
       { label: "Types d'acteurs",  href: '/admin/business-categories',icon: <Briefcase size={15} /> },
+      { label: 'Champs onboarding', href: '/admin/onboarding-fields', icon: <SlidersHorizontal size={15} /> },
     ],
   },
   {

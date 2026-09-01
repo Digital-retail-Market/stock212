@@ -99,6 +99,9 @@ export default function FicheProduitEdit() {
     physical_form: '' as 'liquid' | 'solid' | 'powder' | 'gel' | 'aerosol' | 'cream' | 'tablet' | 'other' | '',
   });
 
+  // ── Catégories (catalogue admin, /admin/categories) ─────────────────────
+  const [categories, setCategories] = useState<{ id: string; name: string; parent_id: string | null; display_order: number }[]>([]);
+
   // ── 2. Tarification ──────────────────────────────────────────────────────
   const [tiers, setTiers]             = useState<PriceTier[]>([{ qty_min: 1, unit_price: 0 }]);
   const [certifications, setCertifications] = useState<string[]>([]);
@@ -162,6 +165,30 @@ export default function FicheProduitEdit() {
 
   // ── Load ─────────────────────────────────────────────────────────────────
   useEffect(() => { if (!isNew && id) loadProduct(id); }, [id, isNew]);
+
+  useEffect(() => {
+    supabase
+      .from('categories')
+      .select('id, name, parent_id, display_order')
+      .eq('active', true)
+      .then(({ data }) => setCategories(data ?? []));
+  }, []);
+
+  // Liste plate triée par groupe (racine puis ses sous-catégories), avec un
+  // libellé "Parent — Enfant" pour lever l'ambiguïté entre sous-catégories
+  // homonymes (ex : "Autres - à spécifier" existe sous plusieurs racines).
+  const categoryOptions = (() => {
+    const roots = categories.filter((c) => !c.parent_id).sort((a, b) => a.display_order - b.display_order);
+    const options: { value: string; label: string }[] = [];
+    for (const root of roots) {
+      options.push({ value: root.id, label: root.name });
+      categories
+        .filter((c) => c.parent_id === root.id)
+        .sort((a, b) => a.display_order - b.display_order)
+        .forEach((child) => options.push({ value: child.id, label: `${root.name} — ${child.name}` }));
+    }
+    return options;
+  })();
 
   async function loadProduct(productId: string) {
     setLoading(true);
@@ -374,6 +401,7 @@ export default function FicheProduitEdit() {
         long_description:   product.long_description || null,
         ean:                product.ean             || null,
         hs_code:            product.hs_code         || null,
+        category_id:        product.category        || null,
         temperature:        product.temperature as 'ambient' | 'refrigerated' | 'fresh' | 'frozen',
         moq:                parseInt(product.moq)    || 1,
         pack_size:          parseInt(product.colisage) || 1,
@@ -734,18 +762,17 @@ export default function FicheProduitEdit() {
                       <FormField label="Code SH / HS Code">
                         <Input value={product.hs_code} onChange={({ detail }) => pf('hs_code', detail.value)} placeholder="Ex: 0401.10.00" />
                       </FormField>
-                      <FormField label="Catégorie">
+                      <FormField label="Catégorie" description="Liste gérée par l'équipe Stock212 (catalogue de catégories)">
                         <Select
-                          selectedOption={{ label: product.category || 'Sélectionner…', value: product.category }}
-                          options={[
-                            { label: 'Laitiers & Fromages', value: 'A' },
-                            { label: 'Épicerie sèche',      value: 'B' },
-                            { label: 'Boissons',            value: 'C' },
-                            { label: 'Hygiène & Beauté',    value: 'D' },
-                            { label: 'Entretien',           value: 'E' },
-                            { label: 'Frais & Surgelés',    value: 'F' },
-                            { label: 'Épicerie fine',       value: 'G' },
-                          ]}
+                          selectedOption={
+                            product.category
+                              ? categoryOptions.find((o) => o.value === product.category) ?? null
+                              : null
+                          }
+                          options={categoryOptions}
+                          placeholder="Sélectionner…"
+                          empty="Aucune catégorie configurée"
+                          filteringType="auto"
                           onChange={({ detail }) => pf('category', detail.selectedOption.value ?? '')}
                         />
                       </FormField>
