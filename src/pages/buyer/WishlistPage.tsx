@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useWishlist } from '../../hooks/useWishlist';
 import type { Product } from '../../types';
 
 // ── Tokens ────────────────────────────────────────────────────────────────────
@@ -17,14 +18,6 @@ const C = {
   slate: '#334155', muted: '#64748b', border: '#e2e8f0', bgAlt: '#f8fafc',
   green: '#1a5c35', greenLight: '#dcfce7', red: '#be1c1c', redLight: '#fff1f1',
 };
-
-// Clé localStorage pour la wishlist (ids de produits)
-const WL_KEY = 's212_wishlist';
-
-function getWishlistIds(): string[] {
-  try { return JSON.parse(localStorage.getItem(WL_KEY) ?? '[]'); }
-  catch { return []; }
-}
 
 // ── Card produit ──────────────────────────────────────────────────────────────
 function WishCard({
@@ -137,7 +130,8 @@ export default function WishlistPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [wishlistIds, setWishlistIds] = useState<string[]>(getWishlistIds);
+  const wishlist = useWishlist();
+  const wishlistIds = wishlist.ids;
 
   useEffect(() => {
     if (wishlistIds.length === 0) { setLoading(false); return; }
@@ -150,7 +144,7 @@ export default function WishlistPage() {
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   }
@@ -161,18 +155,14 @@ export default function WishlistPage() {
   }
 
   function removeItem(id: string) {
-    const next = wishlistIds.filter((x) => x !== id);
-    setWishlistIds(next);
-    localStorage.setItem(WL_KEY, JSON.stringify(next));
+    wishlist.remove(id);
     setProducts((prev) => prev.filter((p) => p.id !== id));
     setSelected((prev) => { const s = new Set(prev); s.delete(id); return s; });
     toast({ title: 'Retiré des favoris', status: 'info', duration: 2000, position: 'top-right' });
   }
 
   function removeSelected() {
-    const next = wishlistIds.filter((id) => !selected.has(id));
-    setWishlistIds(next);
-    localStorage.setItem(WL_KEY, JSON.stringify(next));
+    wishlist.clear([...selected]);
     setProducts((prev) => prev.filter((p) => !selected.has(p.id)));
     toast({
       title: `${selected.size} produit${selected.size > 1 ? 's' : ''} retiré${selected.size > 1 ? 's' : ''} des favoris`,
@@ -260,7 +250,7 @@ export default function WishlistPage() {
             </Text>
           </Box>
           <Button size="sm" fontWeight="700" rounded="full"
-            style={{ background: C.navy, color: 'white' }} onClick={() => navigate('/catalog')}>
+            style={{ background: C.navy, color: 'white' }} onClick={() => navigate('/buyer/catalog')}>
             Parcourir le catalogue
           </Button>
         </Flex>

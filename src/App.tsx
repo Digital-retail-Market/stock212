@@ -39,7 +39,6 @@ const BuyerOrderDetail     = lazy(() => import('./pages/buyer/BuyerOrderDetail')
 const MesPaniersPage       = lazy(() => import('./pages/buyer/MesPaniersPage'));
 const InsightsPage         = lazy(() => import('./pages/buyer/InsightsPage'));
 const WishlistPage         = lazy(() => import('./pages/buyer/WishlistPage'));
-const MesFinancesPage      = lazy(() => import('./pages/buyer/MesFinancesPage'));
 const BuyerQuotesPage      = lazy(() => import('./pages/buyer/BuyerQuotesPage'));
 const MonComptePage        = lazy(() => import('./pages/buyer/MonComptePage'));
 const CheckoutPage         = lazy(() => import('./pages/buyer/CheckoutPage'));
@@ -266,7 +265,8 @@ function RedirectAuthenticated() {
   if (from && from !== '/auth') return <Navigate to={from} replace />;
   if (activeOrg?.org_type === 'seller') return <Navigate to="/vendor" replace />;
   if (activeOrg?.org_type === 'delivery') return <Navigate to="/delivery" replace />;
-  return <Navigate to="/buyer" replace />;
+  // Acheteur → directement le catalogue (le tableau de bord reste accessible via "Accueil")
+  return <Navigate to="/buyer/catalog" replace />;
 }
 // Accès limité : dashboard visible, onboarding obligatoire
 function RequireOnboarding({ children }: { children: React.ReactNode }) {
@@ -555,18 +555,6 @@ function AppRoutes() {
             <RequireBuyer>
               <StorefrontLayout>
                 <WishlistPage />
-              </StorefrontLayout>
-            </RequireBuyer>
-          </RequireOnboarding>
-        }
-      />
-      <Route
-        path="/buyer/finances"
-        element={
-          <RequireOnboarding>
-            <RequireBuyer>
-              <StorefrontLayout>
-                <MesFinancesPage />
               </StorefrontLayout>
             </RequireBuyer>
           </RequireOnboarding>

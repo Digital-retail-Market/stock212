@@ -167,6 +167,8 @@ export default function OnboardingPage() {
       .from('business_categories')
       .select('*')
       .eq('active', true)
+      .order('display_order', { ascending: true })
+      .order('name', { ascending: true })
       .then(({ data }) => {
         if (data) setBusinessCategories(data as BusinessCategory[]);
       });
@@ -490,26 +492,30 @@ export default function OnboardingPage() {
         {field.field_type === 'text' && (
           <Input value={(customFieldValues[field.field_key] as string) ?? ''}
             onChange={(e) => setCustomFieldValue(field.field_key, e.target.value)}
+            placeholder={field.placeholder ?? undefined}
             rounded="sm" fontSize="sm" />
         )}
         {field.field_type === 'number' && (
           <Input type="number" value={(customFieldValues[field.field_key] as string) ?? ''}
             onChange={(e) => setCustomFieldValue(field.field_key, e.target.value)}
+            placeholder={field.placeholder ?? undefined}
             rounded="sm" fontSize="sm" fontFamily="mono" />
         )}
         {field.field_type === 'email' && (
           <Input type="email" value={(customFieldValues[field.field_key] as string) ?? ''}
             onChange={(e) => setCustomFieldValue(field.field_key, e.target.value)}
+            placeholder={field.placeholder ?? undefined}
             rounded="sm" fontSize="sm" />
         )}
         {field.field_type === 'url' && (
           <Input type="url" value={(customFieldValues[field.field_key] as string) ?? ''}
             onChange={(e) => setCustomFieldValue(field.field_key, e.target.value)}
-            placeholder="https://" rounded="sm" fontSize="sm" />
+            placeholder={field.placeholder ?? 'https://'} rounded="sm" fontSize="sm" />
         )}
         {field.field_type === 'textarea' && (
           <Textarea value={(customFieldValues[field.field_key] as string) ?? ''}
             onChange={(e) => setCustomFieldValue(field.field_key, e.target.value)}
+            placeholder={field.placeholder ?? undefined}
             rounded="sm" fontSize="sm" rows={3} />
         )}
         {field.field_type === 'select' && (

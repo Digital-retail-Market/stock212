@@ -81,8 +81,8 @@ export default function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, activeOrg } = useAuth();
-  const SORT_OPTIONS = user ? SORT_OPTIONS_AUTH : SORT_OPTIONS_GUEST;
+  const { activeOrg } = useAuth();
+  const SORT_OPTIONS = activeOrg ? SORT_OPTIONS_AUTH : SORT_OPTIONS_GUEST;
   const { sponsoredProductIds, promoCodes } = useMarketingStorefront();
   const [sponsoredProducts, setSponsoredProducts] = useState<Product[]>([]);
 
@@ -1211,7 +1211,7 @@ const TEMP_BADGE: Record<string, { bg: string; color: string; label: string }> =
 
 function CatalogProductCard({ product }: { product: Product }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { activeOrg } = useAuth();
   const { addItem, removeItem, hasItem } = useComparator();
   const toast = useToast();
 
@@ -1293,7 +1293,7 @@ function CatalogProductCard({ product }: { product: Product }) {
         <Flex position="absolute" bottom={2.5} left={2.5} right={2.5}
           align="center" justify="space-between">
           <HStack spacing={1.5}>
-            {user && product.moq > 1 && (
+            {activeOrg && product.moq > 1 && (
               <Box px={2} py={0.5} rounded="md"
                 style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}>
                 <Text fontSize="9px" fontWeight="700" color="white">MOQ {product.moq}</Text>
@@ -1367,7 +1367,7 @@ function CatalogProductCard({ product }: { product: Product }) {
 
         {/* Prix + CTA */}
         <Flex justify="space-between" align="end" gap={2}>
-          {user ? (
+          {activeOrg ? (
             <Box flex={1} minW={0}>
               {firstTier ? (
                 <>
@@ -1409,7 +1409,7 @@ function CatalogProductCard({ product }: { product: Product }) {
 
           {/* Bouton panier */}
           <Tooltip
-            label={!user ? 'Connexion requise' : 'Ajouter au panier'}
+            label={!activeOrg ? 'Connexion requise' : 'Ajouter au panier'}
             placement="top"
           >
             <Box
@@ -1418,16 +1418,16 @@ function CatalogProductCard({ product }: { product: Product }) {
               display="flex" alignItems="center" justifyContent="center"
               flexShrink={0}
               style={{
-                background: user ? C.navy : '#f1f5f9',
-                border: `1px solid ${user ? C.navyMid : C.border}`,
-                opacity: user ? 1 : 0.5,
+                background: activeOrg ? C.navy : '#f1f5f9',
+                border: `1px solid ${activeOrg ? C.navyMid : C.border}`,
+                opacity: activeOrg ? 1 : 0.5,
               }}
-              _hover={user ? { opacity: 0.85 } : undefined}
+              _hover={activeOrg ? { opacity: 0.85 } : undefined}
               transition="opacity 0.15s"
-              disabled={!user}
+              disabled={!activeOrg}
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
-              <ShoppingCart size={15} color={user ? 'white' : C.muted} />
+              <ShoppingCart size={15} color={activeOrg ? 'white' : C.muted} />
             </Box>
           </Tooltip>
         </Flex>

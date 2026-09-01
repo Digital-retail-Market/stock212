@@ -272,7 +272,7 @@ export default function CheckoutPage() {
           <Button colorScheme="blue" rounded="xl" onClick={() => navigate('/buyer')}>
             Mon espace acheteur
           </Button>
-          <Button variant="outline" rounded="xl" onClick={() => navigate('/catalog')}>
+          <Button variant="outline" rounded="xl" onClick={() => navigate('/buyer/catalog')}>
             Continuer mes achats
           </Button>
         </HStack>
@@ -292,7 +292,7 @@ export default function CheckoutPage() {
     return (
       <Flex direction="column" align="center" justify="center" minH="60vh" gap={4}>
         <Text color="gray.500" fontWeight="medium">Votre panier est vide.</Text>
-        <Button colorScheme="blue" rounded="xl" onClick={() => navigate('/catalog')}>
+        <Button colorScheme="blue" rounded="xl" onClick={() => navigate('/buyer/catalog')}>
           Explorer le catalogue
         </Button>
       </Flex>

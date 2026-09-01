@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Box, Flex, Heading, Text, VStack, HStack, SimpleGrid, Badge,
   Input, InputGroup, InputLeftElement, Select, Checkbox,
@@ -11,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 interface DeliveryProvider {
   id: string;
   name: string;
+  phone: string | null;
   delivery_profiles: {
     delivery_type: string;
     base_rate: number | null;
@@ -33,7 +33,6 @@ const DELIVERY_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function DeliveryDirectoryPage() {
-  const navigate = useNavigate();
   const [providers, setProviders] = useState<DeliveryProvider[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,7 +45,7 @@ export default function DeliveryDirectoryPage() {
       const { data } = await supabase
         .from('organisations')
         .select(`
-          id, name,
+          id, name, phone,
           delivery_profiles(delivery_type, base_rate, avg_rating, review_count, validation_status),
           delivery_zones(region, postal_codes),
           delivery_capabilities(max_weight_kg, cold_chain, last_mile)
@@ -193,7 +192,6 @@ export default function DeliveryDirectoryPage() {
 }
 
 function ProviderCard({ provider }: { provider: DeliveryProvider }) {
-  const navigate = useNavigate();
   const profile = provider.delivery_profiles?.[0];
   const caps = provider.delivery_capabilities?.[0];
   const zones = provider.delivery_zones ?? [];
@@ -298,19 +296,24 @@ function ProviderCard({ provider }: { provider: DeliveryProvider }) {
               <Text fontSize="xs" color="gray.400" fontStyle="italic">Tarif sur demande</Text>
             )}
           </Box>
-          <Button
-            size="xs"
-            colorScheme="blue"
-            rounded="md"
-            rightIcon={<ArrowRight size={11} />}
-            onClick={() => navigate('/buyer/tickets/new')}
-            bg="blue.800"
-            _hover={{ bg: 'blue.700' }}
-            fontSize="xs"
-            fontWeight="600"
-          >
-            Contacter
-          </Button>
+          {provider.phone ? (
+            <Button
+              as="a"
+              href={`tel:${provider.phone.replace(/[^\d+]/g, '')}`}
+              size="xs"
+              colorScheme="blue"
+              rounded="md"
+              rightIcon={<ArrowRight size={11} />}
+              bg="blue.800"
+              _hover={{ bg: 'blue.700' }}
+              fontSize="xs"
+              fontWeight="600"
+            >
+              Contacter
+            </Button>
+          ) : (
+            <Text fontSize="xs" color="gray.400" fontStyle="italic">Coordonnées sur demande</Text>
+          )}
         </Flex>
       </Box>
     </Box>

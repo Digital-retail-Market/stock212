@@ -1,40 +1,47 @@
-import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState, useRef, useCallback, Fragment } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   SpaceBetween, Header, Button, Box, Input,
   FormField, Container, Spinner, Alert, Autosuggest, Flashbar,
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  fetchOfferRankingDataset,
+  rankOfferDataset,
+  type OfferRankingDataset,
+  type RankOffersResult,
+  type RankedOffer,
+} from '../../lib/recommendation';
 
-interface EanRef { id: string; ean: string; name: string; images: string[]; manufacturer_name: string | null; temperature: string }
-
-interface VendorOffer {
-  productId: string; vendorId: string; vendorName: string;
-  vendorRating: number; vendorReviewCount: number;
-  ean: string | null; stock: boolean;
-  moq: number; estimatedLeadDays: number;
-  tiers: { qty_min: number; unit_price: number }[];
-  deliveryFree: number | null;   // free delivery above X MAD
-  deliveryFee: number | null;    // otherwise Y MAD
+interface EanRef {
+  id: string; ean: string; name: string; images: string[];
+  manufacturer_name: string | null; temperature: string;
 }
 
-function basePrice(tiers: { qty_min: number; unit_price: number }[], qty: number) {
-  if (!tiers?.length) return null;
-  const sorted = [...tiers].sort((a, b) => a.qty_min - b.qty_min);
-  let price = sorted[0].unit_price;
-  for (const t of sorted) {
-    if (qty >= t.qty_min) price = t.unit_price;
-  }
-  return price;
-}
+// Libellés des critères pour l'affichage du détail de calcul (transparence §13).
+const CRITERION_LABELS: { key: keyof RankedOffer['breakdown']['scores']; label: string }[] = [
+  { key: 'price', label: 'Prix' },
+  { key: 'delivery', label: 'Livraison' },
+  { key: 'supplierQuality', label: 'Qualité fournisseur' },
+  { key: 'freshness', label: 'Fraîcheur' },
+  { key: 'proximity', label: 'Proximité' },
+];
+
+const PROXIMITY_LABELS: Record<number, string> = {
+  0: 'Même ville', 1: 'Même région', 2: 'Même pays', 3: 'Pays différent',
+};
+
 function starRating(v: number) {
   if (!v) return '—';
   return '★'.repeat(Math.round(v)) + '☆'.repeat(5 - Math.round(v));
 }
 
+function fmtMad(n: number) {
+  return `${n.toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MAD`;
+}
+
 export default function BuyerComparateur() {
-  const navigate = useNavigate();
   const { activeOrg } = useAuth();
   const [searchParams] = useSearchParams();
 
@@ -42,11 +49,37 @@ export default function BuyerComparateur() {
   const [suggestions, setSuggestions]   = useState<EanRef[]>([]);
   const [searching,   setSearching]     = useState(false);
   const [selectedRef, setSelectedRef]   = useState<EanRef | null>(null);
-  const [offers,      setOffers]        = useState<VendorOffer[]>([]);
+  const [dataset,     setDataset]       = useState<OfferRankingDataset | null>(null);
+  const [result,      setResult]        = useState<RankOffersResult | null>(null);
   const [loadingOffers, setLoadingOffers] = useState(false);
   const [qty,         setQty]           = useState(1);
+  const [expandedId,  setExpandedId]    = useState<string | null>(null);
   const [cartMsg,     setCartMsg]       = useState('');
   const sugTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Localisation de l'acheteur (pour le critère de proximité géographique).
+  const buyerLocation = activeOrg
+    ? { city: activeOrg.city, region: activeOrg.region, country: activeOrg.country }
+    : null;
+
+  const runSearchByEan = useCallback(async (ean: string) => {
+    setLoadingOffers(true);
+    setResult(null);
+    setDataset(null);
+    setExpandedId(null);
+
+    // Référence produit (affichage de l'en-tête)
+    const { data: ref } = await supabase
+      .from('ean_references')
+      .select('id, ean, name, images, manufacturer_name, temperature')
+      .eq('ean', ean).eq('status', 'active').maybeSingle();
+    if (ref) setSelectedRef(ref as EanRef);
+
+    // Toutes les offres + données annexes, chargées en une passe.
+    const ds = await fetchOfferRankingDataset(ean);
+    setDataset(ds);
+    setLoadingOffers(false);
+  }, []);
 
   // Auto-run if ?ean= param provided
   useEffect(() => {
@@ -57,6 +90,17 @@ export default function BuyerComparateur() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-classement LOCAL (sans requête) à chaque changement de quantité, de
+  // dataset ou de localisation acheteur — cf. §16 (perf).
+  useEffect(() => {
+    if (!dataset) { setResult(null); return; }
+    setResult(
+      rankOfferDataset(dataset, { quantity: qty, buyerLocation }),
+    );
+  // buyerLocation est recréé à chaque rendu : on dépend de ses champs primitifs.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataset, qty, activeOrg?.city, activeOrg?.region, activeOrg?.country]);
 
   // Autosuggest from ean_references
   useEffect(() => {
@@ -76,56 +120,6 @@ export default function BuyerComparateur() {
     }, 350);
     return () => { if (sugTimer.current) clearTimeout(sugTimer.current); };
   }, [searchQuery]);
-
-  async function runSearchByEan(ean: string) {
-    setLoadingOffers(true);
-    setOffers([]);
-    // Find the reference
-    const { data: ref } = await supabase
-      .from('ean_references').select('id, ean, name, images, manufacturer_name, temperature')
-      .eq('ean', ean).eq('status', 'active').maybeSingle();
-    if (ref) setSelectedRef(ref as EanRef);
-
-    // Find all products with this EAN
-    const { data: products } = await supabase
-      .from('products')
-      .select(`id, ean, moq, estimated_lead_days, avg_rating, review_count, seller_org_id,
-        organisations!seller_org_id (id, name, avg_rating, review_count),
-        price_tiers (qty_min, unit_price)`)
-      .eq('ean', ean).eq('status', 'active');
-
-    if (!products?.length) { setLoadingOffers(false); return; }
-
-    // Fetch delivery configs
-    const vendorIds = products.map((p: any) => p.seller_org_id);
-    const { data: deliveryConfigs } = await supabase
-      .from('vendor_delivery_config')
-      .select('org_id, free_delivery_threshold, delivery_fee_default')
-      .in('org_id', vendorIds);
-
-    const configMap: Record<string, { free: number | null; fee: number | null }> = {};
-    for (const c of (deliveryConfigs ?? []) as any[]) {
-      configMap[c.org_id] = { free: c.free_delivery_threshold, fee: c.delivery_fee_default };
-    }
-
-    const vendorOffers: VendorOffer[] = (products as any[]).map(p => ({
-      productId: p.id,
-      vendorId: p.seller_org_id,
-      vendorName: p.organisations?.name ?? '—',
-      vendorRating: p.avg_rating ?? 0,
-      vendorReviewCount: p.review_count ?? 0,
-      ean: p.ean,
-      stock: true,
-      moq: p.moq,
-      estimatedLeadDays: p.estimated_lead_days ?? 3,
-      tiers: p.price_tiers ?? [],
-      deliveryFree: configMap[p.seller_org_id]?.free ?? null,
-      deliveryFee: configMap[p.seller_org_id]?.fee ?? null,
-    }));
-
-    setOffers(vendorOffers);
-    setLoadingOffers(false);
-  }
 
   function selectRef(ref: EanRef) {
     setSelectedRef(ref);
@@ -150,25 +144,11 @@ export default function BuyerComparateur() {
     setTimeout(() => setCartMsg(''), 3000);
   }
 
-  // Sort offers: best price first (at selected qty)
-  const sortedOffers = [...offers].sort((a, b) => {
-    const pa = basePrice(a.tiers, qty) ?? 99999;
-    const pb = basePrice(b.tiers, qty) ?? 99999;
-    return pa - pb;
-  });
-
-  const bestPrice = sortedOffers.length ? basePrice(sortedOffers[0].tiers, qty) : null;
-
-  // Total cost estimate per vendor
-  function totalCost(offer: VendorOffer) {
-    const price = basePrice(offer.tiers, qty);
-    if (!price) return null;
-    const sub = price * qty;
-    const delivery = offer.deliveryFree != null && sub >= offer.deliveryFree
-      ? 0
-      : (offer.deliveryFee ?? 0);
-    return { subtotal: sub, delivery, total: sub + delivery };
-  }
+  const ranked = result?.ranked ?? [];
+  const weights = result?.weights ?? dataset?.weights ?? null;
+  const cheapestUnit = ranked.length
+    ? Math.min(...ranked.map(r => r.offer.unitPrice))
+    : null;
 
   return (
     <SpaceBetween size="m">
@@ -178,15 +158,9 @@ export default function BuyerComparateur() {
 
       <Header
         variant="h1"
-        description="Comparez les prix et conditions de livraison de tous les vendeurs pour un même produit"
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => navigate('/buyer/catalog')}>← Catalogue</Button>
-            <Button variant="primary" onClick={() => navigate('/buyer/optimizer')} iconName="settings">Optimiseur</Button>
-          </SpaceBetween>
-        }
+        description="Classement des vendeurs par meilleur choix global : prix, livraison, qualité fournisseur, fraîcheur et proximité combinés — pas seulement le prix le plus bas."
       >
-        Comparateur de prix
+        Comparateur d'offres
       </Header>
 
       {/* Search bar */}
@@ -200,7 +174,7 @@ export default function BuyerComparateur() {
               <div style={{ flex: 1 }}>
                 <Autosuggest
                   value={searchQuery}
-                  onChange={({ detail }) => { setSearchQuery(detail.value); setSelectedRef(null); setOffers([]); }}
+                  onChange={({ detail }) => { setSearchQuery(detail.value); setSelectedRef(null); setDataset(null); setResult(null); }}
                   onSelect={({ detail }) => {
                     const ref = suggestions.find(s => s.name === detail.value || s.ean === detail.value);
                     if (ref) selectRef(ref);
@@ -229,7 +203,7 @@ export default function BuyerComparateur() {
           </FormField>
 
           {/* Quantity selector */}
-          {offers.length > 0 && (
+          {ranked.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <Box fontWeight="bold">Simuler pour une quantité :</Box>
               <div style={{ display: 'flex', gap: 6 }}>
@@ -280,7 +254,7 @@ export default function BuyerComparateur() {
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 12, color: '#5f6b7a' }}>{sortedOffers.length} vendeur{sortedOffers.length !== 1 ? 's' : ''}</div>
+            <div style={{ fontSize: 12, color: '#5f6b7a' }}>{ranked.length} vendeur{ranked.length !== 1 ? 's' : ''}</div>
           </div>
         </div>
       )}
@@ -291,107 +265,162 @@ export default function BuyerComparateur() {
       )}
 
       {/* No results */}
-      {!loadingOffers && selectedRef && offers.length === 0 && (
+      {!loadingOffers && selectedRef && ranked.length === 0 && (
         <Alert type="warning" header="Aucun vendeur actif pour ce produit">
-          Ce produit est dans le catalogue de référence mais aucun vendeur ne le propose actuellement.
+          Ce produit est dans le catalogue de référence mais aucun vendeur ne le propose actuellement
+          (ou aucune offre n'a de tarif exploitable pour cette quantité).
         </Alert>
       )}
 
+      {/* Poids appliqués (transparence) */}
+      {ranked.length > 0 && weights && (
+        <Box color="text-body-secondary" fontSize="body-s">
+          Poids du classement (configurables par l'administrateur) :{' '}
+          Prix {weights.price}% · Livraison {weights.delivery}% ·
+          Qualité fournisseur {weights.supplierQuality}% · Fraîcheur {weights.freshness}% ·
+          Proximité {weights.proximity}%
+        </Box>
+      )}
+
       {/* Comparison table */}
-      {sortedOffers.length > 0 && (
-        <Container header={<Header variant="h2">Comparaison des offres</Header>}>
+      {ranked.length > 0 && (
+        <Container header={<Header variant="h2">Offres classées par score global</Header>}>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #e5e7eb', background: '#f8f9fa' }}>
-                  {['Vendeur', `Prix × ${qty}`, 'Paliers', 'MOQ', 'Délai', 'Livraison gratuite', 'Frais livraison', 'Total estimé', ''].map(h => (
+                  {['#', 'Score', 'Vendeur', `Prix × ${qty}`, 'Livraison', 'Fraîcheur', 'Proximité', 'Total estimé', ''].map(h => (
                     <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700,
                         color: '#374151', fontSize: 12, whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {sortedOffers.map((offer, idx) => {
-                  const price = basePrice(offer.tiers, qty);
-                  const isBest = idx === 0 && price === bestPrice;
-                  const cost = totalCost(offer);
+                {ranked.map((r) => {
+                  const o = r.offer;
+                  const isBest = r.rank === 1;
+                  const isCheapest = cheapestUnit != null && o.unitPrice === cheapestUnit;
+                  const expanded = expandedId === o.productId;
                   return (
-                    <tr key={offer.productId}
-                      style={{ borderBottom: '1px solid #f3f4f6',
-                        background: isBest ? '#f0fff4' : 'transparent' }}>
-                      <td style={{ padding: '12px 12px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <div style={{ fontWeight: 700, color: '#0f1b2d' }}>
-                            {isBest && <span style={{ background: '#16a34a', color: '#fff', fontSize: 10,
-                                fontWeight: 800, padding: '1px 6px', borderRadius: 3, marginRight: 6 }}>MEILLEUR PRIX</span>}
-                            {offer.vendorName}
+                    <Fragment key={o.productId}>
+                      <tr
+                        style={{ borderBottom: expanded ? 'none' : '1px solid #f3f4f6',
+                          background: isBest ? '#f0fff4' : 'transparent' }}>
+                        <td style={{ padding: '12px 12px', fontWeight: 800, color: '#0f1b2d' }}>{r.rank}</td>
+                        <td style={{ padding: '12px 12px' }}>
+                          <div style={{ fontWeight: 800, fontSize: 16, color: isBest ? '#16a34a' : '#0f1b2d' }}>
+                            {r.breakdown.finalScore.toFixed(1)}
+                            <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 400 }}> /100</span>
                           </div>
-                          <div style={{ color: '#d97706', fontSize: 11 }}>
-                            {starRating(offer.vendorRating)}
-                            {offer.vendorReviewCount > 0 && <span style={{ color: '#6b7280' }}> ({offer.vendorReviewCount})</span>}
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 12px' }}>
-                        {price != null ? (
-                          <div>
-                            <div style={{ fontWeight: 800, fontSize: 16, color: isBest ? '#16a34a' : '#0f1b2d' }}>
-                              {price.toLocaleString('fr-MA', { minimumFractionDigits: 2 })} MAD
+                          <button
+                            onClick={() => setExpandedId(expanded ? null : o.productId)}
+                            style={{ background: 'none', border: 'none', color: '#0972d3', fontSize: 11,
+                              cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                          >
+                            {expanded ? 'Masquer le détail' : 'Voir le détail'}
+                          </button>
+                        </td>
+                        <td style={{ padding: '12px 12px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <div style={{ fontWeight: 700, color: '#0f1b2d' }}>
+                              {isBest && <span style={{ background: '#16a34a', color: '#fff', fontSize: 10,
+                                  fontWeight: 800, padding: '1px 6px', borderRadius: 3, marginRight: 6 }}>MEILLEUR CHOIX</span>}
+                              {isCheapest && !isBest && <span style={{ background: '#0972d3', color: '#fff', fontSize: 10,
+                                  fontWeight: 800, padding: '1px 6px', borderRadius: 3, marginRight: 6 }}>PRIX LE PLUS BAS</span>}
+                              {o.sellerName}
                             </div>
-                            <div style={{ fontSize: 11, color: '#6b7280' }}>/ unité</div>
-                          </div>
-                        ) : <span style={{ color: '#9ca3af' }}>—</span>}
-                      </td>
-                      <td style={{ padding: '12px 12px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          {[...offer.tiers].sort((a, b) => a.qty_min - b.qty_min).map(t => (
-                            <div key={t.qty_min} style={{ fontSize: 11, color: qty >= t.qty_min ? '#0972d3' : '#9ca3af',
-                                fontWeight: qty >= t.qty_min ? 700 : 400 }}>
-                              ≥{t.qty_min} → {t.unit_price.toFixed(2)} MAD
+                            <div style={{ color: '#d97706', fontSize: 11 }}>
+                              {starRating(o.sellerRating)}
+                              {o.sellerReviewCount > 0 && <span style={{ color: '#6b7280' }}> ({o.sellerReviewCount})</span>}
+                              {o.certificationCount > 0 && (
+                                <span style={{ color: '#16a34a' }}> · {o.certificationCount} cert.</span>
+                              )}
                             </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 12px', color: qty < offer.moq ? '#dc2626' : '#374151', fontWeight: 600 }}>
-                        {offer.moq}
-                        {qty < offer.moq && <div style={{ fontSize: 10, color: '#dc2626' }}>MOQ non atteint</div>}
-                      </td>
-                      <td style={{ padding: '12px 12px', color: '#374151' }}>{offer.estimatedLeadDays}j</td>
-                      <td style={{ padding: '12px 12px', color: '#374151' }}>
-                        {offer.deliveryFree != null
-                          ? <span style={{ color: '#16a34a', fontWeight: 600 }}>
-                              ≥ {offer.deliveryFree.toLocaleString('fr-MA')} MAD
-                            </span>
-                          : <span style={{ color: '#9ca3af' }}>—</span>}
-                      </td>
-                      <td style={{ padding: '12px 12px', color: '#374151' }}>
-                        {cost?.delivery === 0
-                          ? <span style={{ color: '#16a34a', fontWeight: 600 }}>Gratuit</span>
-                          : cost?.delivery != null
-                            ? `${cost.delivery.toLocaleString('fr-MA')} MAD`
-                            : offer.deliveryFee != null ? `${offer.deliveryFee} MAD` : '—'}
-                      </td>
-                      <td style={{ padding: '12px 12px' }}>
-                        {cost != null ? (
+                            {qty < o.moq && <div style={{ fontSize: 10, color: '#dc2626' }}>MOQ {o.moq} non atteint</div>}
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 12px' }}>
+                          <div style={{ fontWeight: 800, fontSize: 15, color: isCheapest ? '#16a34a' : '#0f1b2d' }}>
+                            {fmtMad(o.unitPrice)}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#6b7280' }}>/ unité</div>
+                        </td>
+                        <td style={{ padding: '12px 12px' }}>
+                          {o.isFreeDelivery
+                            ? <span style={{ color: '#16a34a', fontWeight: 700 }}>Gratuite</span>
+                            : fmtMad(o.deliveryCost)}
+                        </td>
+                        <td style={{ padding: '12px 12px', color: '#374151' }}>
+                          {o.freshnessDays == null
+                            ? <span style={{ color: '#9ca3af' }}>n.c.</span>
+                            : (
+                              <span style={{ color: o.freshnessDays < 30 ? '#d97706' : '#374151', fontWeight: 600 }}>
+                                {o.freshnessDays} j
+                              </span>
+                            )}
+                        </td>
+                        <td style={{ padding: '12px 12px', color: '#374151' }}>
+                          {o.proximityRank == null
+                            ? <span style={{ color: '#9ca3af' }}>n.c.</span>
+                            : PROXIMITY_LABELS[o.proximityRank] ?? '—'}
+                        </td>
+                        <td style={{ padding: '12px 12px' }}>
                           <div style={{ fontWeight: 700, color: '#0f1b2d' }}>
-                            {cost.total.toLocaleString('fr-MA', { minimumFractionDigits: 2 })} MAD
+                            {fmtMad(o.landedTotal)}
                             <div style={{ fontSize: 10, color: '#6b7280', fontWeight: 400 }}>
-                              {cost.subtotal.toFixed(2)} + {cost.delivery} livr.
+                              {fmtMad(o.lineSubtotal)} + {o.isFreeDelivery ? '0' : fmtMad(o.deliveryCost)} livr.
                             </div>
                           </div>
-                        ) : <span style={{ color: '#9ca3af' }}>—</span>}
-                      </td>
-                      <td style={{ padding: '12px 12px' }}>
-                        {price != null && (
+                        </td>
+                        <td style={{ padding: '12px 12px' }}>
                           <Button
                             variant={isBest ? 'primary' : 'normal'}
-                            onClick={() => addToCart(offer.productId, offer.moq, price)}
+                            onClick={() => addToCart(o.productId, o.moq, o.unitPrice)}
                           >
                             Ajouter
                           </Button>
-                        )}
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+
+                      {expanded && (
+                        <tr style={{ borderBottom: '1px solid #f3f4f6', background: '#fafafa' }}>
+                          <td colSpan={9} style={{ padding: '4px 12px 14px 12px' }}>
+                            <div style={{ fontSize: 12, color: '#374151' }}>
+                              <strong>Détail du score</strong> — score critère (0–1) × poids (%) :
+                              <table style={{ marginTop: 6, borderCollapse: 'collapse' }}>
+                                <tbody>
+                                  {CRITERION_LABELS.map(({ key, label }) => {
+                                    const s = r.breakdown.scores[key];
+                                    const w = r.breakdown.weights[key];
+                                    return (
+                                      <tr key={key}>
+                                        <td style={{ padding: '2px 12px 2px 0', color: '#6b7280' }}>{label}</td>
+                                        <td style={{ padding: '2px 12px', fontFamily: 'monospace' }}>{s.toFixed(3)}</td>
+                                        <td style={{ padding: '2px 12px', color: '#6b7280' }}>× {w}%</td>
+                                        <td style={{ padding: '2px 12px', fontFamily: 'monospace', fontWeight: 700 }}>
+                                          = {(s * w).toFixed(2)}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                  <tr style={{ borderTop: '1px solid #e5e7eb' }}>
+                                    <td style={{ padding: '4px 12px 2px 0', fontWeight: 700 }}>Score global</td>
+                                    <td colSpan={2} />
+                                    <td style={{ padding: '4px 12px 2px 12px', fontFamily: 'monospace', fontWeight: 800 }}>
+                                      {r.breakdown.finalScore.toFixed(2)} / 100
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                              <div style={{ marginTop: 6, color: '#9ca3af', fontSize: 11 }}>
+                                « n.c. » = donnée non disponible pour ce vendeur → score neutre (0,5) sur ce critère,
+                                sans pénaliser ni avantager l'offre.
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -399,17 +428,25 @@ export default function BuyerComparateur() {
           </div>
 
           {/* Recommendation note */}
-          {sortedOffers.length > 1 && bestPrice != null && (() => {
-            const best = sortedOffers[0];
-            const second = sortedOffers[1];
-            const saving = ((basePrice(second.tiers, qty) ?? 0) - bestPrice) * qty;
-            return saving > 0 ? (
+          {ranked.length > 1 && (() => {
+            const best = ranked[0].offer;
+            const cheapest = [...ranked].sort((a, b) => a.offer.unitPrice - b.offer.unitPrice)[0].offer;
+            if (best.productId === cheapest.productId) {
+              return (
+                <Box color="text-body-secondary" fontSize="body-s" padding={{ top: 'm' }}>
+                  💡 <strong>{best.sellerName}</strong> offre à la fois le meilleur score global et le
+                  prix le plus bas pour cette quantité.
+                </Box>
+              );
+            }
+            return (
               <Box color="text-body-secondary" fontSize="body-s" padding={{ top: 'm' }}>
-                💡 En choisissant <strong>{best.vendorName}</strong> vous économisez{' '}
-                <strong>{saving.toLocaleString('fr-MA', { minimumFractionDigits: 2 })} MAD</strong>{' '}
-                par rapport au second vendeur, hors frais de livraison.
+                💡 <strong>{best.sellerName}</strong> arrive en tête malgré un prix supérieur à{' '}
+                <strong>{cheapest.sellerName}</strong> ({fmtMad(best.unitPrice)} vs {fmtMad(cheapest.unitPrice)}) :
+                ses avantages sur la livraison, la qualité, la fraîcheur et/ou la proximité compensent
+                l'écart de prix selon les poids configurés.
               </Box>
-            ) : null;
+            );
           })()}
         </Container>
       )}

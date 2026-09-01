@@ -8,7 +8,7 @@ import {
 } from '@chakra-ui/react';
 import {
   ShoppingCart, Plus, Trash2, ArrowLeft, Upload, FileText,
-  Download, Edit3, Check, X, Sparkles, ArrowRight, TrendingDown,
+  Download, Check, X, Sparkles, ArrowRight, TrendingDown,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +17,7 @@ import {
   analyzeTemplateOptimization,
   applyTemplateOptimization,
   analyzeCartSplitDelivery,
+  getEffectiveUnitPrice,
 } from '../../lib/cartOptimizer';
 import type { CartOptimizationAnalysis, CartSplitAnalysis } from '../../lib/cartOptimizer';
 
@@ -38,6 +39,21 @@ interface CartItem {
   qty: number;
   vendor?: string;
   product_id?: string;
+  unit_price?: number; // prix unitaire résolu au moment de l'import CSV
+}
+
+// Ligne CSV après vérification contre le catalogue
+type CsvStatus = 'ok' | 'not_found' | 'no_price';
+interface CsvResolved {
+  ean: string;
+  qty: number;
+  requestedVendor?: string;
+  status: CsvStatus;
+  productId?: string;
+  name?: string;
+  vendorName?: string;
+  unitPrice?: number;
+  offerCount?: number; // nb de fournisseurs pour cet EAN
 }
 
 function fmtMAD(n: number) {
@@ -499,23 +515,79 @@ function CartCard({ cart, onOrder, onDelete, onOptimize }: {
 function CsvDrawer({ isOpen, onClose, onImport }: {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (items: CartItem[]) => void;
+  onImport: (items: CartItem[]) => Promise<void> | void;
 }) {
   const toast = useToast();
   const [csvText, setCsvText] = useState('');
-  const [parsed, setParsed] = useState<CartItem[]>([]);
+  const [resolved, setResolved] = useState<CsvResolved[]>([]);
+  const [verifying, setVerifying] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function parseCSV(text: string): CartItem[] {
-    return text.trim().split('\n')
+  // Ligne brute : "ean, quantité, vendeur"  (séparateur , ou ;)
+  function parseRaw(text: string): { ean: string; qty: number; vendor?: string }[] {
+    return text.trim().split(/\r?\n/)
       .filter(l => l.trim() && !l.startsWith('#'))
       .map(line => {
-        const [ean, qtyRaw, vendor] = line.split(',').map(s => s.trim());
-        const qty = parseInt(qtyRaw, 10) || 1;
-        return { ean: ean ?? '', name: `Produit EAN ${ean}`, qty, vendor };
+        const [eanRaw, qtyRaw, vendor] = line.split(/[,;]/).map(s => s.trim());
+        const ean = (eanRaw ?? '').replace(/\D/g, '');
+        return { ean, qty: Math.max(1, parseInt(qtyRaw ?? '1', 10) || 1), vendor: vendor || undefined };
       })
-      .filter(item => item.ean);
+      .filter(r => r.ean.length >= 8);
   }
+
+  // Vérification : chaque EAN est résolu contre le catalogue (produit actif, prix, vendeur)
+  const verify = useCallback(async (rows: { ean: string; qty: number; vendor?: string }[]) => {
+    if (rows.length === 0) { setResolved([]); return; }
+    setVerifying(true);
+    const eans = [...new Set(rows.map(r => r.ean))];
+    const { data } = await supabase
+      .from('products')
+      .select('id, name, ean, seller_org_id, organisations!seller_org_id(name), price_tiers(qty_min, unit_price)')
+      .in('ean', eans)
+      .eq('status', 'active');
+
+    type Cand = {
+      id: string; name: string; ean: string | null;
+      organisations: { name: string } | null;
+      price_tiers: { qty_min: number; unit_price: number }[] | null;
+    };
+    const byEan = new Map<string, Cand[]>();
+    for (const p of (data ?? []) as unknown as Cand[]) {
+      const k = p.ean ?? '';
+      if (!byEan.has(k)) byEan.set(k, []);
+      byEan.get(k)!.push(p);
+    }
+
+    const out: CsvResolved[] = rows.map(r => {
+      const cands = byEan.get(r.ean) ?? [];
+      if (cands.length === 0) return { ean: r.ean, qty: r.qty, requestedVendor: r.vendor, status: 'not_found' };
+      // vendeur demandé → on privilégie le fournisseur qui correspond ; sinon le moins cher
+      const wanted = r.vendor?.toLowerCase();
+      const priced = cands
+        .map(c => ({ c, price: getEffectiveUnitPrice(c.price_tiers ?? [], r.qty) }))
+        .sort((a, b) => (a.price || Infinity) - (b.price || Infinity));
+      const chosen = (wanted
+        && priced.find(x => (x.c.organisations?.name ?? '').toLowerCase().includes(wanted)))
+        || priced[0];
+      if (!(chosen.price > 0)) {
+        return {
+          ean: r.ean, qty: r.qty, requestedVendor: r.vendor, status: 'no_price',
+          productId: chosen.c.id, name: chosen.c.name,
+          vendorName: chosen.c.organisations?.name ?? '—', offerCount: cands.length,
+        };
+      }
+      return {
+        ean: r.ean, qty: r.qty, requestedVendor: r.vendor, status: 'ok',
+        productId: chosen.c.id, name: chosen.c.name,
+        vendorName: chosen.c.organisations?.name ?? '—',
+        unitPrice: chosen.price, offerCount: cands.length,
+      };
+    });
+    setResolved(out);
+    setVerifying(false);
+  }, []);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -524,26 +596,53 @@ function CsvDrawer({ isOpen, onClose, onImport }: {
     reader.onload = ev => {
       const text = ev.target?.result as string;
       setCsvText(text);
-      setParsed(parseCSV(text));
+      verify(parseRaw(text));
     };
     reader.readAsText(file);
   }
 
   function handleTextChange(text: string) {
     setCsvText(text);
-    setParsed(parseCSV(text));
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => verify(parseRaw(text)), 350);
   }
 
-  function handleConfirm() {
-    if (!parsed.length) return;
-    onImport(parsed);
-    toast({
-      title: `${parsed.length} ligne${parsed.length > 1 ? 's' : ''} importée${parsed.length > 1 ? 's' : ''}`,
-      status: 'success', duration: 3000, position: 'top-right',
-    });
-    setCsvText(''); setParsed([]);
-    onClose();
+  function reset() {
+    setCsvText(''); setResolved([]);
+    if (fileRef.current) fileRef.current.value = '';
   }
+
+  const okItems: CartItem[] = resolved
+    .filter(r => r.status === 'ok')
+    .map(r => ({
+      ean: r.ean, name: r.name ?? `EAN ${r.ean}`, qty: r.qty,
+      vendor: r.vendorName, product_id: r.productId, unit_price: r.unitPrice,
+    }));
+  const nNotFound = resolved.filter(r => r.status === 'not_found').length;
+  const nNoPrice = resolved.filter(r => r.status === 'no_price').length;
+
+  async function handleConfirm() {
+    if (!okItems.length) return;
+    setSubmitting(true);
+    try {
+      await onImport(okItems);
+      toast({
+        title: `Panier créé — ${okItems.length} article${okItems.length > 1 ? 's' : ''} vérifié${okItems.length > 1 ? 's' : ''}`,
+        description: nNotFound ? `${nNotFound} EAN ignoré${nNotFound > 1 ? 's' : ''} (introuvable${nNotFound > 1 ? 's' : ''})` : undefined,
+        status: 'success', duration: 3500, position: 'top-right',
+      });
+      reset();
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const STATUS_UI: Record<CsvStatus, { color: string; bg: string; label: string }> = {
+    ok:        { color: C.green, bg: C.greenLight, label: 'Vérifié' },
+    not_found: { color: C.red,   bg: C.redLight,   label: 'EAN introuvable' },
+    no_price:  { color: '#92400e', bg: C.amberLight, label: 'Sur devis' },
+  };
 
   return (
     <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="md">
@@ -608,47 +707,75 @@ function CsvDrawer({ isOpen, onClose, onImport }: {
               <Textarea
                 value={csvText}
                 onChange={e => handleTextChange(e.target.value)}
-                placeholder={'3045320094084,48,Al Manara\n6191117210124,20,Sidi Ali Distribution'}
+                placeholder={'6119000000011,48,Lesieur\n6119000000073,20,Sidi Ali'}
                 rows={6} fontSize="12px" fontFamily="mono" rounded="xl" resize="none"
                 style={{ borderColor: C.border }}
                 _focus={{ borderColor: C.navy, boxShadow: 'none' }}
               />
             </Box>
 
-            {parsed.length > 0 && (
+            {(verifying || resolved.length > 0) && (
               <Box rounded="xl" overflow="hidden" style={{ border: `1px solid ${C.border}` }}>
-                <Box px={4} py={2} style={{ background: C.bgAlt, borderBottom: `1px solid ${C.border}` }}>
+                <Flex px={4} py={2} justify="space-between" align="center"
+                  style={{ background: C.bgAlt, borderBottom: `1px solid ${C.border}` }}>
                   <Text fontSize="11px" fontWeight="700" style={{ color: C.navy }}>
-                    Aperçu — {parsed.length} ligne{parsed.length > 1 ? 's' : ''}
+                    Vérification catalogue
                   </Text>
-                </Box>
-                <VStack spacing={0} align="stretch" maxH="200px" overflowY="auto">
-                  {parsed.map((item, i) => (
-                    <Flex key={i} px={4} py={2.5} justify="space-between" align="center"
-                      style={{ borderBottom: i < parsed.length - 1 ? `1px solid ${C.border}` : undefined }}>
-                      <Text fontSize="xs" fontFamily="mono" style={{ color: C.slate }}>{item.ean}</Text>
-                      <HStack spacing={3}>
-                        <Text fontSize="xs" style={{ color: C.muted }}>{item.vendor ?? '—'}</Text>
-                        <Badge fontSize="10px" rounded="full" px={2}
-                          style={{ background: C.amberLight, color: '#92400e' }}>
-                          {item.qty}U
-                        </Badge>
-                      </HStack>
-                    </Flex>
-                  ))}
+                  {verifying
+                    ? <HStack spacing={1.5}><Spinner size="xs" /><Text fontSize="10px" style={{ color: C.muted }}>en cours…</Text></HStack>
+                    : <HStack spacing={2} fontSize="10px" fontWeight="700">
+                        <Text style={{ color: C.green }}>{okItems.length} ✓</Text>
+                        {nNoPrice > 0 && <Text style={{ color: '#92400e' }}>{nNoPrice} sur devis</Text>}
+                        {nNotFound > 0 && <Text style={{ color: C.red }}>{nNotFound} ✗</Text>}
+                      </HStack>}
+                </Flex>
+                <VStack spacing={0} align="stretch" maxH="240px" overflowY="auto">
+                  {resolved.map((r, i) => {
+                    const ui = STATUS_UI[r.status];
+                    return (
+                      <Flex key={i} px={4} py={2.5} gap={3} align="center"
+                        style={{ borderBottom: i < resolved.length - 1 ? `1px solid ${C.border}` : undefined }}>
+                        {r.status === 'ok'
+                          ? <Check size={14} color={C.green} style={{ flexShrink: 0 }} />
+                          : <X size={14} color={ui.color} style={{ flexShrink: 0 }} />}
+                        <Box flex={1} minW={0}>
+                          <Text fontSize="xs" fontWeight="600" noOfLines={1}
+                            style={{ color: r.status === 'ok' ? C.slate : C.muted }}>
+                            {r.name ?? `EAN ${r.ean}`}
+                          </Text>
+                          <Text fontSize="10px" fontFamily="mono" style={{ color: C.muted }}>
+                            {r.ean}{r.vendorName ? ` · ${r.vendorName}` : ''}
+                            {r.offerCount && r.offerCount > 1 ? ` · ${r.offerCount} fourn.` : ''}
+                          </Text>
+                        </Box>
+                        <HStack spacing={2} flexShrink={0}>
+                          {r.status === 'ok' && r.unitPrice != null && (
+                            <Text fontSize="xs" fontFamily="mono" style={{ color: C.navy }}>
+                              {fmtMAD(r.unitPrice * r.qty)}
+                            </Text>
+                          )}
+                          <Badge fontSize="9px" rounded="full" px={2}
+                            style={{ background: ui.bg, color: ui.color }}>
+                            {r.status === 'ok' ? `${r.qty}U` : ui.label}
+                          </Badge>
+                        </HStack>
+                      </Flex>
+                    );
+                  })}
                 </VStack>
               </Box>
             )}
 
             <Button
-              isDisabled={parsed.length === 0}
+              isDisabled={okItems.length === 0 || verifying}
+              isLoading={submitting}
               onClick={handleConfirm}
               size="lg" fontWeight="700" rounded="xl"
-              style={{ background: parsed.length ? C.navy : undefined, color: parsed.length ? 'white' : undefined }}
+              style={{ background: okItems.length ? C.navy : undefined, color: okItems.length ? 'white' : undefined }}
               _hover={{ opacity: 0.9 }}
               leftIcon={<Check size={16} />}
             >
-              Créer le panier ({parsed.length} article{parsed.length > 1 ? 's' : ''})
+              Créer le panier ({okItems.length} article{okItems.length > 1 ? 's' : ''})
             </Button>
           </VStack>
         </DrawerBody>
@@ -855,18 +982,40 @@ export default function MesPaniersPage() {
     openOptimizer();
   }
 
-  // ── CSV import (local only) ────────────────────────────────────────────────
-  function handleCSVImport(items: CartItem[]) {
-    const newCart: CartTemplate = {
-      id: String(Date.now()),
-      name: `Import CSV — ${new Date().toLocaleDateString('fr-FR')}`,
-      items,
-      lastUsed: null,
-      usageCount: 0,
-      vendor: items[0]?.vendor,
-      isLocal: true,
-    };
-    setCarts(prev => [newCart, ...prev]);
+  // ── CSV import ────────────────────────────────────────────────────────────
+  // Les lignes ont déjà été vérifiées contre le catalogue (product_id + prix réels) ;
+  // on crée un vrai panier type en base → commandable comme n'importe quel panier.
+  async function handleCSVImport(items: CartItem[]) {
+    if (!activeOrg || items.length === 0) return;
+    const name = `Import CSV — ${new Date().toLocaleDateString('fr-FR')}`;
+    const { data: cart, error } = await supabase
+      .from('carts')
+      .insert({ buyer_org_id: activeOrg.id, status: 'active', is_template: true, name, order_count: 0 })
+      .select('id')
+      .single();
+    if (error || !cart) {
+      toast({ title: 'Erreur lors de la création du panier', description: error?.message, status: 'error', duration: 4000, position: 'bottom-right' });
+      return;
+    }
+    const cartId = (cart as { id: string }).id;
+    const { error: e2 } = await supabase.from('cart_items').insert(
+      items
+        .filter(it => it.product_id)
+        .map(it => ({
+          cart_id: cartId,
+          product_id: it.product_id,
+          quantity: it.qty,
+          unit_price_computed: it.unit_price ?? null,
+        })),
+    );
+    if (e2) {
+      toast({ title: 'Erreur lors de l\'ajout des articles', description: e2.message, status: 'error', duration: 4000, position: 'bottom-right' });
+      await supabase.from('carts').delete().eq('id', cartId);
+      return;
+    }
+    setCarts(prev => [{
+      id: cartId, name, items, lastUsed: null, usageCount: 0, vendor: items[0]?.vendor,
+    }, ...prev]);
   }
 
   const isLoading = dbLoading && carts.length === 0;

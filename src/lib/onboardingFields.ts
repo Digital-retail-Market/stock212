@@ -55,6 +55,9 @@ export interface OnboardingFieldDefinition {
   required: boolean;
   enabled: boolean;
   display_order: number;
+  // Exemple de saisie affiché en filigrane dans le champ (text/number/email/
+  // url/textarea) pour guider l'utilisateur. Null = pas de suggestion.
+  placeholder: string | null;
   // "table.column" (ex: "seller_profiles.contact_referent") pour un champ core
   // qui écrit dans une colonne dédiée d'une table existante, ou null pour un
   // champ personnalisé stocké dans profile.custom_fields sous field_key.

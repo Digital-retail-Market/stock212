@@ -25,6 +25,7 @@ interface FormState {
   field_type: OnboardingFieldType;
   required: boolean;
   options: string[];
+  placeholder: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -34,7 +35,11 @@ const EMPTY_FORM: FormState = {
   field_type: 'text',
   required: false,
   options: [],
+  placeholder: '',
 };
+
+// Types de champ pour lesquels une suggestion de saisie a du sens.
+const FIELD_TYPES_WITH_PLACEHOLDER: OnboardingFieldType[] = ['text', 'number', 'email', 'url', 'textarea'];
 
 export default function AdminOnboardingFields() {
   const [role, setRole] = useState<FieldDefRole>('vendeur');
@@ -101,6 +106,7 @@ export default function AdminOnboardingFields() {
       field_type: def.field_type,
       required: def.required,
       options: def.options ?? [],
+      placeholder: def.placeholder ?? '',
     });
     setFieldKeyTouched(true);
     setShowModal(true);
@@ -151,6 +157,7 @@ export default function AdminOnboardingFields() {
       field_type: form.field_type,
       options: needsOptions ? cleanOptions : null,
       required: form.required,
+      placeholder: FIELD_TYPES_WITH_PLACEHOLDER.includes(form.field_type) ? (form.placeholder.trim() || null) : null,
       updated_at: new Date().toISOString(),
     };
 
@@ -479,6 +486,19 @@ export default function AdminOnboardingFields() {
               {form.required ? 'Champ obligatoire' : 'Champ optionnel'}
             </Toggle>
           </FormField>
+
+          {FIELD_TYPES_WITH_PLACEHOLDER.includes(form.field_type) && (
+            <FormField
+              label="Suggestion de saisie"
+              description="Exemple affiché en filigrane dans le champ pour guider l'utilisateur (facultatif)."
+            >
+              <Input
+                value={form.placeholder}
+                onChange={({ detail }) => setForm((f) => ({ ...f, placeholder: detail.value }))}
+                placeholder="Ex : Casablanca-Settat"
+              />
+            </FormField>
+          )}
 
           {needsOptions && (
             <FormField

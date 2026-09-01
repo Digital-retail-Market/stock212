@@ -24,7 +24,7 @@ export default function ProductCampaignPanel({ productId, campaigns }: Props) {
 
   const copyCode = () => {
     const code = promoCode?.code ?? promoCode?.name ?? '';
-    navigator.clipboard.writeText(code).catch(() => {});
+    navigator.clipboard.writeText(code).catch(() => {/* copie best-effort : navigateur peut bloquer l'API clipboard */});
     setCopied(true);
     toast({ title: `Code "${code}" copié !`, status: 'success', duration: 2000 });
     setTimeout(() => setCopied(false), 2500);

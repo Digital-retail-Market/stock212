@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-  SpaceBetween, Header, Button, Box, Select,
-  Container, Spinner, Alert, Flashbar, Badge,
+  SpaceBetween, Header, Box, Select,
+  Spinner, Alert, Flashbar,
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { lowestTierPrice } from '../../lib/pricing';
 
 interface DestockProduct {
   id: string; name: string; ean: string | null; images: string[];
@@ -57,13 +57,9 @@ function dlcColor(days: number) {
 function urgencyLabel(days: number) {
   return days <= 14 ? 'URGENT' : days <= 30 ? 'BIENTÔT' : 'DISPONIBLE';
 }
-function basePrice(tiers: { qty_min: number; unit_price: number }[]) {
-  if (!tiers?.length) return null;
-  return [...tiers].sort((a, b) => a.qty_min - b.qty_min)[0].unit_price;
-}
+const basePrice = lowestTierPrice;
 
 export default function BuyerDestockage() {
-  const navigate  = useNavigate();
   const { activeOrg } = useAuth();
 
   const [loadingPromo, setLoadingPromo] = useState(true);
@@ -169,12 +165,6 @@ export default function BuyerDestockage() {
       <Header
         variant="h1"
         description="Produits en promotion et lots à date de péremption proche — prix négociés, stocks limités"
-        actions={
-          <SpaceBetween direction="horizontal" size="xs">
-            <Button onClick={() => navigate('/buyer/catalog')}>← Catalogue</Button>
-            <Button variant="primary" onClick={() => navigate('/buyer/optimizer')} iconName="settings">Optimiseur</Button>
-          </SpaceBetween>
-        }
       >
         Déstockage & Promotions
       </Header>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Table,
   Header,
@@ -51,6 +52,7 @@ interface OrderReturn {
 
 export default function VendorOrders() {
   const { activeOrg, user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterText, setFilterText] = useState('');
@@ -174,6 +176,19 @@ export default function VendorOrders() {
     fetchOrderLines(order.id);
     fetchReturns(order.id);
   }
+
+  // Ouverture directe via lien profond ?order=<id> (ex. depuis VendorOverview).
+  useEffect(() => {
+    const deepId = searchParams.get('order');
+    if (!deepId || selectedOrder || !activeOrg) return;
+    const inPage = orders.find((o) => o.id === deepId);
+    if (inPage) { openOrderModal(inPage); return; }
+    supabase
+      .from('orders').select('*')
+      .eq('id', deepId).eq('seller_org_id', activeOrg.id).maybeSingle()
+      .then(({ data }) => { if (data) openOrderModal(data as Order); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, searchParams, selectedOrder, activeOrg]);
 
   async function handleStatusUpdate(order: Order, newStatus: string) {
     setUpdatingStatus(true);

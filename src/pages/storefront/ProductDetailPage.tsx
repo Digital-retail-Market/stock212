@@ -483,7 +483,7 @@ export default function ProductDetailPage() {
 
         {/* ── Sticky Purchase Panel ─────────────────────────────────────────── */}
         <Box position="sticky" top="80px" alignSelf="flex-start">
-          {user ? (
+          {activeOrg ? (
             <Box bg="white" rounded="2xl" overflow="hidden"
               style={{ border: `1.5px solid ${N.border}`, boxShadow: '0 4px 32px rgba(13,31,56,0.10)' }}>
 
@@ -1438,7 +1438,7 @@ export default function ProductDetailPage() {
                       lineHeight={1.35} mb={1.5}>
                       {rec.name}
                     </Text>
-                    {user && tier ? (
+                    {activeOrg && tier ? (
                       <HStack spacing={1} align="baseline">
                         <Text fontSize="md" fontWeight="800" style={{ color: N.navy }} fontFamily="mono">
                           {tier.unit_price.toFixed(2)}

@@ -172,7 +172,7 @@ export default function VendorOverview() {
             id: 'number',
             header: 'N° Commande',
             cell: (o: Order) => (
-              <Link onFollow={() => navigate(`/vendor/orders/${o.id}`)}>{o.order_number}</Link>
+              <Link onFollow={() => navigate(`/vendor/orders?order=${o.id}`)}>{o.order_number}</Link>
             ),
           },
           {
@@ -198,7 +198,7 @@ export default function VendorOverview() {
             id: 'actions',
             header: 'Actions',
             cell: (o: Order) => (
-              <Button variant="inline-link" onClick={() => navigate(`/vendor/orders/${o.id}`)}>
+              <Button variant="inline-link" onClick={() => navigate(`/vendor/orders?order=${o.id}`)}>
                 Détails
               </Button>
             ),
