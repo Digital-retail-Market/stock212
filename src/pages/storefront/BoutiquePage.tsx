@@ -4,7 +4,7 @@ import {
   Box, Flex, Heading, Text, VStack, HStack, SimpleGrid, Image,
   Button, Skeleton, SkeletonText, Badge, Wrap, WrapItem, Tag,
   TagLabel, Divider, Avatar, Tabs, TabList, Tab, TabPanels,
-  TabPanel, Progress, Tooltip, IconButton,
+  TabPanel, Progress, Tooltip, IconButton, useToast,
 } from '@chakra-ui/react';
 import {
   ArrowLeft, Store, MapPin, Calendar, ShieldCheck, Package,
@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
+import { lowestTierPrice } from '../../lib/pricing';
 import type { Organisation, Product, Brand, Category } from '../../types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -74,8 +76,31 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
 // ─── Carte produit compacte ────────────────────────────────────────────────────
 function ProductCard({ p }: { p: Product }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, activeOrg } = useAuth();
+  const toast = useToast();
+  const [addingToCart, setAddingToCart] = useState(false);
   const best = p.price_tiers?.sort((a, b) => a.qty_min - b.qty_min)[0];
+
+  async function handleAddToCart(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!activeOrg || addingToCart) return;
+    const price = lowestTierPrice(p.price_tiers);
+    if (!price) return;
+    setAddingToCart(true);
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId: p.id,
+      quantity: p.moq,
+      unitPrice: price,
+    });
+    if (error) {
+      toast({ title: 'Erreur', description: error, status: 'error', duration: 4000, position: 'bottom-right' });
+    } else {
+      toast({ title: 'Ajouté au panier', description: p.name, status: 'success', duration: 2500, position: 'bottom-right' });
+    }
+    setAddingToCart(false);
+  }
+
   return (
     <Box
       bg="white" border="1px solid" borderColor="gray.200" rounded="xl"
@@ -94,22 +119,23 @@ function ProductCard({ p }: { p: Product }) {
         <Text fontSize="xs" color="gray.400" noOfLines={1} mb={0.5}>{p.brands?.name ?? p.categories?.name ?? '—'}</Text>
         <Text fontWeight="600" color="gray.800" fontSize="sm" noOfLines={2} lineHeight={1.3} mb={2}>{p.name}</Text>
         <Flex justify="space-between" align="center">
-          {user
+          {activeOrg
             ? best
               ? <Text fontWeight="700" color="blue.800" fontSize="sm" fontFamily="mono">{best.unit_price.toFixed(2)} {p.currency}</Text>
               : <Text fontSize="xs" color="gray.400" fontStyle="italic">Sur devis</Text>
-            : <HStack spacing={1} cursor="pointer" onClick={e => { e.stopPropagation(); navigate('/auth'); }}>
+            : <HStack spacing={1} cursor="pointer" onClick={e => { e.stopPropagation(); navigate(user ? '/onboarding' : '/auth'); }}>
                 <Lock size={10} color="var(--chakra-colors-gray-400)" />
                 <Text fontSize="10px" color="blue.600" fontWeight="500">Accéder aux tarifs</Text>
               </HStack>
           }
-          <Tooltip label="Commander" placement="top" hasArrow>
+          <Tooltip label={activeOrg ? 'Commander' : 'Connexion requise'} placement="top" hasArrow>
             <IconButton
-              aria-label="Commander" icon={user ? <ShoppingCart size={13} /> : <Lock size={13} />}
-              size="xs" colorScheme={user ? 'blue' : 'gray'} variant={user ? 'solid' : 'outline'}
-              rounded="md" isDisabled={!user} bg={user ? 'blue.800' : undefined}
-              _hover={user ? { bg: 'blue.700' } : undefined}
-              onClick={e => e.stopPropagation()}
+              aria-label="Commander" icon={addingToCart ? undefined : activeOrg ? <ShoppingCart size={13} /> : <Lock size={13} />}
+              isLoading={addingToCart}
+              size="xs" colorScheme={activeOrg ? 'blue' : 'gray'} variant={activeOrg ? 'solid' : 'outline'}
+              rounded="md" isDisabled={!activeOrg || !best} bg={activeOrg ? 'blue.800' : undefined}
+              _hover={activeOrg ? { bg: 'blue.700' } : undefined}
+              onClick={handleAddToCart}
             />
           </Tooltip>
         </Flex>

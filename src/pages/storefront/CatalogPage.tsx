@@ -15,6 +15,7 @@ import type { LandedCostResult, OptimizedLine, EanInput } from '../../lib/cartOp
 import { Search, SlidersHorizontal, ShoppingCart, Star, X, Lock, Scale, Package } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
 import { useComparator } from '../../contexts/ComparatorContext';
 import { CategoryBreadcrumb } from '../../layouts/StorefrontLayout';
 import { getCatStyle } from '../../lib/categoryIcons';
@@ -1223,6 +1224,7 @@ function CatalogProductCard({ product }: { product: Product }) {
 
   const inComparator = hasItem(product.id);
   const tempBadge = TEMP_BADGE[product.temperature];
+  const [addingToCart, setAddingToCart] = useState(false);
 
   function toggleCompare(e: React.MouseEvent) {
     e.stopPropagation();
@@ -1232,6 +1234,24 @@ function CatalogProductCard({ product }: { product: Product }) {
       addItem(product);
       toast({ title: 'Ajouté au comparateur', status: 'info', duration: 2000, isClosable: true, position: 'bottom-right' });
     }
+  }
+
+  async function handleAddToCart(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!activeOrg || !firstTier || addingToCart) return;
+    setAddingToCart(true);
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId: product.id,
+      quantity: product.moq,
+      unitPrice: firstTier.unit_price,
+    });
+    if (error) {
+      toast({ title: 'Erreur', description: error, status: 'error', duration: 4000, isClosable: true, position: 'bottom-right' });
+    } else {
+      toast({ title: 'Ajouté au panier', description: product.name, status: 'success', duration: 2500, isClosable: true, position: 'bottom-right' });
+    }
+    setAddingToCart(false);
   }
 
   return (
@@ -1409,7 +1429,7 @@ function CatalogProductCard({ product }: { product: Product }) {
 
           {/* Bouton panier */}
           <Tooltip
-            label={!activeOrg ? 'Connexion requise' : 'Ajouter au panier'}
+            label={!activeOrg ? 'Connexion requise' : !firstTier ? 'Sur devis' : 'Ajouter au panier'}
             placement="top"
           >
             <Box
@@ -1420,14 +1440,16 @@ function CatalogProductCard({ product }: { product: Product }) {
               style={{
                 background: activeOrg ? C.navy : '#f1f5f9',
                 border: `1px solid ${activeOrg ? C.navyMid : C.border}`,
-                opacity: activeOrg ? 1 : 0.5,
+                opacity: activeOrg && firstTier && !addingToCart ? 1 : 0.5,
               }}
               _hover={activeOrg ? { opacity: 0.85 } : undefined}
               transition="opacity 0.15s"
-              disabled={!activeOrg}
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              disabled={!activeOrg || !firstTier || addingToCart}
+              onClick={handleAddToCart}
             >
-              <ShoppingCart size={15} color={activeOrg ? 'white' : C.muted} />
+              {addingToCart
+                ? <Spinner size="xs" color="white" />
+                : <ShoppingCart size={15} color={activeOrg ? 'white' : C.muted} />}
             </Box>
           </Tooltip>
         </Flex>

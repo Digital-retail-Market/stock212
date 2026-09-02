@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
+import { lowestTierPrice } from '../../lib/pricing';
 import { useWishlist } from '../../hooks/useWishlist';
 import type { Product } from '../../types';
 
@@ -123,7 +125,7 @@ function WishCard({
 
 // ── Page principale ───────────────────────────────────────────────────────────
 export default function WishlistPage() {
-  const { user } = useAuth();
+  const { user, activeOrg } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -171,8 +173,21 @@ export default function WishlistPage() {
     setSelected(new Set());
   }
 
-  function addToCart(product: Product) {
+  async function addToCart(product: Product) {
     if (!user) { navigate('/auth'); return; }
+    if (!activeOrg) return;
+    const price = lowestTierPrice(product.price_tiers);
+    if (!price) return;
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId: product.id,
+      quantity: product.moq,
+      unitPrice: price,
+    });
+    if (error) {
+      toast({ title: 'Erreur', description: error, status: 'error', duration: 4000, position: 'top-right' });
+      return;
+    }
     toast({
       title: 'Ajouté au panier',
       description: product.name,
@@ -180,12 +195,25 @@ export default function WishlistPage() {
     });
   }
 
-  function addSelectedToCart() {
-    const count = selected.size;
+  async function addSelectedToCart() {
     if (!user) { navigate('/auth'); return; }
+    if (!activeOrg) return;
+    const items = products.filter((p) => selected.has(p.id));
+    let added = 0;
+    for (const p of items) {
+      const price = lowestTierPrice(p.price_tiers);
+      if (!price) continue;
+      const { error } = await addToCartShared({
+        buyerOrgId: activeOrg.id,
+        productId: p.id,
+        quantity: p.moq,
+        unitPrice: price,
+      });
+      if (!error) added++;
+    }
     toast({
-      title: `${count} produit${count > 1 ? 's' : ''} ajouté${count > 1 ? 's' : ''} au panier`,
-      status: 'success', duration: 2500, position: 'top-right',
+      title: `${added} produit${added > 1 ? 's' : ''} ajouté${added > 1 ? 's' : ''} au panier`,
+      status: added > 0 ? 'success' : 'warning', duration: 2500, position: 'top-right',
     });
   }
 

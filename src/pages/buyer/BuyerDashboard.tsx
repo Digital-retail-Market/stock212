@@ -8,7 +8,7 @@ import {
   ShoppingBag, FileText, Bell, ArrowRight, Package,
   Clock, Search, Plus, ChevronRight, TrendingUp, CheckCircle,
   AlertCircle, RefreshCw, Heart, BarChart2, CreditCard,
-  User, ShoppingCart, ArrowUpRight,
+  User, ArrowUpRight,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -138,7 +138,6 @@ export default function BuyerDashboard() {
   const navModules = [
     { label: 'Commandes', icon: ShoppingBag,  to: '/buyer/orders',   bg: '#eff6ff', color: '#2563eb' },
     { label: 'Devis',     icon: FileText,     to: '/buyer/quotes',   bg: '#fdf4ff', color: '#9333ea' },
-    { label: 'Paniers',   icon: ShoppingCart, to: '/buyer/carts',    bg: '#fff7ed', color: '#c2410c' },
     { label: 'Favoris',   icon: Heart,        to: '/buyer/wishlist',  bg: '#fff1f2', color: '#e11d48' },
     { label: 'Insights',  icon: BarChart2,    to: '/buyer/insights',  bg: '#f0fdf4', color: '#16a34a' },
     { label: 'Finances',  icon: CreditCard,   to: '/buyer/finances',  bg: '#fffbeb', color: '#d97706' },

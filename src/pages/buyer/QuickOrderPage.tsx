@@ -314,9 +314,9 @@ export default function QuickOrderPage() {
       toast({
         status: 'success',
         title: `${lines.length} produit${lines.length > 1 ? 's' : ''} ajouté${lines.length > 1 ? 's' : ''} au panier.`,
-        description: 'Accédez à vos paniers pour finaliser la commande.',
+        description: 'Finalisez votre commande depuis le panier.',
       });
-      navigate('/buyer/carts');
+      navigate('/checkout');
     }
     setAddingToCart(false);
   }

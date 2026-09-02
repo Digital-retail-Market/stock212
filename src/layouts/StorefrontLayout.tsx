@@ -9,7 +9,7 @@ import {
   Tooltip, Accordion, AccordionItem, AccordionButton, AccordionPanel,
   AccordionIcon, Modal, ModalOverlay, ModalContent, ModalHeader,
   ModalBody, ModalCloseButton, Breadcrumb, BreadcrumbItem,
-  BreadcrumbLink, LinkBox, LinkOverlay,
+  BreadcrumbLink,
 } from '@chakra-ui/react';
 import {
   Search, ShoppingCart, ChevronDown, Package, Menu as MenuIcon,
@@ -48,122 +48,6 @@ const N = {
 function CatIcon({ name, size = 16 }: { name: string; size?: number }) {
   const { Icon, color } = getCatStyle(name);
   return <Icon size={size} color={color} />;
-}
-
-// ─── NavLink ──────────────────────────────────────────────────────────────────
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
-  const loc = useLocation();
-  const active = loc.pathname === to || (to !== '/' && loc.pathname.startsWith(to));
-  return (
-    <Link to={to}>
-      <Box
-        as="span" display="inline-flex" alignItems="center" h="48px"
-        fontWeight={active ? '700' : '500'} fontSize="sm"
-        whiteSpace="nowrap" cursor="pointer"
-        color={active ? 'white' : 'rgba(255,255,255,0.72)'}
-        borderBottom="2px solid"
-        borderColor={active ? N.amber : 'transparent'}
-        sx={{ '&:hover': { color: 'white', borderBottomColor: N.amber } }}
-        transition="all 0.15s"
-      >
-        {children}
-      </Box>
-    </Link>
-  );
-}
-
-// ─── CategoryMegaMenu ─────────────────────────────────────────────────────────
-function CategoryMegaMenu({ roots, children: subs }: { roots: Category[]; children: Category[] }) {
-  const navigate = useNavigate();
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const active = roots.find((r) => r.id === activeId) ?? roots[0];
-  const activeSubs = subs.filter((s) => s.parent_id === active?.id);
-
-  return (
-    <Menu isLazy>
-      <MenuButton as={Button} variant="ghost" size="sm" fontWeight="700"
-        fontSize="sm" rightIcon={<ChevronDown size={13} color="white" />}
-        color="white" _hover={{ bg: 'rgba(255,255,255,0.12)' }}>
-        Produits
-      </MenuButton>
-      <MenuList p={0} shadow="2xl" rounded="2xl" border="1px" borderColor="gray.100"
-        minW="680px" zIndex={300} overflow="hidden">
-        <Flex>
-          {/* Left: root tabs */}
-          <VStack spacing={0} align="stretch" bg="gray.50" minW="160px" py={3}
-            borderRight="1px" borderColor="gray.100">
-            {roots.map((root) => {
-              const { Icon } = getCatStyle(root.name);
-              const isActive = active?.id === root.id;
-              return (
-                <Box key={root.id} px={4} py={3} cursor="pointer"
-                  bg={isActive ? 'white' : 'transparent'}
-                  borderStart="3px solid" borderColor={isActive ? N.navy : 'transparent'}
-                  onMouseEnter={() => setActiveId(root.id)}
-                  onClick={() => navigate(`/catalog?category=${root.id}`)}
-                  transition="all 0.15s" _hover={{ bg: 'white' }}>
-                  <HStack spacing={2}>
-                    <Icon size={16} color={isActive ? N.navy : '#9ca3af'} />
-                    <Text fontSize="sm" fontWeight={isActive ? '700' : 'medium'}
-                      style={{ color: isActive ? N.navy : '#374151' }}>{root.name}</Text>
-                  </HStack>
-                </Box>
-              );
-            })}
-          </VStack>
-
-          {/* Right: content */}
-          <Box flex={1} p={5}>
-            {active?.image_url && (
-              <Box h="90px" rounded="xl" overflow="hidden" mb={4} position="relative">
-                <Image src={active.image_url} alt={active.name} w="full" h="full"
-                  objectFit="cover" loading="lazy" />
-                <Box position="absolute" inset={0}
-                  bg="linear-gradient(to right, rgba(0,0,0,0.55), transparent)" />
-                <Text position="absolute" left={4} bottom={3} color="white"
-                  fontWeight="bold" fontSize="sm">{active.name}</Text>
-              </Box>
-            )}
-            <SimpleGrid columns={3} spacing={1.5}>
-              {activeSubs.map((sub) => {
-                const { Icon: SubIcon, bg: subBg, color: subColor } = getCatStyle(sub.name);
-                return (
-                  <Tooltip key={sub.id} label={sub.description ?? ''} isDisabled={!sub.description} placement="top">
-                    <LinkBox>
-                      <Flex gap={2} align="center" p={2.5} rounded="xl" cursor="pointer"
-                        _hover={{ bg: N.bgAlt }} transition="bg 0.15s">
-                        <Flex w={8} h={8} rounded="lg" align="center" justify="center" flexShrink={0}
-                          style={{ background: subBg }}>
-                          <SubIcon size={15} color={subColor} />
-                        </Flex>
-                        <LinkOverlay as="span" onClick={() => navigate(`/catalog?category=${sub.id}`)}>
-                          <Text fontSize="xs" fontWeight="medium" color="gray.700" noOfLines={2} lineHeight={1.3}>
-                            {sub.name}
-                          </Text>
-                        </LinkOverlay>
-                      </Flex>
-                    </LinkBox>
-                  </Tooltip>
-                );
-              })}
-            </SimpleGrid>
-            {activeSubs.length === 0 && (
-              <Text fontSize="sm" color="gray.400" textAlign="center" py={4}>Aucune sous-catégorie</Text>
-            )}
-            <Flex justify="flex-end" mt={3}>
-              <Button size="xs" variant="ghost"
-                style={{ color: N.navy }}
-                rightIcon={<ChevronRight size={11} color={N.navy} />}
-                _hover={{ bg: N.bgAlt }}
-                onClick={() => navigate(`/catalog?category=${active?.id}`)}>
-                Tous les produits {active?.name}
-              </Button>
-            </Flex>
-          </Box>
-        </Flex>
-      </MenuList>
-    </Menu>
-  );
 }
 
 // ─── SearchAutocomplete (self-contained, exportable) ─────────────────────────
@@ -599,7 +483,6 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
   const { isOpen: isCartOpen, onOpen: onCartOpen, onClose: onCartClose } = useDisclosure();
   const { isOpen: isMobSearchOpen, onOpen: onMobSearchOpen, onClose: onMobSearchClose } = useDisclosure();
   const { count: cartCount } = useCart();
-  const { items: compItems } = useComparator();
   const wishlistCount = useWishlist().count;
   const [roots, setRoots] = useState<Category[]>([]);
   const [subs, setSubs] = useState<Category[]>([]);
@@ -916,77 +799,6 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
             />
           </HStack>
         </Flex>
-
-        {/* Tier 2 — Navigation secondaire (desktop uniquement) */}
-        <Box display={{ base: 'none', lg: 'block' }}
-          bg={N.navy}
-          borderTop="1px solid rgba(255,255,255,0.06)">
-          <Flex maxW="1400px" mx="auto" px={6} align="center" h="44px" justify="space-between">
-
-            {/* Gauche : mega menu + liens principaux */}
-            <HStack spacing={0} h="full" align="center">
-              {roots.length > 0 && <CategoryMegaMenu roots={roots} children={subs} />}
-              <Box w="1px" h="16px" bg="rgba(255,255,255,0.15)" mx={3} flexShrink={0} />
-              <HStack spacing={0} h="full">
-                {[
-                  { to: '/catalog',    label: 'Catalogue' },
-                  { to: '/best-deals', label: 'Best Deals' },
-                  { to: '/brands',     label: 'Marques' },
-                  { to: '/boutiques',  label: 'Boutiques' },
-                ].map(({ to, label }) => (
-                  <Box key={to} px={3.5} h="full" display="flex" alignItems="center">
-                    <NavLink to={to}>{label}</NavLink>
-                  </Box>
-                ))}
-              </HStack>
-            </HStack>
-
-            {/* Droite : badges accès rapide */}
-            <HStack spacing={1.5}>
-              <Link to="/best-deals">
-                <HStack
-                  px={3} py="4px" rounded="md" spacing={1.5} cursor="pointer"
-                  bg="rgba(234,153,20,0.18)" border="1px solid rgba(234,153,20,0.40)"
-                  _hover={{ bg: 'rgba(234,153,20,0.28)' }} transition="background 0.13s"
-                >
-                  <Text fontSize="11px" fontWeight="700" color="#FCD34D">Promotions</Text>
-                </HStack>
-              </Link>
-              <Link to="/catalog?sort=new">
-                <HStack
-                  px={3} py="4px" rounded="md" spacing={1.5} cursor="pointer"
-                  bg="rgba(255,255,255,0.08)" border="1px solid rgba(255,255,255,0.15)"
-                  _hover={{ bg: 'rgba(255,255,255,0.14)' }} transition="background 0.13s"
-                >
-                  <Text fontSize="11px" fontWeight="600" color="rgba(255,255,255,0.80)">Nouveautés</Text>
-                </HStack>
-              </Link>
-              <Link to="/how-it-works">
-                <HStack
-                  px={3} py="4px" rounded="md" spacing={1.5} cursor="pointer"
-                  bg="rgba(255,255,255,0.05)" border="1px solid rgba(255,255,255,0.10)"
-                  _hover={{ bg: 'rgba(255,255,255,0.11)' }} transition="background 0.13s"
-                >
-                  <Text fontSize="11px" fontWeight="600" color="rgba(255,255,255,0.60)">Comment ça marche</Text>
-                </HStack>
-              </Link>
-              {compItems.length > 0 && (
-                <Link to="/compare">
-                  <HStack
-                    px={3} py="4px" rounded="md" spacing={1.5} cursor="pointer"
-                    bg="rgba(234,153,20,0.18)" border="1px solid rgba(234,153,20,0.40)"
-                    _hover={{ bg: 'rgba(234,153,20,0.28)' }} transition="background 0.13s"
-                  >
-                    <Scale size={10} color="#FCD34D" />
-                    <Text fontSize="11px" fontWeight="700" color="#FCD34D">
-                      Comparer ({compItems.length})
-                    </Text>
-                  </HStack>
-                </Link>
-              )}
-            </HStack>
-          </Flex>
-        </Box>
       </Box>
 
       {/* Sous-nav acheteur — visible uniquement sur /buyer/* */}
@@ -1011,7 +823,6 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               { to: '/buyer/destockage',    label: 'Déstockage',    exact: false },
               { to: '/buyer/orders',        label: 'Commandes',     exact: false },
               { to: '/buyer/quotes',        label: 'Devis',         exact: false },
-              { to: '/buyer/carts',         label: 'Paniers',       exact: false },
               { to: '/buyer/compare',       label: 'Comparateur',   exact: false },
               { to: '/buyer/optimizer',     label: 'Optimiseur',    exact: false },
               { to: '/buyer/ean-catalogue', label: 'Réf. EAN',      exact: false },
@@ -1167,11 +978,6 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                       <Link to="/buyer/quotes" onClick={onClose}>
                         <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
                           <Text fontSize="sm" fontWeight="medium" color="gray.700">Mes devis</Text>
-                        </Box>
-                      </Link>
-                      <Link to="/buyer/carts" onClick={onClose}>
-                        <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Mes paniers</Text>
                         </Box>
                       </Link>
                       <Link to="/buyer/ean-catalogue" onClick={onClose}>

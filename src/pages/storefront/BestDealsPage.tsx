@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Flex, Heading, Text, VStack, HStack, SimpleGrid,
   Badge, Image, Button, Tabs, TabList, Tab, TabPanels, TabPanel,
-  Skeleton,
+  Skeleton, useToast,
 } from '@chakra-ui/react';
 import { TrendingDown, Clock, ShoppingCart, Lock, ArrowRight, Package, Tag } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import type { Product, Promotion } from '../../types';
+import { addToCart as addToCartShared } from '../../lib/cart';
+import { lowestTierPrice } from '../../lib/pricing';
+import type { Product, Promotion, Organisation } from '../../types';
 
 export default function BestDealsPage() {
   const navigate = useNavigate();
@@ -225,7 +227,7 @@ export default function BestDealsPage() {
                     <Skeleton key={i} h="200px" rounded="md" />
                   ))
                 : promoProducts.map((p) => (
-                    <DealCard key={p.id} product={p} isAuthenticated={!!activeOrg} />
+                    <DealCard key={p.id} product={p} activeOrg={activeOrg} />
                   ))}
               {!loading && promoProducts.length === 0 && (
                 <Box gridColumn="1/-1" textAlign="center" py={12} color="gray.400">
@@ -250,7 +252,7 @@ export default function BestDealsPage() {
                     <Skeleton key={i} h="200px" rounded="md" />
                   ))
                 : destockDeals.map(({ product, promo }) => (
-                    <DestockCard key={promo.id} product={product} promo={promo} isAuthenticated={!!activeOrg} />
+                    <DestockCard key={promo.id} product={product} promo={promo} activeOrg={activeOrg} />
                   ))}
               {!loading && destockDeals.length === 0 && (
                 <Box gridColumn="1/-1" textAlign="center" py={12} color="gray.400">
@@ -273,9 +275,32 @@ export default function BestDealsPage() {
   );
 }
 
-function DealCard({ product, isAuthenticated }: { product: Product; isAuthenticated: boolean }) {
+function DealCard({ product, activeOrg }: { product: Product; activeOrg: Organisation | null }) {
   const navigate = useNavigate();
+  const toast = useToast();
+  const [addingToCart, setAddingToCart] = useState(false);
+  const isAuthenticated = !!activeOrg;
   const bestPrice = product.price_tiers?.slice().sort((a, b) => a.qty_min - b.qty_min)[0];
+
+  async function handleAddToCart(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!activeOrg || addingToCart) return;
+    const price = lowestTierPrice(product.price_tiers);
+    if (!price) return;
+    setAddingToCart(true);
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId: product.id,
+      quantity: product.moq,
+      unitPrice: price,
+    });
+    if (error) {
+      toast({ title: 'Erreur', description: error, status: 'error', duration: 4000, position: 'bottom-right' });
+    } else {
+      toast({ title: 'Ajouté au panier', description: product.name, status: 'success', duration: 2500, position: 'bottom-right' });
+    }
+    setAddingToCart(false);
+  }
 
   return (
     <Box
@@ -343,7 +368,9 @@ function DealCard({ product, isAuthenticated }: { product: Product; isAuthentica
               bg="blue.800"
               _hover={{ bg: 'blue.700' }}
               fontSize="10px"
-              onClick={(e) => e.stopPropagation()}
+              isLoading={addingToCart}
+              isDisabled={!bestPrice}
+              onClick={handleAddToCart}
             >
               Commander
             </Button>
@@ -375,14 +402,35 @@ function DealCard({ product, isAuthenticated }: { product: Product; isAuthentica
 }
 
 function DestockCard({
-  product, promo, isAuthenticated,
-}: { product: Product; promo: Promotion; isAuthenticated: boolean }) {
+  product, promo, activeOrg,
+}: { product: Product; promo: Promotion; activeOrg: Organisation | null }) {
   const navigate = useNavigate();
+  const toast = useToast();
+  const [addingToCart, setAddingToCart] = useState(false);
+  const isAuthenticated = !!activeOrg;
   const bestPrice = product.price_tiers?.slice().sort((a, b) => a.qty_min - b.qty_min)[0];
   const discounted =
     bestPrice && promo.promo_type === 'percentage'
       ? bestPrice.unit_price * (1 - Number(promo.discount_value) / 100)
       : null;
+
+  async function handleAddToCart(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!activeOrg || !bestPrice || addingToCart) return;
+    setAddingToCart(true);
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId: product.id,
+      quantity: product.moq,
+      unitPrice: discounted ?? bestPrice.unit_price,
+    });
+    if (error) {
+      toast({ title: 'Erreur', description: error, status: 'error', duration: 4000, position: 'bottom-right' });
+    } else {
+      toast({ title: 'Ajouté au panier', description: product.name, status: 'success', duration: 2500, position: 'bottom-right' });
+    }
+    setAddingToCart(false);
+  }
 
   return (
     <Box
@@ -446,7 +494,9 @@ function DestockCard({
               size="xs" colorScheme="purple" rounded="sm"
               leftIcon={<ShoppingCart size={11} />}
               bg="#6d28d9" _hover={{ bg: '#5b21b6' }} fontSize="10px"
-              onClick={(e) => e.stopPropagation()}
+              isLoading={addingToCart}
+              isDisabled={!bestPrice}
+              onClick={handleAddToCart}
             >
               Commander
             </Button>

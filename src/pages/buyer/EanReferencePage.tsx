@@ -597,7 +597,7 @@ export default function EanReferencePage() {
         description: 'Prix optimal sélectionné pour chaque article.',
         duration: 4000,
       });
-      navigate('/buyer/carts');
+      navigate('/checkout');
     }
   }, [activeOrg, filteredSorted, quantities, selectedOffers, toast, navigate]);
 

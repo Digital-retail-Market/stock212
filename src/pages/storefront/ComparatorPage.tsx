@@ -6,7 +6,7 @@ import {
   Badge, Table, Thead, Tbody, Tr, Th, Td, Tag, TagLabel,
   IconButton, Wrap, WrapItem, Checkbox, Divider, Tooltip,
   Popover, PopoverTrigger, PopoverContent, PopoverHeader,
-  PopoverBody, PopoverCloseButton, PopoverArrow, SimpleGrid,
+  PopoverBody, PopoverCloseButton, PopoverArrow, SimpleGrid, useToast,
 } from '@chakra-ui/react';
 import {
   X, Scale, ArrowLeft, Lock, ShoppingCart, Package, SlidersHorizontal,
@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useComparator } from '../../contexts/ComparatorContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
+import { lowestTierPrice } from '../../lib/pricing';
 import type { Product } from '../../types';
 
 // ─── Définition de tous les critères disponibles ───────────────────────────────
@@ -306,8 +308,29 @@ function CriteriaPanel({
 // ─── Page principale ───────────────────────────────────────────────────────────
 export default function ComparatorPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, activeOrg } = useAuth();
+  const toast = useToast();
   const { items, removeItem, clearItems } = useComparator();
+  const [addingToCartId, setAddingToCartId] = useState<string | null>(null);
+
+  async function handleAddToCart(p: Product) {
+    if (!activeOrg || addingToCartId) return;
+    const price = lowestTierPrice(p.price_tiers);
+    if (!price) return;
+    setAddingToCartId(p.id);
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId: p.id,
+      quantity: p.moq,
+      unitPrice: price,
+    });
+    if (error) {
+      toast({ title: 'Erreur', description: error, status: 'error', duration: 4000, position: 'bottom-right' });
+    } else {
+      toast({ title: 'Ajouté au panier', description: p.name, status: 'success', duration: 2500, position: 'bottom-right' });
+    }
+    setAddingToCartId(null);
+  }
 
   const [activeCriteria, setActiveCriteria] = useState<string[]>(() => {
     try {
@@ -515,8 +538,10 @@ export default function ComparatorPage() {
                   <Td key={p.id} py={4}>
                     <VStack spacing={2} align="stretch">
                       <Button size="xs" colorScheme="blue" rounded="md"
-                        leftIcon={user ? <ShoppingCart size={12} /> : <Lock size={12} />}
-                        isDisabled={!user} onClick={() => { if (!user) navigate('/auth'); }}
+                        leftIcon={activeOrg ? <ShoppingCart size={12} /> : <Lock size={12} />}
+                        isDisabled={!activeOrg || !lowestTierPrice(p.price_tiers)}
+                        isLoading={addingToCartId === p.id}
+                        onClick={() => (activeOrg ? handleAddToCart(p) : navigate(user ? '/onboarding' : '/auth'))}
                         bg="blue.800" _hover={{ bg: 'blue.700' }} fontSize="xs" fontWeight="600">
                         Commander
                       </Button>

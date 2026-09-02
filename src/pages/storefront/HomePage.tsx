@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Box, Button, Flex, Heading, Text, VStack, HStack, Image, SimpleGrid, Skeleton } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, ChevronRight, ShieldCheck, Snowflake, TrendingDown } from 'lucide-react';
+import { ArrowRight, ChevronRight, ShieldCheck, Snowflake, TrendingDown, Package, Truck, Globe } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCatStyle } from '../../lib/categoryIcons';
@@ -366,26 +366,40 @@ export default function HomePage() {
                   {user ? t('hero.secondaryLogged') : t('hero.secondaryAnon')}
                 </Text>
               </VStack>
-              <Flex align="center" flexWrap="wrap" rowGap={4}>
-                {[
-                  { v: fmtStat(platformCounts.products, '10 000+'), l: 'Produits actifs' },
-                  { v: fmtStat(platformCounts.vendors, '500+'),     l: 'Vendeurs vérifiés' },
-                  { v: fmtStat(platformCounts.delivery, '200+'),    l: 'Livreurs partenaires' },
-                  { v: '30+',                                        l: 'Pays couverts' },
-                ].map(({ v, l }, i) => (
-                  <Flex key={l} align="center">
-                    {i > 0 && <Box flexShrink={0} w="1px" h="36px" mx={5}
-                      style={{ background: 'rgba(255,255,255,0.12)' }} />}
-                    <Box>
-                      <Text fontWeight="900" fontSize="xl" color="white" lineHeight={1}>{v}</Text>
-                      <Text fontSize="10px" fontWeight="500" mt={0.5}
-                        style={{ color: 'rgba(148,163,184,0.8)' }}>{l}</Text>
-                    </Box>
-                  </Flex>
-                ))}
-              </Flex>
             </motion.div>
           </Box>
+        </Container>
+      </Box>
+
+      {/* ══════════════════════════════════════════════════════════════
+          KPI BAR — chiffres clés de la plateforme
+      ══════════════════════════════════════════════════════════════ */}
+      <Box bg={C.bgAlt} py={{ base: 6, md: 7 }} mt={{ base: -5, md: -8 }} position="relative" zIndex={2}
+        style={{ borderBottom: `1px solid ${C.border}` }}>
+        <Container>
+          <SimpleGrid columns={{ base: 2, md: 4 }} spacingX={6} spacingY={8}>
+            {[
+              { icon: Package,     v: fmtStat(platformCounts.products, '10 000+'), l: 'Produits actifs' },
+              { icon: ShieldCheck, v: fmtStat(platformCounts.vendors, '500+'),     l: 'Vendeurs vérifiés' },
+              { icon: Truck,       v: fmtStat(platformCounts.delivery, '200+'),    l: 'Livreurs partenaires' },
+              { icon: Globe,       v: '30+',                                        l: 'Pays couverts' },
+            ].map(({ icon: Icon, v, l }) => (
+              <Flex key={l} align="center" gap={4}>
+                <Flex w={{ base: 11, md: 14 }} h={{ base: 11, md: 14 }} rounded="full" align="center" justify="center"
+                  flexShrink={0} style={{ background: C.navy }}>
+                  <Icon size={22} color="white" />
+                </Flex>
+                <Box>
+                  <Text fontWeight="900" fontSize={{ base: '24px', md: '32px' }} style={{ color: C.navy }} lineHeight={1}>
+                    {v}
+                  </Text>
+                  <Text fontSize={{ base: 'xs', md: 'sm' }} fontWeight="600" mt={1} style={{ color: C.muted }}>
+                    {l}
+                  </Text>
+                </Box>
+              </Flex>
+            ))}
+          </SimpleGrid>
         </Container>
       </Box>
 
@@ -426,19 +440,37 @@ export default function HomePage() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════
-          CATÉGORIES — carrés plein écran, toutes affichées
+          CATÉGORIES — deux lignes défilables horizontalement
       ══════════════════════════════════════════════════════════════ */}
       <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
         <Container>
-          <Heading size="md" fontWeight="800" mb={5} style={{ color: C.navy }}>
-            {t('categories.title')}
-          </Heading>
+          <Flex align="center" justify="space-between" mb={5}>
+            <Heading size="md" fontWeight="800" style={{ color: C.navy }}>
+              {t('categories.title')}
+            </Heading>
+            <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+              color={C.slate} _hover={{ color: C.amber, bg: 'transparent' }}
+              rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+              {t('common.seeAll')}
+            </Button>
+          </Flex>
 
-          <SimpleGrid columns={{ base: 3, sm: 4, md: 5 }} spacing={{ base: 2, md: 4 }}>
+          <Box
+            display="grid"
+            style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 1fr)' }}
+            sx={{
+              gridAutoColumns: { base: '116px', sm: '138px', md: '160px' },
+              '&::-webkit-scrollbar': { display: 'none' },
+            }}
+            gap={{ base: 2, md: 4 }}
+            overflowX="auto"
+            pb={1}
+            scrollbarWidth="none"
+          >
             {orderedCategories.map((cat) => (
               <CategoryTile key={cat.id} category={cat} onClick={() => navigate(`/catalog?category=${cat.id}`)} />
             ))}
-          </SimpleGrid>
+          </Box>
         </Container>
       </Box>
 

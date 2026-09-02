@@ -466,7 +466,31 @@ export default function VendorBoutique() {
             label: 'Livraison & export',
             content: (
               <SpaceBetween size="l">
-                <Container header={<Header variant="h2">Modes de livraison</Header>}>
+                <Container
+                  header={
+                    <Header
+                      variant="h2"
+                      description={'Détermine si "Flotte du vendeur" apparaît comme option d\'opérateur dans la section Opérateur de livraison du checkout acheteur.'}
+                    >
+                      Livraison par vos propres moyens
+                    </Header>
+                  }
+                >
+                  <Toggle
+                    checked={form.default_delivery_methods.includes('seller_fleet')}
+                    onChange={e => toggleArray('default_delivery_methods', 'seller_fleet', e.detail.checked)}
+                  >
+                    Je livre moi-même avec ma flotte ("Flotte du vendeur" au checkout)
+                  </Toggle>
+                </Container>
+
+                <Container
+                  header={
+                    <Header variant="h2" description="Formats et rapidité de livraison que vous proposez — affiché sur votre fiche vendeur, indicatif pour l'acheteur.">
+                      Formats de livraison
+                    </Header>
+                  }
+                >
                   <SpaceBetween size="m">
                     {DELIVERY_OPTIONS.map(({ value, label }) => (
                       <Toggle

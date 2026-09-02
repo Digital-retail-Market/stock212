@@ -36,7 +36,6 @@ const BrandPage            = lazy(() => import('./pages/storefront/BrandPage'));
 const BuyerDashboard       = lazy(() => import('./pages/buyer/BuyerDashboard'));
 const MesCommandesPage     = lazy(() => import('./pages/buyer/MesCommandesPage'));
 const BuyerOrderDetail     = lazy(() => import('./pages/buyer/BuyerOrderDetail'));
-const MesPaniersPage       = lazy(() => import('./pages/buyer/MesPaniersPage'));
 const InsightsPage         = lazy(() => import('./pages/buyer/InsightsPage'));
 const WishlistPage         = lazy(() => import('./pages/buyer/WishlistPage'));
 const MesFinancesPage      = lazy(() => import('./pages/buyer/MesFinancesPage'));
@@ -496,18 +495,6 @@ function AppRoutes() {
             <RequireBuyer>
               <StorefrontLayout>
                 <BuyerOrderDetail />
-              </StorefrontLayout>
-            </RequireBuyer>
-          </RequireOnboarding>
-        }
-      />
-      <Route
-        path="/buyer/carts"
-        element={
-          <RequireOnboarding>
-            <RequireBuyer>
-              <StorefrontLayout>
-                <MesPaniersPage />
               </StorefrontLayout>
             </RequireBuyer>
           </RequireOnboarding>
