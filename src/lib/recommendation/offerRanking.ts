@@ -103,7 +103,7 @@ export interface RankParams {
 
 // ── Dataset brut (résultat de la phase "récupération") ───────────────────────
 
-interface RawProduct {
+export interface RawProduct {
   id: string;
   name: string;
   ean: string | null;
@@ -245,6 +245,91 @@ export async function fetchOfferRankingDataset(
 
 // ── Phase 2 — classement (pur, sans réseau) ────────────────────────────────
 
+/** Contexte partagé (données annexes) nécessaire pour noter une offre. */
+interface OfferBuildContext {
+  orgMap: Map<string, SellerOrgInfo>;
+  profileMap: Map<string, SellerProfileInfo>;
+  deliveryConfigs: Map<string, DeliveryConfig>;
+  lotsByProduct: Map<string, LotInfo[]>;
+  buyerLocation: GeoLocation | null;
+}
+
+/**
+ * Construit l'offre affichable + ses valeurs brutes de critères pour UN produit,
+ * à partir du contexte (orgs / profils / livraison / lots) déjà chargé.
+ * Fonction pure, réutilisée par `rankOfferDataset` (un seul EAN) et
+ * `rankCatalogGroups` (plusieurs groupes, un seul lot de requêtes réseau).
+ */
+function buildRankableOffer(
+  p: RawProduct,
+  ctx: OfferBuildContext,
+  quantity: number,
+  now: Date,
+): RankableOffer<OfferData> | null {
+  const tiers = (p.price_tiers ?? []).slice();
+  const unitPrice = getEffectiveUnitPrice(tiers, quantity);
+  if (!(unitPrice > 0)) return null; // pas de prix exploitable → offre non éligible
+
+  const lineSubtotal = unitPrice * quantity;
+  const cfg = ctx.deliveryConfigs.get(p.seller_org_id) ?? null;
+  const deliveryCost = computeDeliveryFee(cfg, lineSubtotal);
+
+  const org = ctx.orgMap.get(p.seller_org_id) ?? null;
+  const profile = ctx.profileMap.get(p.seller_org_id) ?? null;
+
+  // Qualité fournisseur : note vendeur (seller_profiles) + certifications ;
+  // à défaut de profil vendeur on retombe sur les données produit.
+  const certCount = (profile?.certs.length ?? 0) || (p.certifications?.length ?? 0);
+  const supplierQuality = calculateSupplierQualityScore({
+    avgRating: profile?.avgRating ?? p.avg_rating,
+    reviewCount: profile?.reviewCount ?? p.review_count,
+    certificationCount: certCount,
+  });
+
+  const freshnessDays = freshnessDaysFromLots(ctx.lotsByProduct.get(p.id), now);
+
+  const proximityRank = calculateProximityDistance(
+    ctx.buyerLocation,
+    org ? { city: org.city, region: org.region, country: org.country } : null,
+  );
+
+  const offer: OfferData = {
+    productId: p.id,
+    ean: p.ean,
+    productName: p.name,
+    sellerId: p.seller_org_id,
+    sellerName: org?.name ?? '—',
+    sellerCity: org?.city ?? null,
+    sellerRegion: org?.region ?? null,
+    moq: p.moq ?? 1,
+    estimatedLeadDays: p.estimated_lead_days ?? 3,
+    priceTiers: tiers,
+    sellerRating: profile?.avgRating ?? (Number(p.avg_rating ?? 0) || 0),
+    sellerReviewCount:
+      profile?.reviewCount ?? (Number(p.review_count ?? 0) || 0),
+    certificationCount: certCount,
+    unitPrice,
+    lineSubtotal,
+    deliveryCost,
+    isFreeDelivery: deliveryCost === 0,
+    landedTotal: lineSubtotal + deliveryCost,
+    freshnessDays,
+    proximityRank,
+  };
+
+  return {
+    id: p.id,
+    values: {
+      price: unitPrice,
+      delivery: deliveryCost,
+      supplierQuality,
+      freshness: freshnessDays,
+      proximity: proximityRank,
+    },
+    payload: offer,
+  };
+}
+
 export function rankOfferDataset(
   ds: OfferRankingDataset,
   params: RankParams,
@@ -254,72 +339,17 @@ export function rankOfferDataset(
   const weights = params.weights ?? ds.weights;
   const buyerLocation = params.buyerLocation ?? null;
 
-  const rankable: RankableOffer<OfferData>[] = [];
+  const ctx: OfferBuildContext = {
+    orgMap: ds.orgMap,
+    profileMap: ds.profileMap,
+    deliveryConfigs: ds.deliveryConfigs,
+    lotsByProduct: ds.lotsByProduct,
+    buyerLocation,
+  };
 
-  for (const p of ds.products) {
-    const tiers = (p.price_tiers ?? []).slice();
-    const unitPrice = getEffectiveUnitPrice(tiers, quantity);
-    if (!(unitPrice > 0)) continue; // pas de prix exploitable → offre non éligible
-
-    const lineSubtotal = unitPrice * quantity;
-    const cfg = ds.deliveryConfigs.get(p.seller_org_id) ?? null;
-    const deliveryCost = computeDeliveryFee(cfg, lineSubtotal);
-
-    const org = ds.orgMap.get(p.seller_org_id) ?? null;
-    const profile = ds.profileMap.get(p.seller_org_id) ?? null;
-
-    // Qualité fournisseur : note vendeur (seller_profiles) + certifications ;
-    // à défaut de profil vendeur on retombe sur les données produit.
-    const certCount = (profile?.certs.length ?? 0) || (p.certifications?.length ?? 0);
-    const supplierQuality = calculateSupplierQualityScore({
-      avgRating: profile?.avgRating ?? p.avg_rating,
-      reviewCount: profile?.reviewCount ?? p.review_count,
-      certificationCount: certCount,
-    });
-
-    const freshnessDays = freshnessDaysFromLots(ds.lotsByProduct.get(p.id), now);
-
-    const proximityRank = calculateProximityDistance(
-      buyerLocation,
-      org ? { city: org.city, region: org.region, country: org.country } : null,
-    );
-
-    const offer: OfferData = {
-      productId: p.id,
-      ean: p.ean,
-      productName: p.name,
-      sellerId: p.seller_org_id,
-      sellerName: org?.name ?? '—',
-      sellerCity: org?.city ?? null,
-      sellerRegion: org?.region ?? null,
-      moq: p.moq ?? 1,
-      estimatedLeadDays: p.estimated_lead_days ?? 3,
-      priceTiers: tiers,
-      sellerRating: profile?.avgRating ?? (Number(p.avg_rating ?? 0) || 0),
-      sellerReviewCount:
-        profile?.reviewCount ?? (Number(p.review_count ?? 0) || 0),
-      certificationCount: certCount,
-      unitPrice,
-      lineSubtotal,
-      deliveryCost,
-      isFreeDelivery: deliveryCost === 0,
-      landedTotal: lineSubtotal + deliveryCost,
-      freshnessDays,
-      proximityRank,
-    };
-
-    rankable.push({
-      id: p.id,
-      values: {
-        price: unitPrice,
-        delivery: deliveryCost,
-        supplierQuality,
-        freshness: freshnessDays,
-        proximity: proximityRank,
-      },
-      payload: offer,
-    });
-  }
+  const rankable = ds.products
+    .map((p) => buildRankableOffer(p, ctx, quantity, now))
+    .filter((x): x is RankableOffer<OfferData> => x != null);
 
   const breakdowns = scoreOffers(rankable, weights);
   const ranked: RankedOffer[] = breakdowns.map((b, i) => ({
@@ -329,6 +359,124 @@ export function rankOfferDataset(
   }));
 
   return { ean: ds.ean, quantity, weights, ranked };
+}
+
+// ── Classement en lot de plusieurs groupes (catalogue) ──────────────────────
+//
+// Utilisé par le catalogue acheteur : plusieurs "groupes" (un par EAN) doivent
+// chacun être classés (le classement se fait PAR groupe — la normalisation des
+// critères est relative aux offres du même produit), mais on ne veut faire
+// qu'UN SEUL lot de requêtes réseau pour l'ensemble des groupes affichés
+// (au lieu d'un appel `fetchOfferRankingDataset` par groupe, qui déclencherait
+// une cascade de requêtes proportionnelle au nombre de produits à l'écran).
+
+export interface CatalogGroupInput {
+  /** Identifiant du groupe côté appelant (ex. EAN ou clé de secours). */
+  key: string;
+  products: RawProduct[];
+}
+
+export interface RankCatalogGroupsParams {
+  quantity?: number;
+  buyerLocation?: GeoLocation | null;
+  weights?: RecommendationWeights;
+  now?: Date;
+}
+
+export async function rankCatalogGroups(
+  groups: CatalogGroupInput[],
+  params: RankCatalogGroupsParams = {},
+): Promise<Map<string, RankOffersResult>> {
+  const result = new Map<string, RankOffersResult>();
+  const allProducts = groups.flatMap((g) => g.products);
+  if (allProducts.length === 0) return result;
+
+  const now = params.now ?? new Date();
+  const quantity = Math.max(1, Math.floor(params.quantity || 1));
+  const buyerLocation = params.buyerLocation ?? null;
+
+  const sellerIds = [...new Set(allProducts.map((p) => p.seller_org_id))];
+  const productIds = allProducts.map((p) => p.id);
+
+  const [sellerOrgsRes, sellerProfilesRes, deliveryConfigs, lotsRes, fetchedWeights] =
+    await Promise.all([
+      supabase
+        .from('organisations')
+        .select('id, name, city, region, country')
+        .in('id', sellerIds),
+      supabase
+        .from('seller_profiles')
+        .select('organisation_id, avg_rating, review_count, certifications')
+        .in('organisation_id', sellerIds),
+      fetchDeliveryConfigs(sellerIds),
+      supabase
+        .from('product_lots')
+        .select('product_id, expiry_date, qty_available, active')
+        .in('product_id', productIds),
+      params.weights ? Promise.resolve(params.weights) : fetchRecommendationWeights(),
+    ]);
+
+  const orgMap = new Map<string, SellerOrgInfo>();
+  for (const o of (sellerOrgsRes.data ?? []) as Array<Record<string, unknown>>) {
+    orgMap.set(o.id as string, {
+      name: (o.name as string) ?? '—',
+      city: (o.city as string) ?? null,
+      region: (o.region as string) ?? null,
+      country: (o.country as string) ?? null,
+    });
+  }
+
+  const profileMap = new Map<string, SellerProfileInfo>();
+  for (const p of (sellerProfilesRes.data ?? []) as Array<Record<string, unknown>>) {
+    profileMap.set(p.organisation_id as string, {
+      avgRating: Number(p.avg_rating ?? 0) || 0,
+      reviewCount: Number(p.review_count ?? 0) || 0,
+      certs: (p.certifications as string[]) ?? [],
+    });
+  }
+
+  const lotsByProduct = new Map<string, LotInfo[]>();
+  for (const l of (lotsRes.data ?? []) as Array<Record<string, unknown>>) {
+    const key = l.product_id as string;
+    if (!lotsByProduct.has(key)) lotsByProduct.set(key, []);
+    lotsByProduct.get(key)!.push({
+      expiry_date: (l.expiry_date as string) ?? null,
+      qty_available: (l.qty_available as number) ?? null,
+      active: (l.active as boolean) ?? null,
+    });
+  }
+
+  const weights = fetchedWeights as RecommendationWeights;
+  const ctx: OfferBuildContext = {
+    orgMap,
+    profileMap,
+    deliveryConfigs,
+    lotsByProduct,
+    buyerLocation,
+  };
+
+  for (const g of groups) {
+    const rankable = g.products
+      .map((p) => buildRankableOffer(p, ctx, quantity, now))
+      .filter((x): x is RankableOffer<OfferData> => x != null);
+    if (rankable.length === 0) continue;
+
+    const breakdowns = scoreOffers(rankable, weights);
+    const ranked: RankedOffer[] = breakdowns.map((b, i) => ({
+      rank: i + 1,
+      offer: b.payload,
+      breakdown: b,
+    }));
+
+    result.set(g.key, {
+      ean: g.products[0]?.ean ?? g.key,
+      quantity,
+      weights,
+      ranked,
+    });
+  }
+
+  return result;
 }
 
 // ── Convenience — récupération + classement en un appel ─────────────────────

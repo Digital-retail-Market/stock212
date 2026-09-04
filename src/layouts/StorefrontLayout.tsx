@@ -1056,8 +1056,8 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
       {/* Comparator floating button */}
       <ComparatorFloat />
 
-      {/* Footer */}
-      <Box bg="gray.900" mt={12}>
+      {/* Footer — masqué sur mobile, seule la nav basse (Accueil/Catalogue/Panier...) reste visible */}
+      <Box bg="gray.900" mt={12} display={{ base: 'none', md: 'block' }}>
         <Box maxW="1400px" mx="auto" px={4} pt={9} pb={6}>
           <Flex direction={{ base: 'column', md: 'row' }} gap={8} justify="space-between">
             <VStack align="start" spacing={3} maxW="260px">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Flex, Grid, Heading, Text, VStack, HStack,
@@ -22,6 +22,10 @@ import { addToCart as addToCartShared } from '../../lib/cart';
 import { useComparator } from '../../contexts/ComparatorContext';
 import { useProductCampaigns } from '../../hooks/useMarketingStorefront';
 import ProductCampaignPanel from '../../components/marketing/ProductCampaignPanel';
+import {
+  fetchOfferRankingDataset, rankOfferDataset,
+  type OfferRankingDataset, type RankOffersResult,
+} from '../../lib/recommendation';
 import type {
   Product, ProductReview, ProductDimensions,
   NutritionalValues, ProductDocument,
@@ -168,6 +172,7 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [selectedDelivery, setSelectedDelivery] = useState('');
   const [addingToCart, setAddingToCart] = useState(false);
+  const [recoDataset, setRecoDataset] = useState<OfferRankingDataset | null>(null);
   const [lots, setLots] = useState<{
     id: string; lot_number: string; qty_available: number;
     expiry_date: string | null; specific_price: number | null;
@@ -225,6 +230,26 @@ export default function ProductDetailPage() {
       setSimilar(merged.slice(0, 8));
     });
   }, [product?.id, product?.brand_id, product?.seller_org_id, product?.category_id]);
+
+  // Recommandation — classement (prix, livraison, qualité fournisseur, fraîcheur,
+  // proximité) de tous les fournisseurs proposant ce même EAN, pour signaler à
+  // l'acheteur si un autre fournisseur est plus avantageux que celui affiché.
+  useEffect(() => {
+    if (!product?.ean) { setRecoDataset(null); return; }
+    let cancelled = false;
+    fetchOfferRankingDataset(product.ean).then((ds) => {
+      if (!cancelled) setRecoDataset(ds);
+    });
+    return () => { cancelled = true; };
+  }, [product?.ean]);
+
+  const reco: RankOffersResult | null = useMemo(() => {
+    if (!recoDataset) return null;
+    const buyerLocation = activeOrg
+      ? { city: activeOrg.city, region: activeOrg.region, country: activeOrg.country }
+      : null;
+    return rankOfferDataset(recoDataset, { quantity: qty, buyerLocation });
+  }, [recoDataset, qty, activeOrg?.city, activeOrg?.region, activeOrg?.country]);
 
   const sortedTiers = product?.price_tiers?.slice().sort((a, b) => a.qty_min - b.qty_min) ?? [];
   const _q = sortedTiers.filter((t) => qty >= t.qty_min);
@@ -782,6 +807,48 @@ export default function ProductDetailPage() {
               </Box>
             </Box>
           )}
+
+          {/* Recommandation — meilleur fournisseur pour ce produit, tous vendeurs confondus */}
+          {activeOrg && reco && reco.ranked.length > 1 && (() => {
+            const top = reco.ranked[0];
+            const current = reco.ranked.find((r) => r.offer.productId === product.id);
+            const isTop = top.offer.productId === product.id;
+            return (
+              <Box mt={3} bg="white" rounded="2xl" p={4}
+                style={{ border: `1.5px solid ${isTop ? '#86efac' : N.amber}` }}>
+                <HStack mb={2} spacing={2}>
+                  <Award size={14} color={isTop ? '#16a34a' : N.amber} />
+                  <Text fontWeight="700" fontSize="xs" color={isTop ? 'green.800' : N.navy}
+                    textTransform="uppercase" letterSpacing="0.05em">
+                    {isTop ? 'Meilleure offre recommandée' : 'Une offre plus avantageuse existe'}
+                  </Text>
+                </HStack>
+                {isTop ? (
+                  <Text fontSize="xs" style={{ color: N.muted }} lineHeight={1.6}>
+                    Chez <strong style={{ color: N.navy }}>{top.offer.sellerName}</strong>, ce produit
+                    est notre meilleur choix global ({top.breakdown.finalScore.toFixed(0)}/100 — prix,
+                    livraison, qualité fournisseur, fraîcheur et proximité combinés) parmi{' '}
+                    {reco.ranked.length} fournisseurs.
+                  </Text>
+                ) : (
+                  <>
+                    <Text fontSize="xs" style={{ color: N.muted }} lineHeight={1.6} mb={3}>
+                      <strong style={{ color: N.navy }}>{top.offer.sellerName}</strong> propose ce même
+                      produit avec un meilleur score global ({top.breakdown.finalScore.toFixed(0)}/100
+                      {current && ` vs ${current.breakdown.finalScore.toFixed(0)}/100 ici`}) — prix,
+                      livraison, qualité fournisseur, fraîcheur et proximité combinés.
+                    </Text>
+                    <Button size="sm" w="full" rounded="xl" fontWeight="700" fontSize="xs"
+                      rightIcon={<ArrowRight size={12} />}
+                      style={{ background: N.amber, color: 'white' }} _hover={{ opacity: 0.9 }}
+                      onClick={() => navigate(`/product/${top.offer.productId}`)}>
+                      Voir l'offre recommandée — {top.offer.sellerName}
+                    </Button>
+                  </>
+                )}
+              </Box>
+            );
+          })()}
 
           {/* DLC lots */}
           {lots.some((l) => l.specific_price != null) && (

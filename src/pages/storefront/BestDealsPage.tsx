@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Flex, Heading, Text, VStack, HStack, SimpleGrid,
+  Box, Flex, Text, VStack, HStack, SimpleGrid,
   Badge, Image, Button, Tabs, TabList, Tab, TabPanels, TabPanel,
   Skeleton, useToast,
 } from '@chakra-ui/react';
@@ -65,73 +65,6 @@ export default function BestDealsPage() {
 
   return (
     <VStack spacing={6} align="stretch">
-      {/* En-tête section — remplace le hero Pexels B2C */}
-      <Box
-        bg="blue.900"
-        rounded="md"
-        overflow="hidden"
-        position="relative"
-        minH={{ base: '150px', md: '180px' }}
-      >
-        {/* Accents géométriques sobres */}
-        <Box
-          position="absolute" top={0} right={0}
-          w="0" h="0"
-          style={{
-            borderLeft: '280px solid transparent',
-            borderTop: '280px solid rgba(255,255,255,0.03)',
-          }}
-        />
-        <Box
-          position="absolute" bottom="-30px" left="-30px"
-          w="140px" h="140px"
-          bg="blue.800"
-          style={{ clipPath: 'circle()' }}
-        />
-
-        <Flex
-          position="relative"
-          p={{ base: 6, md: 10 }}
-          align="center"
-          minH={{ base: '150px', md: '180px' }}
-        >
-          <VStack align="start" spacing={3} maxW="560px">
-            <HStack spacing={3}>
-              <Flex
-                w={9} h={9}
-                bg="blue.800"
-                border="1px" borderColor="blue.700"
-                rounded="sm"
-                align="center" justify="center"
-                flexShrink={0}
-              >
-                <TrendingDown size={18} color="white" />
-              </Flex>
-              <Box>
-                <Heading size="md" color="white" fontWeight="700" letterSpacing="-0.01em">
-                  Offres négociées
-                </Heading>
-                <Text color="blue.300" fontSize="xs">
-                  Conditions tarifaires préférentielles · Actualisées quotidiennement
-                </Text>
-              </Box>
-            </HStack>
-            <HStack spacing={6} pt={1} flexWrap="wrap">
-              {[
-                { icon: TrendingDown, label: 'Remises volume négociées' },
-                { icon: Clock, label: 'Déstockage' },
-                { icon: ShoppingCart, label: 'Prix nets professionnels HT' },
-              ].map(({ icon: Icon, label }) => (
-                <HStack key={label} spacing={1.5} color="blue.300">
-                  <Icon size={12} />
-                  <Text fontSize="xs" fontWeight="500">{label}</Text>
-                </HStack>
-              ))}
-            </HStack>
-          </VStack>
-        </Flex>
-      </Box>
-
       {/* Bannière accès restreint — remplace le gradient orange/red B2C */}
       {!activeOrg && (
         <Box

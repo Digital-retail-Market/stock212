@@ -521,8 +521,9 @@ export default function HomePage() {
 
       {/* ══════════════════════════════════════════════════════════════
           RÉASSURANCE — une ligne, pas une section — dernière section avant le footer
+          Masquée sur mobile : redondant juste au-dessus de la nav basse.
       ══════════════════════════════════════════════════════════════ */}
-      <Box style={{ background: C.bgWarm }}>
+      <Box style={{ background: C.bgWarm }} display={{ base: 'none', md: 'block' }}>
         <Container>
           <Flex py={3} gap={0} align="center" justify="center" flexWrap="wrap">
             {[

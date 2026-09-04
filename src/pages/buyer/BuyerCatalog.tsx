@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { addToCart as addToCartShared } from '../../lib/cart';
 import { lowestTierPrice } from '../../lib/pricing';
 import { useWishlist } from '../../hooks/useWishlist';
+import { rankCatalogGroups, type CatalogGroupInput } from '../../lib/recommendation';
 
 interface CatalogProduct {
   id: string; name: string; ean: string | null;
@@ -28,13 +29,15 @@ interface CatalogProduct {
 /**
  * Un « produit » du point de vue acheteur = un article (EAN) proposé par
  * potentiellement plusieurs fournisseurs. On regroupe les lignes `products`
- * par EAN : une carte = un produit, l'exploration ouvre le comparateur qui
- * classe tous les fournisseurs (dont le « meilleur choix »).
+ * par EAN : une carte = un produit, dont le fournisseur affiché (`representative`)
+ * est celui recommandé par l'algorithme (prix, livraison, qualité fournisseur,
+ * fraîcheur, proximité — cf. src/lib/recommendation) et non systématiquement
+ * le moins cher. « Voir l'offre » mène directement à cette offre recommandée.
  */
 interface GroupedProduct {
   key: string;            // ean ou, à défaut, id
   ean: string | null;
-  representative: CatalogProduct; // offre la moins chère du groupe
+  representative: CatalogProduct; // offre recommandée du groupe (repli : la moins chère)
   offerCount: number;     // nombre de fournisseurs
   vendorNames: string[];
   minPrice: number | null;
@@ -194,6 +197,37 @@ export default function BuyerCatalog() {
     setTotalCount(grouped.length);
     // Pagination des groupes côté client.
     grouped = grouped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    // ── Représentant du groupe = offre recommandée (prix, livraison, qualité
+    // fournisseur, fraîcheur, proximité), pas systématiquement la moins chère.
+    // Un seul lot de requêtes réseau pour toute la page (cf. rankCatalogGroups).
+    if (grouped.length > 0) {
+      const buyerLocation = activeOrg
+        ? { city: activeOrg.city, region: activeOrg.region, country: activeOrg.country }
+        : null;
+      const rankInputs: CatalogGroupInput[] = grouped.map((g) => ({
+        key: g.key,
+        products: (map.get(g.key) ?? []).map((o) => ({
+          id: o.id,
+          name: o.name,
+          ean: o.ean,
+          seller_org_id: o.seller_org_id,
+          moq: o.moq,
+          estimated_lead_days: null,
+          avg_rating: o.avg_rating,
+          review_count: o.review_count,
+          certifications: o.certifications,
+          price_tiers: o.price_tiers,
+        })),
+      }));
+      const ranking = await rankCatalogGroups(rankInputs, { quantity: 1, buyerLocation });
+      grouped = grouped.map((g) => {
+        const bestId = ranking.get(g.key)?.ranked[0]?.offer.productId;
+        const best = bestId ? map.get(g.key)?.find((o) => o.id === bestId) : null;
+        return best ? { ...g, representative: best } : g;
+      });
+    }
+
     setGroups(grouped);
     setLoading(false);
   }
@@ -399,7 +433,7 @@ export default function BuyerCatalog() {
                     onCompare={() => toggleCompare(g.representative)}
                     onToggleFav={() => wishlist.toggle(g.representative.id)}
                     onAddToCart={() => addToCart(g.representative)}
-                    onView={() => navigate(`/buyer/compare?ean=${g.ean ?? g.representative.id}`)}
+                    onView={() => navigate(`/product/${g.representative.id}`)}
                   />
                 ))}
               </div>
@@ -570,7 +604,7 @@ function ProductCard({
             fontWeight: 700, fontSize: 12, cursor: 'pointer',
           }}
         >
-          {multiVendor ? `Voir les ${group.offerCount} offres` : 'Voir l’offre'}
+          Voir l’offre{multiVendor ? ' recommandée' : ''}
         </button>
         <button
           onClick={onAddToCart}
