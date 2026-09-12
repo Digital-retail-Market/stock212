@@ -31,15 +31,23 @@ const C = {
   // Primary Brand Colors
   primary:     '#0f172a',      // Deep navy - primary CTA, headers, anchors
   primaryLight:'#1e293b',      // Lighter navy for secondary elements
+  primaryMid:  '#1a2332',      // Mid navy for gradients
 
   // Accent - vibrant but professional
   accent:      '#d97706',      // Warm amber - highlights, secondary CTA
   accentLight: '#fef3c7',      // Light amber background
   accentBorder:'#fbbf24',      // Amber border for hover states
 
+  // Orange variants
+  orange:      '#f97316',      // Bright orange for highlights
+  orangeLight: '#fed7aa',      // Light orange background
+
   // Supporting Colors
   success:     '#059669',      // Teal-green for positive actions
   warning:     '#dc2626',      // Red for alerts/urgency (limited use)
+  warningLight:'#fee2e2',      // Light red/pink background
+  warningDark: '#b91c1c',      // Dark red for hover states
+  warningBorder:'#fca5a5',     // Light red border
   info:        '#0891b2',      // Cyan for informational elements
 
   // Neutral Colors - professional grayscale
@@ -524,7 +532,10 @@ export default function HomePage() {
 
             {/* Description */}
             <Text fontSize={{ base: 'md', md: '2xl' }} color="white" lineHeight={1.8} maxW="2xl" fontWeight="500">
-              {t('hero.description', { products: '43+', vendors: '1+' })}
+              {t('hero.description', {
+                products: fmtStat(platformCounts.products, '43+'),
+                vendors: fmtStat(platformCounts.vendors, '1+')
+              })}
             </Text>
 
             {/* CTA Buttons */}
@@ -545,25 +556,25 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════════════════
           KPI BAR — chiffres clés de la plateforme
       ══════════════════════════════════════════════════════════════ */}
-      <Box bg={C.bgAlt} py={{ base: 8, md: 10 }} mt={{ base: -5, md: -8 }} position="relative" zIndex={2}
+      <Box bg={C.bgAlt} py={{ base: 6, sm: 8, md: 10 }} mt={{ base: -5, md: -8 }} position="relative" zIndex={2}
         style={{ borderBottom: `1px solid ${C.divider}` }}>
         <Container>
-          <SimpleGrid columns={{ base: 2, md: 3 }} spacingX={6} spacingY={8}>
+          <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} spacing={{ base: 6, sm: 8, md: 10 }}>
             {[
               { icon: Package,     v: fmtStat(platformCounts.products, '10 000+'), l: t('stats.activeProducts') },
               { icon: ShieldCheck, v: fmtStat(platformCounts.vendors, '500+'),     l: t('stats.verifiedVendors') },
               { icon: Truck,       v: fmtStat(platformCounts.delivery, '200+'),    l: t('stats.deliveryPartners') },
             ].map(({ icon: Icon, v, l }) => (
-              <Flex key={l} align="center" gap={4}>
-                <Flex w={{ base: 11, md: 14 }} h={{ base: 11, md: 14 }} rounded="full" align="center" justify="center"
+              <Flex key={l} align="center" gap={{ base: 3, md: 4 }} direction={{ base: 'row' }}>
+                <Flex w={{ base: 10, sm: 11, md: 14 }} h={{ base: 10, sm: 11, md: 14 }} rounded="full" align="center" justify="center"
                   flexShrink={0} style={{ background: C.primary }}>
-                  <Icon size={22} color="white" />
+                  <Icon size={{ base: 18, md: 22 }} color="white" />
                 </Flex>
-                <Box>
-                  <Text fontWeight="900" fontSize={{ base: '24px', md: '32px' }} style={{ color: C.primary }} lineHeight={1}>
+                <Box minW={0} flex={1}>
+                  <Text fontWeight="900" fontSize={{ base: '20px', sm: '24px', md: '32px' }} style={{ color: C.primary }} lineHeight={1.2}>
                     {v}
                   </Text>
-                  <Text fontSize={{ base: 'xs', md: 'sm' }} fontWeight="600" mt={1} style={{ color: C.textMuted }}>
+                  <Text fontSize={{ base: '10px', sm: 'xs', md: 'sm' }} fontWeight="600" mt={{ base: 0.5, md: 1 }} style={{ color: C.textMuted }} noOfLines={2}>
                     {l}
                   </Text>
                 </Box>
@@ -591,7 +602,7 @@ export default function HomePage() {
             {[
               { icon: '⚡', title: t('promos.flashSale'), desc: t('promos.upTo50'), cta: t('promos.limitedTime'), bg: `linear-gradient(135deg, ${C.warning} 0%, ${C.primary} 100%)` },
               { icon: '🚚', title: t('promos.freeShipping'), desc: t('promos.onOrders'), cta: t('promos.todayOnly'), bg: `linear-gradient(135deg, ${C.accent} 0%, ${C.primary} 100%)` },
-              { icon: '✨', title: t('promos.newArrivals'), desc: '500+ products', cta: t('promos.explore'), bg: `linear-gradient(135deg, ${C.accent} 0%, ${C.primaryLight} 100%)` },
+              { icon: '✨', title: t('promos.newArrivals'), desc: `${fmtStat(newArrivals.length, '500+')} ${t('common.products')}`, cta: t('promos.explore'), bg: `linear-gradient(135deg, ${C.accent} 0%, ${C.primaryLight} 100%)` },
               { icon: '💰', title: t('promos.bulkDiscounts'), desc: t('promos.volumeSavings'), cta: t('promos.seePrices'), bg: `linear-gradient(135deg, ${C.success} 0%, ${C.primary} 100%)` },
               { icon: '✅', title: t('promos.verifiedSellers'), desc: t('promos.trusted'), cta: t('promos.browse'), bg: `linear-gradient(135deg, ${C.info} 0%, ${C.primary} 100%)` },
               { icon: '🎁', title: t('promos.rewardsProgram'), desc: t('promos.earnPoints'), cta: t('promos.joinNow'), bg: `linear-gradient(135deg, ${C.primary} 0%, ${C.accent} 100%)` },
@@ -1293,7 +1304,7 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════════════════
           CTA NEWSLETTER — Engagement section (just before footer)
       ══════════════════════════════════════════════════════════════ */}
-      <Box bg={`linear-gradient(135deg, ${C.primary} 0%, ${C.primaryMid} 100%)`} py={9}
+      <Box bg={`linear-gradient(135deg, ${C.primary} 0%, ${C.primaryLight} 100%)`} py={9}
         style={{ borderBottom: `3px solid ${C.accent}` }}>
         <Container>
           <VStack spacing={5} align="center" textAlign="center">
