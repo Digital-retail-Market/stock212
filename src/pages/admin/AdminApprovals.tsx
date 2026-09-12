@@ -5,6 +5,10 @@ import {
   Textarea, FormField, Link, Spinner,
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
+import {
+  ROLE_TO_FIELD_DEF_ROLE, formatCustomFieldValue,
+  type OnboardingFieldDefinition,
+} from '../../lib/onboardingFields';
 
 interface PendingOrg {
   id: string;
@@ -53,6 +57,14 @@ const ORG_TYPE_LABEL: Record<string, string> = {
 // À ajuster si le bucket réel porte un autre nom.
 const KYC_BUCKET = 'onboarding-documents';
 
+// Table de profil associée à chaque type d'organisation, où vit custom_fields
+// (voir migration 041 et pages/admin/AdminOnboardingFields.tsx)
+const PROFILE_TABLE: Record<PendingOrg['org_type'], string> = {
+  buyer: 'buyer_profiles',
+  seller: 'seller_profiles',
+  delivery: 'delivery_profiles',
+};
+
 export default function AdminApprovals() {
   const [items, setItems] = useState<PendingOrg[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +83,11 @@ export default function AdminApprovals() {
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [reviewingDocId, setReviewingDocId] = useState<string | null>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  // Champs additionnels (custom_fields) configurés par l'admin pour ce rôle
+  const [customFields, setCustomFields] = useState<Record<string, unknown>>({});
+  const [customFieldDefs, setCustomFieldDefs] = useState<OnboardingFieldDefinition[]>([]);
+  const [customFieldsLoading, setCustomFieldsLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -118,6 +135,8 @@ export default function AdminApprovals() {
       setOwnerEmail(null);
       setDocuments([]);
       setSignedUrls({});
+      setCustomFields({});
+      setCustomFieldDefs([]);
       return;
     }
 
@@ -138,7 +157,32 @@ export default function AdminApprovals() {
       });
 
     fetchDocuments();
+    fetchCustomFields();
     return () => { cancelled = true; };
+
+    async function fetchCustomFields() {
+      setCustomFieldsLoading(true);
+      const [profileRes, defsRes] = await Promise.all([
+        supabase
+          .from(PROFILE_TABLE[selected!.org_type])
+          .select('custom_fields')
+          .eq('organisation_id', selected!.id)
+          .maybeSingle(),
+        supabase
+          .from('onboarding_field_definitions')
+          .select('*')
+          .eq('role', ROLE_TO_FIELD_DEF_ROLE[selected!.org_type]),
+      ]);
+      if (cancelled) return;
+      setCustomFieldsLoading(false);
+      if (profileRes.error) {
+        console.error('custom_fields', profileRes.error);
+        setCustomFields({});
+      } else {
+        setCustomFields((profileRes.data?.custom_fields as Record<string, unknown>) ?? {});
+      }
+      setCustomFieldDefs((defsRes.data ?? []) as OnboardingFieldDefinition[]);
+    }
 
     async function fetchDocuments() {
       setDocumentsLoading(true);
@@ -383,6 +427,30 @@ export default function AdminApprovals() {
                 ]}
               />
             </ColumnLayout>
+
+            {/* Champs additionnels (custom_fields) */}
+            {customFieldsLoading ? (
+              <Box padding="s"><Spinner /> Chargement des champs additionnels…</Box>
+            ) : Object.keys(customFields).length > 0 && (
+              <Box>
+                <Header variant="h3">Champs additionnels</Header>
+                <ColumnLayout columns={2} variant="text-grid">
+                  <KeyValuePairs
+                    columns={2}
+                    items={Object.entries(customFields).map(([key, value]) => {
+                      const def = customFieldDefs.find((d) => d.field_key === key);
+                      const isDoc = def?.field_type === 'document' && typeof value === 'string' && value;
+                      return {
+                        label: def?.label ?? key,
+                        value: isDoc
+                          ? <Link href={value as string} external target="_blank">Voir le document</Link>
+                          : formatCustomFieldValue(value, def?.field_type),
+                      };
+                    })}
+                  />
+                </ColumnLayout>
+              </Box>
+            )}
 
             {/* Documents KYC */}
             <Box>

@@ -6,6 +6,10 @@ import {
   Alert, Textarea,
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
+import {
+  DEFAULT_RECOMMENDATION_WEIGHTS,
+  validateRecommendationWeights,
+} from '../../lib/recommendation/weights';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface PlatformSettings {
@@ -64,6 +68,12 @@ interface PlatformSettings {
   security_lockout_minutes: number;
   audit_logs_enabled: boolean;
   audit_retention_days: number;
+  // 7. Recommandation — poids du classement multi-critères des offres (somme = 100)
+  reco_weight_price: number;
+  reco_weight_delivery: number;
+  reco_weight_supplier_quality: number;
+  reco_weight_freshness: number;
+  reco_weight_proximity: number;
   updated_at?: string;
 }
 
@@ -92,6 +102,11 @@ const DEFAULTS: Omit<PlatformSettings, 'id' | 'updated_at'> = {
   security_session_hours: 24, security_2fa_required: false,
   security_max_attempts: 5, security_lockout_minutes: 30,
   audit_logs_enabled: true, audit_retention_days: 90,
+  reco_weight_price: DEFAULT_RECOMMENDATION_WEIGHTS.price,
+  reco_weight_delivery: DEFAULT_RECOMMENDATION_WEIGHTS.delivery,
+  reco_weight_supplier_quality: DEFAULT_RECOMMENDATION_WEIGHTS.supplierQuality,
+  reco_weight_freshness: DEFAULT_RECOMMENDATION_WEIGHTS.freshness,
+  reco_weight_proximity: DEFAULT_RECOMMENDATION_WEIGHTS.proximity,
 };
 
 type F = Omit<PlatformSettings, 'id' | 'updated_at'>;
@@ -584,6 +599,99 @@ function Tab6Security({ f, set }: { f: F; set: React.Dispatch<React.SetStateActi
   );
 }
 
+// ─── Onglet 7 — Recommandation (poids du classement des offres) ──────────────
+function Tab7Recommendation({ f, set }: { f: F; set: React.Dispatch<React.SetStateAction<F>> }) {
+  const weights = {
+    price: f.reco_weight_price,
+    delivery: f.reco_weight_delivery,
+    supplierQuality: f.reco_weight_supplier_quality,
+    freshness: f.reco_weight_freshness,
+    proximity: f.reco_weight_proximity,
+  };
+  const check = validateRecommendationWeights(weights);
+
+  const rows: { key: keyof F; label: string; help: string }[] = [
+    { key: 'reco_weight_price', label: 'Prix produit', help: 'Prix réellement applicable à la quantité (remises incluses).' },
+    { key: 'reco_weight_delivery', label: 'Coût livraison', help: 'Frais de livraison réellement applicables (franco, forfait…).' },
+    { key: 'reco_weight_supplier_quality', label: 'Qualité fournisseur', help: 'Note moyenne acheteurs + certifications du vendeur.' },
+    { key: 'reco_weight_freshness', label: 'Fraîcheur produit', help: 'Jours restants avant péremption du lot proposé.' },
+    { key: 'reco_weight_proximity', label: 'Proximité géographique', help: 'Même ville / région / pays que l\'acheteur.' },
+  ];
+
+  return (
+    <SpaceBetween size="l">
+      <Alert type="info">
+        Ces poids déterminent le <strong>classement des offres fournisseurs</strong> lorsqu'un acheteur
+        compare plusieurs vendeurs pour un même produit (page « Comparateur »). Chaque critère est
+        d'abord normalisé sur une échelle commune, puis combiné selon ces poids.
+        <br />
+        Un produit bientôt périmé <strong>n'est jamais exclu</strong> : il obtient seulement une moins
+        bonne note de fraîcheur.
+      </Alert>
+
+      <Container
+        header={
+          <Header
+            variant="h2"
+            actions={
+              check.valid
+                ? <Badge color="green">Total : {check.sum} %</Badge>
+                : <Badge color="red">Total : {check.sum} %</Badge>
+            }
+          >
+            Poids des 5 critères
+          </Header>
+        }
+      >
+        <SpaceBetween size="m">
+          <ColumnLayout columns={2}>
+            {rows.map((r) => (
+              <FormField key={r.key} label={r.label} description={r.help}>
+                <Input
+                  type="number"
+                  value={String(f[r.key] as number)}
+                  onChange={mkNum(r.key, set)}
+                />
+              </FormField>
+            ))}
+          </ColumnLayout>
+
+          {check.valid ? (
+            <StatusIndicator type="success">
+              Configuration valide — la somme des poids est bien égale à 100 %.
+            </StatusIndicator>
+          ) : (
+            <Alert type="error" header="Configuration invalide — enregistrement bloqué">
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {check.errors.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+              <Box margin={{ top: 's' }}>
+                Le back-end (contrainte de base de données) rejettera également toute somme
+                différente de 100 % ou tout poids négatif.
+              </Box>
+            </Alert>
+          )}
+
+          <Box>
+            <Button
+              onClick={() => set(p => ({
+                ...p,
+                reco_weight_price: DEFAULTS.reco_weight_price,
+                reco_weight_delivery: DEFAULTS.reco_weight_delivery,
+                reco_weight_supplier_quality: DEFAULTS.reco_weight_supplier_quality,
+                reco_weight_freshness: DEFAULTS.reco_weight_freshness,
+                reco_weight_proximity: DEFAULTS.reco_weight_proximity,
+              }))}
+            >
+              Rétablir les poids par défaut (35 / 20 / 20 / 15 / 10)
+            </Button>
+          </Box>
+        </SpaceBetween>
+      </Container>
+    </SpaceBetween>
+  );
+}
+
 // ─── Page principale ───────────────────────────────────────────────────────────
 export default function AdminSettings() {
   const [settingsId, setSettingsId] = useState<string | null>(null);
@@ -613,6 +721,25 @@ export default function AdminSettings() {
 
   const save = async () => {
     if (!settingsId) return;
+
+    // Garde-fou front : les poids de recommandation doivent sommer à 100 %.
+    // Le back-end (contrainte CHECK sur platform_settings) reste la source de
+    // vérité et rejetterait de toute façon un update invalide.
+    const weightCheck = validateRecommendationWeights({
+      price: form.reco_weight_price,
+      delivery: form.reco_weight_delivery,
+      supplierQuality: form.reco_weight_supplier_quality,
+      freshness: form.reco_weight_freshness,
+      proximity: form.reco_weight_proximity,
+    });
+    if (!weightCheck.valid) {
+      setFlash({
+        type: 'error',
+        msg: `Poids de recommandation invalides — ${weightCheck.errors.join(' ')}`,
+      });
+      return;
+    }
+
     setSaving(true); setFlash(null);
     const { error } = await supabase
       .from('platform_settings')
@@ -671,6 +798,7 @@ export default function AdminSettings() {
             { id: 'finance',       label: '💶 Finance & Facturation',         content: <Tab4Finance        f={form} set={tracked} /> },
             { id: 'notifications', label: '🔔 Notifications',                 content: <Tab5Notifications  f={form} set={tracked} /> },
             { id: 'security',      label: '🔒 Sécurité & Audit',              content: <Tab6Security       f={form} set={tracked} /> },
+            { id: 'reco',          label: '🎯 Recommandation',                content: <Tab7Recommendation f={form} set={tracked} /> },
           ]}
         />
       </SpaceBetween>

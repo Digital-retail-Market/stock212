@@ -34,9 +34,6 @@ const VENDOR_NAV = [
   { type: 'section' as const, text: 'Logistique', items: [
     { type: 'link' as const, text: 'Expéditions', href: '/vendor/deliveries' },
   ]},
-  { type: 'section' as const, text: 'Finance', items: [
-    { type: 'link' as const, text: 'Facturation & Wallet', href: '/vendor/finances' },
-  ]},
   { type: 'section' as const, text: 'Acheteurs', items: [
     { type: 'link' as const, text: 'Liste acheteurs', href: '/vendor/buyers' },
   ]},

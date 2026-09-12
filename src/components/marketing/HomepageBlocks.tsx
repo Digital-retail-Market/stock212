@@ -11,7 +11,6 @@
  *  DealOfDayBlock        — Deal_Of_The_Day
  *  FooterBannerBlock     — Homepage_Footer_Banner
  *  SearchSponsoredBlock  — Search_Sponsored  (utilisé dans CatalogPage)
- *  CartCrossSellBlock    — Cart_CrossSell    (utilisé dans MesPaniersPage)
  *  RFQBoostBlock         — RFQ_Boost_Slot
  */
 
@@ -19,7 +18,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Flex, Text, Heading, Button, HStack, VStack, SimpleGrid,
-  Image, Badge, Skeleton, Tag, TagLabel, IconButton, Progress,
+  Image, Badge, Skeleton, IconButton, Progress,
 } from '@chakra-ui/react';
 import {
   ChevronLeft, ChevronRight, Zap, Tag as TagIcon, Gift,
@@ -623,79 +622,6 @@ export function SearchSponsoredBlock({ products }: { products: Product[] }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 9. CartCrossSellBlock — Cart_CrossSell (used in MesPaniersPage)
-// ═══════════════════════════════════════════════════════════════════════════════
-export function CartCrossSellBlock({ cartProductIds }: { cartProductIds: string[] }) {
-  const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch cross-sell: active campaigns type=cart_cross_sell OR related products
-    const today = new Date().toISOString().slice(0, 10);
-    Promise.all([
-      supabase.from('campaigns').select('scope_value').eq('status', 'active')
-        .eq('type', 'cart_cross_sell').or(`end_date.gte.${today},end_date.is.null`),
-      supabase.from('products').select('*, organisations(name), price_tiers(*)')
-        .eq('status', 'active').eq('is_sponsored', true).limit(6),
-    ]).then(([csRes, spRes]) => {
-      const ids = (csRes.data ?? []).map((r: { scope_value: string | null }) => r.scope_value).filter(Boolean) as string[];
-      const sponsored = (spRes.data ?? []) as Product[];
-      if (ids.length > 0) {
-        supabase.from('products').select('*, organisations(name), price_tiers(*)')
-          .in('id', ids.slice(0, 6)).eq('status', 'active')
-          .then(({ data }) => { setProducts((data ?? []) as Product[]); setLoading(false); });
-      } else {
-        setProducts(sponsored.filter(p => !cartProductIds.includes(p.id)));
-        setLoading(false);
-      }
-    });
-  }, [cartProductIds.join(',')]);
-
-  if (loading) return (
-    <Box mt={6}><Skeleton h="4px" mb={3} /><Box display="flex" gap={3}>
-      {[...Array(4)].map((_, i) => <Skeleton key={i} w="150px" h="160px" rounded="lg" />)}
-    </Box></Box>
-  );
-  if (products.length === 0) return null;
-
-  return (
-    <Box mt={6} p={5} rounded="xl" bg="white" border="1px solid" borderColor={C.border}>
-      <HStack spacing={2} mb={4}>
-        <ShoppingCart size={16} style={{ color: C.teal }} />
-        <Text fontWeight="700" fontSize="sm" color="gray.800">Vous pourriez aussi avoir besoin de</Text>
-        <Tag size="sm" colorScheme="teal" rounded="md" variant="subtle">
-          <TagLabel fontSize="9px">Cross-sell</TagLabel>
-        </Tag>
-      </HStack>
-      <Box display="flex" gap={3} overflowX="auto"
-        style={{ scrollbarWidth: 'none' }}
-        sx={{ '&::-webkit-scrollbar': { display: 'none' } }}>
-        {products.map(p => (
-          <Box key={p.id} flexShrink={0} w="150px" bg={C.bgAlt} rounded="lg"
-            overflow="hidden" border="1px solid" borderColor={C.border}
-            cursor="pointer" onClick={() => navigate(`/product/${p.id}`)}
-            _hover={{ borderColor: C.amberBorder, shadow: 'sm' }} transition="all 0.18s">
-            <Box h="110px">
-              {p.images?.[0]
-                ? <Image src={p.images[0]} alt={p.name} w="full" h="full" objectFit="cover" />
-                : <Flex w="full" h="full" align="center" justify="center" bg={C.bgAlt}>
-                    <Package size={22} color={C.muted} />
-                  </Flex>}
-            </Box>
-            <Box p={2.5}>
-              <Text fontSize="9px" fontWeight="600" color="gray.700" noOfLines={2} lineHeight={1.3} mb={1}>
-                {p.name}
-              </Text>
-              <Text fontSize="9px" color="gray.400">{p.organisations?.name}</Text>
-            </Box>
-          </Box>
-        ))}
-      </Box>
-    </Box>
-  );
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 10. RFQBoostBlock — RFQ_Boost_Slot

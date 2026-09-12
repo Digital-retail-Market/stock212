@@ -52,7 +52,7 @@ export default function VendorCatalog() {
     price: '',
     status: 'draft',
     moq: '1',
-    currency: 'EUR',
+    currency: 'MAD',
     temperature: 'ambient',
     estimated_lead_days: '7',
   });
@@ -109,12 +109,12 @@ export default function VendorCatalog() {
       // Create initial price tier if price was provided
       const unitPrice = parseFloat(form.price);
       if (newProduct?.id && unitPrice > 0) {
-        await supabase.from('price_tiers').insert({
+        const { error: tierErr } = await supabase.from('price_tiers').insert({
           product_id: newProduct.id,
           qty_min:    parseInt(form.moq) || 1,
           unit_price: unitPrice,
-          currency:   form.currency,
         });
+        if (tierErr) throw tierErr;
       }
 
       // Upload images if any were selected
@@ -141,7 +141,7 @@ export default function VendorCatalog() {
       setShowNewModal(false);
       setImageFiles([]);
       setUploadProgress(0);
-      setForm({ name: '', short_description: '', ean: '', price: '', status: 'draft', moq: '1', currency: 'EUR', temperature: 'ambient', estimated_lead_days: '7' });
+      setForm({ name: '', short_description: '', ean: '', price: '', status: 'draft', moq: '1', currency: 'MAD', temperature: 'ambient', estimated_lead_days: '7' });
       fetchProducts();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erreur');

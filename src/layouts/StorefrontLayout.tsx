@@ -9,13 +9,13 @@ import {
   Tooltip, Accordion, AccordionItem, AccordionButton, AccordionPanel,
   AccordionIcon, Modal, ModalOverlay, ModalContent, ModalHeader,
   ModalBody, ModalCloseButton, Breadcrumb, BreadcrumbItem,
-  BreadcrumbLink, LinkBox, LinkOverlay,
+  BreadcrumbLink,
 } from '@chakra-ui/react';
 import {
   Search, ShoppingCart, ChevronDown, Package, Menu as MenuIcon,
   LayoutDashboard, LogOut, Settings, Star, Truck, Phone, Mail,
   Facebook, Twitter, Linkedin, Instagram, Home, Globe,
-  ChevronRight, Lock, Scale, X, FileText,
+  ChevronRight, Lock, Scale, X, FileText, Heart,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
@@ -26,6 +26,7 @@ import type { SupportedLang } from '../i18n';
 import { getCatStyle } from '../lib/categoryIcons';
 import { getCategoryLabel } from '../lib/categoryLabel';
 import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 import { CartDrawer } from '../components/CartDrawer';
 import { NotificationBell } from '../components/NotificationBell';
 import MobileBottomNav from './MobileBottomNav';
@@ -47,122 +48,6 @@ const N = {
 function CatIcon({ name, size = 16 }: { name: string; size?: number }) {
   const { Icon, color } = getCatStyle(name);
   return <Icon size={size} color={color} />;
-}
-
-// ─── NavLink ──────────────────────────────────────────────────────────────────
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
-  const loc = useLocation();
-  const active = loc.pathname === to || (to !== '/' && loc.pathname.startsWith(to));
-  return (
-    <Link to={to}>
-      <Box
-        as="span" display="inline-flex" alignItems="center" h="48px"
-        fontWeight={active ? '700' : '500'} fontSize="sm"
-        whiteSpace="nowrap" cursor="pointer"
-        color={active ? 'white' : 'rgba(255,255,255,0.72)'}
-        borderBottom="2px solid"
-        borderColor={active ? N.amber : 'transparent'}
-        sx={{ '&:hover': { color: 'white', borderBottomColor: N.amber } }}
-        transition="all 0.15s"
-      >
-        {children}
-      </Box>
-    </Link>
-  );
-}
-
-// ─── CategoryMegaMenu ─────────────────────────────────────────────────────────
-function CategoryMegaMenu({ roots, children: subs }: { roots: Category[]; children: Category[] }) {
-  const navigate = useNavigate();
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const active = roots.find((r) => r.id === activeId) ?? roots[0];
-  const activeSubs = subs.filter((s) => s.parent_id === active?.id);
-
-  return (
-    <Menu isLazy>
-      <MenuButton as={Button} variant="ghost" size="sm" fontWeight="700"
-        fontSize="sm" rightIcon={<ChevronDown size={13} color="white" />}
-        color="white" _hover={{ bg: 'rgba(255,255,255,0.12)' }}>
-        Produits
-      </MenuButton>
-      <MenuList p={0} shadow="2xl" rounded="2xl" border="1px" borderColor="gray.100"
-        minW="680px" zIndex={300} overflow="hidden">
-        <Flex>
-          {/* Left: root tabs */}
-          <VStack spacing={0} align="stretch" bg="gray.50" minW="160px" py={3}
-            borderRight="1px" borderColor="gray.100">
-            {roots.map((root) => {
-              const { Icon } = getCatStyle(root.name);
-              const isActive = active?.id === root.id;
-              return (
-                <Box key={root.id} px={4} py={3} cursor="pointer"
-                  bg={isActive ? 'white' : 'transparent'}
-                  borderStart="3px solid" borderColor={isActive ? N.navy : 'transparent'}
-                  onMouseEnter={() => setActiveId(root.id)}
-                  onClick={() => navigate(`/catalog?category=${root.id}`)}
-                  transition="all 0.15s" _hover={{ bg: 'white' }}>
-                  <HStack spacing={2}>
-                    <Icon size={16} color={isActive ? N.navy : '#9ca3af'} />
-                    <Text fontSize="sm" fontWeight={isActive ? '700' : 'medium'}
-                      style={{ color: isActive ? N.navy : '#374151' }}>{root.name}</Text>
-                  </HStack>
-                </Box>
-              );
-            })}
-          </VStack>
-
-          {/* Right: content */}
-          <Box flex={1} p={5}>
-            {active?.image_url && (
-              <Box h="90px" rounded="xl" overflow="hidden" mb={4} position="relative">
-                <Image src={active.image_url} alt={active.name} w="full" h="full"
-                  objectFit="cover" loading="lazy" />
-                <Box position="absolute" inset={0}
-                  bg="linear-gradient(to right, rgba(0,0,0,0.55), transparent)" />
-                <Text position="absolute" left={4} bottom={3} color="white"
-                  fontWeight="bold" fontSize="sm">{active.name}</Text>
-              </Box>
-            )}
-            <SimpleGrid columns={3} spacing={1.5}>
-              {activeSubs.map((sub) => {
-                const { Icon: SubIcon, bg: subBg, color: subColor } = getCatStyle(sub.name);
-                return (
-                  <Tooltip key={sub.id} label={sub.description ?? ''} isDisabled={!sub.description} placement="top">
-                    <LinkBox>
-                      <Flex gap={2} align="center" p={2.5} rounded="xl" cursor="pointer"
-                        _hover={{ bg: N.bgAlt }} transition="bg 0.15s">
-                        <Flex w={8} h={8} rounded="lg" align="center" justify="center" flexShrink={0}
-                          style={{ background: subBg }}>
-                          <SubIcon size={15} color={subColor} />
-                        </Flex>
-                        <LinkOverlay as="span" onClick={() => navigate(`/catalog?category=${sub.id}`)}>
-                          <Text fontSize="xs" fontWeight="medium" color="gray.700" noOfLines={2} lineHeight={1.3}>
-                            {sub.name}
-                          </Text>
-                        </LinkOverlay>
-                      </Flex>
-                    </LinkBox>
-                  </Tooltip>
-                );
-              })}
-            </SimpleGrid>
-            {activeSubs.length === 0 && (
-              <Text fontSize="sm" color="gray.400" textAlign="center" py={4}>Aucune sous-catégorie</Text>
-            )}
-            <Flex justify="flex-end" mt={3}>
-              <Button size="xs" variant="ghost"
-                style={{ color: N.navy }}
-                rightIcon={<ChevronRight size={11} color={N.navy} />}
-                _hover={{ bg: N.bgAlt }}
-                onClick={() => navigate(`/catalog?category=${active?.id}`)}>
-                Tous les produits {active?.name}
-              </Button>
-            </Flex>
-          </Box>
-        </Flex>
-      </MenuList>
-    </Menu>
-  );
 }
 
 // ─── SearchAutocomplete (self-contained, exportable) ─────────────────────────
@@ -229,10 +114,11 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
     setOpen(false); setQuery('');
   }
 
+  const { t } = useTranslation();
   const roots = allCategories.filter((c) => !c.parent_id);
   const subs = allCategories.filter((c) => !!c.parent_id);
   const isEmpty = products.length === 0 && matchedCats.length === 0;
-  const ph = selectedCat ? `Rechercher dans ${selectedCat.name}…` : 'Rechercher produits, marques, EAN...';
+  const ph = selectedCat ? t('header.searchIn', { category: selectedCat.name }) : t('header.searchProducts');
 
   const inputH = size === 'lg' ? '52px' : size === 'sm' ? '36px' : '44px';
   const plOffset = '96px';
@@ -242,20 +128,20 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
       <form onSubmit={handleSubmit}>
         <InputGroup>
           <InputLeftElement w="auto" pl={1} pointerEvents="all" h={inputH}>
-            <Menu isOpen={catMenuOpen} onClose={() => setCatMenuOpen(false)}>
+            <Menu isLazy isOpen={catMenuOpen} onClose={() => setCatMenuOpen(false)}>
               <MenuButton as={Button} size="xs" variant="ghost"
                 color={selectedCat ? 'blue.600' : 'gray.400'}
                 rightIcon={<ChevronDown size={10} />}
                 h="30px" minW="auto" px={2} ml={1} fontSize="xs" fontWeight="medium"
                 onClick={() => setCatMenuOpen(!catMenuOpen)}
-                aria-label="Sélectionner une catégorie">
+                aria-label={t('header.selectCategory')}>
                 {selectedCat ? (
                   <HStack spacing={1}>
                     <CatIcon name={selectedCat.name} size={13} />
-                    <Text display={{ base: 'none', md: 'block' }} noOfLines={1} maxW="80px">{selectedCat.name}</Text>
+                    <Text display={{ base: 'none', md: 'block' }} noOfLines={1} maxW="80px">{getCategoryLabel(selectedCat)}</Text>
                   </HStack>
                 ) : (
-                  <HStack spacing={1}><Globe size={13} /><Text display={{ base: 'none', md: 'block' }}>Toutes</Text></HStack>
+                  <HStack spacing={1}><Globe size={13} /><Text display={{ base: 'none', md: 'block' }}>{t('header.allCategories')}</Text></HStack>
                 )}
               </MenuButton>
               <MenuList minW="210px" shadow="xl" rounded="xl" zIndex={400} fontSize="sm">
@@ -263,7 +149,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                   onClick={() => { setSelectedCat(null); setCatMenuOpen(false); }}
                   fontWeight={!selectedCat ? 'semibold' : 'normal'}
                   color={!selectedCat ? 'blue.600' : 'gray.700'}>
-                  Toutes les catégories
+                  {t('categories.seeAll')}
                 </MenuItem>
                 <MenuDivider />
                 {roots.map((root) => {
@@ -273,7 +159,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                       <MenuItem icon={<Icon size={14} />} fontWeight="semibold" color="gray.700"
                         onClick={() => { setSelectedCat(root); setCatMenuOpen(false); }}
                         bg={selectedCat?.id === root.id ? 'blue.50' : undefined}>
-                        {root.name}
+                        {getCategoryLabel(root)}
                       </MenuItem>
                       {subs.filter((s) => s.parent_id === root.id).map((sub) => {
                         const { Icon: SubIcon } = getCatStyle(sub.name);
@@ -282,7 +168,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                             icon={<SubIcon size={12} />}
                             onClick={() => { setSelectedCat(sub); setCatMenuOpen(false); }}
                             bg={selectedCat?.id === sub.id ? 'blue.50' : undefined}>
-                            {sub.name}
+                            {getCategoryLabel(sub)}
                           </MenuItem>
                         );
                       })}
@@ -303,7 +189,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
           <InputRightElement h={inputH} w="40px">
             {loading ? <Spinner size="xs" color="blue.400" /> :
               query ? (
-                <IconButton aria-label="Effacer" icon={<X size={13} color="#9CA3AF" />}
+                <IconButton aria-label={t('header.closeSearch')} icon={<X size={13} color="#9CA3AF" />}
                   size="xs" variant="ghost" rounded="full"
                   onClick={() => { setQuery(''); setOpen(false); }} />
               ) : <Search size={15} color="#9CA3AF" />}
@@ -318,20 +204,20 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
           {loading && isEmpty && (
             <Flex align="center" justify="center" py={8} gap={3}>
               <Spinner size="sm" color="blue.400" />
-              <Text fontSize="sm" color="gray.500">Recherche en cours...</Text>
+              <Text fontSize="sm" color="gray.500">{t('common.loading')}</Text>
             </Flex>
           )}
           {!loading && isEmpty && (
             <Box p={6} textAlign="center">
-              <Text fontSize="sm" color="gray.500" mb={2}>Aucun résultat pour <strong>"{query}"</strong></Text>
-              {!user && <Text fontSize="xs" color="blue.500">Inscrivez-vous pour l'offre complète.</Text>}
+              <Text fontSize="sm" color="gray.500" mb={2}>{t('header.noResults', { query })}</Text>
+              {!user && <Text fontSize="xs" color="blue.500">{t('header.signUpForMore')}</Text>}
             </Box>
           )}
 
           {matchedCats.length > 0 && (
             <Box>
               <Text fontSize="10px" fontWeight="bold" color="gray.400" px={4} pt={3} pb={1} letterSpacing="wider">
-                CATÉGORIES
+                {t('header.searchCategories').toUpperCase()}
               </Text>
               {matchedCats.map((cat) => {
                 const { Icon: CI, bg: cBg, color: cColor } = getCatStyle(cat.name);
@@ -344,7 +230,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                       <CI size={14} color={cColor} />
                     </Flex>
                     <Box flex={1}>
-                      <Text fontSize="sm" color="gray.700" fontWeight="medium">{cat.name}</Text>
+                      <Text fontSize="sm" color="gray.700" fontWeight="medium">{getCategoryLabel(cat)}</Text>
                       {cat.description && <Text fontSize="10px" color="gray.400" noOfLines={1}>{cat.description}</Text>}
                     </Box>
                   </Flex>
@@ -357,7 +243,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
           {products.length > 0 && (
             <Box>
               <Text fontSize="10px" fontWeight="bold" color="gray.400" px={4} pt={3} pb={1} letterSpacing="wider">
-                PRODUITS
+                {t('header.searchProducts').toUpperCase()}
               </Text>
               {products.map((p) => {
                 const tier = p.price_tiers?.slice().sort((a, b) => a.qty_min - b.qty_min)[0];
@@ -415,7 +301,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                   navigate(`/catalog?${p.toString()}`);
                   setOpen(false); setQuery('');
                 }}>
-                Tous les résultats pour "{query}"
+                {t('header.allResults', { query })}
               </Button>
             </Box>
           )}
@@ -480,6 +366,7 @@ export function CategoryBreadcrumb({ category, roots, subCategories, productName
   category?: Category | null; roots: Category[]; subCategories: Category[];
   productName?: string; searchTerm?: string;
 }) {
+  const { t } = useTranslation();
   const allCats = [...roots, ...subCategories];
   const parentCat = category?.parent_id ? allCats.find((c) => c.id === category.parent_id) : null;
 
@@ -488,18 +375,18 @@ export function CategoryBreadcrumb({ category, roots, subCategories, productName
       fontSize="sm" mb={4}>
       <BreadcrumbItem>
         <BreadcrumbLink as={Link} to="/" color="gray.500" _hover={{ color: 'blue.600' }}>
-          <HStack spacing={1}><Home size={13} /><Text>Accueil</Text></HStack>
+          <HStack spacing={1}><Home size={13} /><Text>{t('nav.home')}</Text></HStack>
         </BreadcrumbLink>
       </BreadcrumbItem>
       {searchTerm ? (
         <BreadcrumbItem isCurrentPage>
-          <BreadcrumbLink color="gray.800" fontWeight="medium">Recherche : "{searchTerm}"</BreadcrumbLink>
+          <BreadcrumbLink color="gray.800" fontWeight="medium">{t('common.search')} : "{searchTerm}"</BreadcrumbLink>
         </BreadcrumbItem>
       ) : (
         <>
           <BreadcrumbItem>
             <BreadcrumbLink as={Link} to="/catalog" color="gray.500" _hover={{ color: 'blue.600' }}>
-              Catalogue
+              {t('nav.catalog')}
             </BreadcrumbLink>
           </BreadcrumbItem>
           {parentCat && (
@@ -521,7 +408,7 @@ export function CategoryBreadcrumb({ category, roots, subCategories, productName
                 _hover={productName ? { color: 'blue.600' } : undefined}>
                 <HStack spacing={1}>
                   <CatIcon name={category.name} size={12} />
-                  <Text>{category.name}</Text>
+                  <Text>{getCategoryLabel(category, i18n.language)}</Text>
                 </HStack>
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -543,6 +430,7 @@ export function CategoryBreadcrumb({ category, roots, subCategories, productName
 export function LangSwitcher({ variant = 'dark' }: { variant?: 'dark' | 'light' }) {
   const { lang, setLang } = useLanguage();
   const opts: { key: SupportedLang; label: string }[] = [
+    { key: 'en', label: 'EN' },
     { key: 'fr', label: 'FR' },
     { key: 'ar', label: 'العربية' },
   ];
@@ -598,7 +486,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
   const { isOpen: isCartOpen, onOpen: onCartOpen, onClose: onCartClose } = useDisclosure();
   const { isOpen: isMobSearchOpen, onOpen: onMobSearchOpen, onClose: onMobSearchClose } = useDisclosure();
   const { count: cartCount } = useCart();
-  const { items: compItems } = useComparator();
+  const wishlistCount = useWishlist().count;
   const [roots, setRoots] = useState<Category[]>([]);
   const [subs, setSubs] = useState<Category[]>([]);
 
@@ -621,7 +509,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
   return '/buyer';
 }
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="gray.50">
       {/* Announcement bar — contact + langue (desktop) */}
       <Box display={{ base: 'none', md: 'block' }}
         style={{ background: `linear-gradient(90deg, #0a1929 0%, ${N.navy} 50%, #0a1929 100%)` }} py={1.5} px={4}>
@@ -674,7 +562,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   Stock212
                 </Text>
                 <Text fontSize="9px" color="gray.400" fontWeight="500" letterSpacing="0.5px" mt="1px">
-                  B2B FMCG MARKETPLACE
+                  {t('header.tagline')}
                 </Text>
               </Box>
             </HStack>
@@ -711,12 +599,40 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               <>
                 <NotificationBell />
 
+                {/* Favoris — acheteurs uniquement */}
+                {(!activeOrg || activeOrg.org_type === 'buyer') && (
+                  <Box position="relative" display="inline-flex">
+                    <Tooltip label={t('header.myFavorites')} placement="bottom" hasArrow openDelay={400}>
+                      <IconButton
+                        aria-label={t('header.myFavorites')}
+                        icon={<Heart size={17} fill={wishlistCount > 0 ? '#e11d48' : 'none'} color={wishlistCount > 0 ? '#e11d48' : 'currentColor'} />}
+                        variant="ghost"
+                        rounded="full"
+                        size="sm"
+                        color="gray.500"
+                        _hover={{ bg: 'red.50', color: 'red.500' }}
+                        onClick={() => navigate('/buyer/wishlist')}
+                      />
+                    </Tooltip>
+                    {wishlistCount > 0 && (
+                      <Badge
+                        position="absolute" top="-3px" right="-3px"
+                        bg="#e11d48" color="white" rounded="full" fontSize="8px"
+                        minW="15px" h="15px" lineHeight="15px" textAlign="center"
+                        pointerEvents="none" fontWeight="700"
+                      >
+                        {wishlistCount}
+                      </Badge>
+                    )}
+                  </Box>
+                )}
+
                 {/* Cart — masqué pour les livreurs */}
                 {activeOrg?.org_type !== 'delivery' && (
                   <Box position="relative" display="inline-flex">
-                    <Tooltip label="Panier" placement="bottom" hasArrow openDelay={400}>
+                    <Tooltip label={t('nav.cart')} placement="bottom" hasArrow openDelay={400}>
                       <IconButton
-                        aria-label="Panier"
+                        aria-label={t('nav.cart')}
                         icon={<ShoppingCart size={17} />}
                         variant="ghost"
                         rounded="full"
@@ -740,7 +656,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 )}
 
                 {/* User menu */}
-                <Menu>
+                <Menu isLazy>
                   <MenuButton>
                     <HStack
                       spacing={2} cursor="pointer"
@@ -801,7 +717,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                         onClick={() => navigate(getDashPath())}
                         color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                       >
-                        Tableau de bord
+                        {t('header.dashboard')}
                       </MenuItem>
                       {activeOrg?.org_type !== 'delivery' && (
                         <>
@@ -810,28 +726,28 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                             onClick={() => navigate('/buyer/orders')}
                             color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                           >
-                            Mes commandes
+                            {t('header.myOrders')}
                           </MenuItem>
                           <MenuItem
                             icon={<FileText size={15} />}
                             onClick={() => navigate('/buyer/quotes')}
                             color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                           >
-                            Mes devis
+                            {t('header.myQuotes')}
                           </MenuItem>
                           <MenuItem
                             icon={<Truck size={15} />}
                             onClick={() => navigate('/buyer/orders')}
                             color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                           >
-                            Suivi livraisons
+                            {t('header.deliveryTracking')}
                           </MenuItem>
                           <MenuItem
                             icon={<Settings size={15} />}
                             onClick={() => navigate('/buyer/account')}
                             color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                           >
-                            Paramètres
+                            {t('header.settings')}
                           </MenuItem>
                         </>
                       )}
@@ -844,7 +760,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                         onClick={async () => { await signOut(); navigate('/auth'); }}
                         _hover={{ bg: 'red.50' }}
                       >
-                        Déconnexion
+                        {t('header.logout')}
                       </MenuItem>
                     </Box>
                   </MenuList>
@@ -858,7 +774,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   _hover={{ bg: 'gray.50', color: 'blue.600' }}
                   onClick={() => navigate('/auth')}
                 >
-                  Connexion
+                  {t('footer.login')}
                 </Button>
                 <Button
                   size="sm" colorScheme="blue" rounded="full" fontWeight="600" px={4}
@@ -868,7 +784,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   transition="all 0.15s"
                   onClick={() => navigate('/auth')}
                 >
-                  S'inscrire
+                  {t('footer.signUpFree')}
                 </Button>
               </HStack>
             )}
@@ -886,77 +802,6 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
             />
           </HStack>
         </Flex>
-
-        {/* Tier 2 — Navigation secondaire (desktop uniquement) */}
-        <Box display={{ base: 'none', lg: 'block' }}
-          bg={N.navy}
-          borderTop="1px solid rgba(255,255,255,0.06)">
-          <Flex maxW="1400px" mx="auto" px={6} align="center" h="44px" justify="space-between">
-
-            {/* Gauche : mega menu + liens principaux */}
-            <HStack spacing={0} h="full" align="center">
-              {roots.length > 0 && <CategoryMegaMenu roots={roots} children={subs} />}
-              <Box w="1px" h="16px" bg="rgba(255,255,255,0.15)" mx={3} flexShrink={0} />
-              <HStack spacing={0} h="full">
-                {[
-                  { to: '/catalog',    label: 'Catalogue' },
-                  { to: '/best-deals', label: 'Best Deals' },
-                  { to: '/brands',     label: 'Marques' },
-                  { to: '/boutiques',  label: 'Boutiques' },
-                ].map(({ to, label }) => (
-                  <Box key={to} px={3.5} h="full" display="flex" alignItems="center">
-                    <NavLink to={to}>{label}</NavLink>
-                  </Box>
-                ))}
-              </HStack>
-            </HStack>
-
-            {/* Droite : badges accès rapide */}
-            <HStack spacing={1.5}>
-              <Link to="/best-deals">
-                <HStack
-                  px={3} py="4px" rounded="md" spacing={1.5} cursor="pointer"
-                  bg="rgba(234,153,20,0.18)" border="1px solid rgba(234,153,20,0.40)"
-                  _hover={{ bg: 'rgba(234,153,20,0.28)' }} transition="background 0.13s"
-                >
-                  <Text fontSize="11px" fontWeight="700" color="#FCD34D">Promotions</Text>
-                </HStack>
-              </Link>
-              <Link to="/catalog?sort=new">
-                <HStack
-                  px={3} py="4px" rounded="md" spacing={1.5} cursor="pointer"
-                  bg="rgba(255,255,255,0.08)" border="1px solid rgba(255,255,255,0.15)"
-                  _hover={{ bg: 'rgba(255,255,255,0.14)' }} transition="background 0.13s"
-                >
-                  <Text fontSize="11px" fontWeight="600" color="rgba(255,255,255,0.80)">Nouveautés</Text>
-                </HStack>
-              </Link>
-              <Link to="/how-it-works">
-                <HStack
-                  px={3} py="4px" rounded="md" spacing={1.5} cursor="pointer"
-                  bg="rgba(255,255,255,0.05)" border="1px solid rgba(255,255,255,0.10)"
-                  _hover={{ bg: 'rgba(255,255,255,0.11)' }} transition="background 0.13s"
-                >
-                  <Text fontSize="11px" fontWeight="600" color="rgba(255,255,255,0.60)">Comment ça marche</Text>
-                </HStack>
-              </Link>
-              {compItems.length > 0 && (
-                <Link to="/compare">
-                  <HStack
-                    px={3} py="4px" rounded="md" spacing={1.5} cursor="pointer"
-                    bg="rgba(234,153,20,0.18)" border="1px solid rgba(234,153,20,0.40)"
-                    _hover={{ bg: 'rgba(234,153,20,0.28)' }} transition="background 0.13s"
-                  >
-                    <Scale size={10} color="#FCD34D" />
-                    <Text fontSize="11px" fontWeight="700" color="#FCD34D">
-                      Comparer ({compItems.length})
-                    </Text>
-                  </HStack>
-                </Link>
-              )}
-            </HStack>
-          </Flex>
-        </Box>
       </Box>
 
       {/* Sous-nav acheteur — visible uniquement sur /buyer/* */}
@@ -976,16 +821,20 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
             css={{ '&::-webkit-scrollbar': { display: 'none' } }}
           >
             {([
-              { to: '/buyer',               label: 'Accueil',       exact: true  },
-              { to: '/buyer/orders',        label: 'Commandes',     exact: false },
-              { to: '/buyer/quotes',        label: 'Devis',         exact: false },
-              { to: '/buyer/carts',         label: 'Paniers',       exact: false },
-              { to: '/buyer/ean-catalogue', label: 'Réf. EAN',      exact: false },
-              { to: '/buyer/wishlist',      label: 'Favoris',       exact: false },
-              { to: '/buyer/insights',      label: 'Insights',      exact: false },
-              { to: '/buyer/finances',      label: 'Finances',      exact: false },
-              { to: '/buyer/account',       label: 'Compte',        exact: false },
-            ] as { to: string; label: string; exact: boolean }[]).map(({ to, label, exact }) => {
+              { to: '/buyer',               labelKey: 'nav.home',       exact: true  },
+              { to: '/buyer/catalog',       labelKey: 'nav.catalog',     exact: false },
+              { to: '/buyer/destockage',    labelKey: 'nav.destocking',    exact: false },
+              { to: '/buyer/orders',        labelKey: 'nav.orders',     exact: false },
+              { to: '/buyer/quotes',        labelKey: 'nav.quotes',         exact: false },
+              { to: '/buyer/compare',       labelKey: 'nav.comparator',   exact: false },
+              { to: '/buyer/optimizer',     labelKey: 'nav.optimizer',    exact: false },
+              { to: '/buyer/ean-catalogue', labelKey: 'nav.eanCatalog',      exact: false },
+              { to: '/buyer/wishlist',      labelKey: 'nav.favorites',       exact: false },
+              { to: '/buyer/insights',      labelKey: 'nav.insights',      exact: false },
+              { to: '/buyer/finances',      labelKey: 'nav.finances',      exact: false },
+              { to: '/buyer/account',       labelKey: 'nav.account',        exact: false },
+            ] as { to: string; labelKey: string; exact: boolean }[]).map(({ to, labelKey, exact }) => {
+              const label = t(labelKey);
               const active = exact
                 ? loc.pathname === to
                 : loc.pathname.startsWith(to);
@@ -1004,6 +853,12 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                     transition="all 0.15s"
                   >
                     {label}
+                    {to === '/buyer/wishlist' && wishlistCount > 0 && (
+                      <Box as="span" ml={1} px={1.5} fontSize="10px" fontWeight="700"
+                        borderRadius="full" style={{ background: N.amber, color: 'white' }}>
+                        {wishlistCount}
+                      </Box>
+                    )}
                   </Box>
                 </Link>
               );
@@ -1032,7 +887,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   Stock212
                 </Text>
                 <Text fontSize="8px" color="gray.400" fontWeight="500" letterSpacing="0.5px">
-                  B2B FMCG MARKETPLACE
+                  {t('header.tagline')}
                 </Text>
               </Box>
             </HStack>
@@ -1049,11 +904,11 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               </Box>
 
               {[
-                { to: '/',           label: 'Accueil' },
-                { to: '/catalog',    label: 'Catalogue' },
-                { to: '/brands',     label: 'Marques' },
-                { to: '/boutiques',  label: 'Boutiques' },
-                { to: '/best-deals', label: 'Best Deals' },
+                { to: '/',           label: t('nav.home') },
+                { to: '/catalog',    label: t('nav.catalog') },
+                { to: '/brands',     label: t('nav.brands') },
+                { to: '/boutiques',  label: t('nav.shops') },
+                { to: '/best-deals', label: t('nav.bestDeals') },
               ].map(({ to, label }) => (
                 <Link key={to} to={to} onClick={onClose}>
                   <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
@@ -1067,7 +922,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   <Divider />
                   <Box px={5} pt={3} pb={1}>
                     <Text fontSize="10px" fontWeight="bold" color="gray.400" letterSpacing="wider">
-                      CATÉGORIES
+                      {t('categories.title').toUpperCase()}
                     </Text>
                   </Box>
                   <Accordion allowMultiple>
@@ -1109,34 +964,29 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 <VStack align="stretch" spacing={0}>
                   <Box px={5} pt={3} pb={1}>
                     <Text fontSize="10px" fontWeight="bold" color="gray.400" letterSpacing="wider">
-                      MON ESPACE
+                      {t('footer.account').toUpperCase()}
                     </Text>
                   </Box>
                   <Link to={getDashPath()} onClick={onClose}>
                     <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                      <Text fontSize="sm" fontWeight="medium" color="gray.700">Tableau de bord</Text>
+                      <Text fontSize="sm" fontWeight="medium" color="gray.700">{t('header.dashboard')}</Text>
                     </Box>
                   </Link>
                   {activeOrg?.org_type !== 'delivery' && (
                     <>
                       <Link to="/buyer/orders" onClick={onClose}>
                         <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Mes commandes</Text>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700">{t('header.myOrders')}</Text>
                         </Box>
                       </Link>
                       <Link to="/buyer/quotes" onClick={onClose}>
                         <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Mes devis</Text>
-                        </Box>
-                      </Link>
-                      <Link to="/buyer/carts" onClick={onClose}>
-                        <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Mes paniers</Text>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700">{t('header.myQuotes')}</Text>
                         </Box>
                       </Link>
                       <Link to="/buyer/ean-catalogue" onClick={onClose}>
                         <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Référence EAN</Text>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700">{t('header.eanReference')}</Text>
                         </Box>
                       </Link>
                     </>
@@ -1144,7 +994,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   <Divider my={1} />
                   <Box py={3} px={5} cursor="pointer" _hover={{ bg: 'red.50' }}
                     onClick={async () => { await signOut(); onClose(); navigate('/auth'); }}>
-                    <Text fontSize="sm" fontWeight="medium" color="red.500">Déconnexion</Text>
+                    <Text fontSize="sm" fontWeight="medium" color="red.500">{t('header.logout')}</Text>
                   </Box>
                 </VStack>
               ) : (
@@ -1152,9 +1002,9 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   <Button w="full" rounded="full" size="sm" fontWeight="700"
                     style={{ background: N.navy, color: 'white' }}
                     _hover={{ opacity: 0.9 }}
-                    onClick={() => { navigate('/auth'); onClose(); }}>S'inscrire gratuitement</Button>
+                    onClick={() => { navigate('/auth'); onClose(); }}>{t('footer.signUpFree')}</Button>
                   <Button w="full" variant="outline" rounded="full" size="sm"
-                    onClick={() => { navigate('/auth'); onClose(); }}>Se connecter</Button>
+                    onClick={() => { navigate('/auth'); onClose(); }}>{t('footer.login')}</Button>
                 </VStack>
               )}
             </VStack>
@@ -1183,7 +1033,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         <Box bg="blue.700" px={4} py={2.5}>
           <Flex maxW="1400px" mx="auto" align="center" gap={2}>
             <Text fontSize="sm" color="white" fontWeight="500">
-              ⏳ Votre dossier est en cours de validation — un commercial vous contactera sous 24–48h pour activer votre accès complet.
+              {t('header.pendingValidation')}
             </Text>
           </Flex>
         </Box>
@@ -1192,7 +1042,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         <Box bg="red.600" px={4} py={2.5}>
           <Flex maxW="1400px" mx="auto" align="center" gap={2}>
             <Text fontSize="sm" color="white" fontWeight="500">
-              ❌ Votre dossier a été refusé. Contactez-nous à{' '}
+              {t('header.validationRejected', { email: 'commercial@stock212.com' }).split('{{email}}')[0]}
               <Text as="a" href="mailto:commercial@stock212.com" textDecoration="underline" display="inline">
                 commercial@stock212.com
               </Text>
@@ -1201,51 +1051,48 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         </Box>
       )}
 
-      {/* Page content — homepage gets full-bleed (no maxW / px) */}
+      {/* Page content — homepage gets full-bleed (no maxW / px) — flex="1" pousse le footer en bas */}
       {loc.pathname === '/'
-        ? <Box bg="white" pb={{ base: '58px', md: 0 }}>{children}</Box>
-        : <Box maxW="1400px" mx="auto" px={4} py={6} pb={{ base: '70px', md: 6 }}>{children}</Box>
+        ? <Box flex="1" bg="white" pb={{ base: '58px', md: 0 }}>{children}</Box>
+        : <Box flex="1" w="100%" maxW="1400px" mx="auto" px={4} py={6} pb={{ base: '70px', md: 6 }}>{children}</Box>
       }
 
       {/* Comparator floating button */}
       <ComparatorFloat />
 
-      {/* Footer */}
-      <Box bg="gray.900" mt={16}>
-        <Box maxW="1400px" mx="auto" px={4} pt={12} pb={8}>
-          <Flex direction={{ base: 'column', md: 'row' }} gap={10} justify="space-between">
-            <VStack align="start" spacing={4} maxW="260px">
-              <Box bg="white" rounded="xl" p={2.5} display="inline-flex"
-                style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}>
-                <Image
-                  src="/logos.png"
-                  alt="Stock212"
-                  h="168px"
-                  w="auto"
-                  objectFit="contain"
-                />
-              </Box>
+      {/* Footer — masqué sur mobile, seule la nav basse (Accueil/Catalogue/Panier...) reste visible */}
+      <Box bg="gray.900" mt={12} display={{ base: 'none', md: 'block' }}>
+        <Box maxW="1400px" mx="auto" px={4} pt={9} pb={6}>
+          <Flex direction={{ base: 'column', md: 'row' }} gap={8} justify="space-between">
+            <VStack align="start" spacing={3} maxW="260px">
+              <Image
+                src="/stock212_logo_white.png"
+                alt="Stock212"
+                h="120px"
+                w="auto"
+                objectFit="contain"
+              />
               <Text color="gray.400" fontSize="sm" lineHeight={1.7}>
-                La marketplace B2B de référence pour les professionnels FMCG en Europe et en Afrique.
+                {t('footer.tagline')}
               </Text>
               <HStack spacing={3}>
                 {[Facebook, Twitter, Linkedin, Instagram].map((Icon, i) => (
-                  <Flex key={i} w={8} h={8} bg="gray.800" rounded="lg" align="center" justify="center"
+                  <Flex key={i} w={7} h={7} bg="gray.800" rounded="lg" align="center" justify="center"
                     cursor="pointer" _hover={{ bg: N.amber }} transition="background 0.2s">
-                    <Icon size={15} color="#9CA3AF" />
+                    <Icon size={14} color="#9CA3AF" />
                   </Flex>
                 ))}
               </HStack>
             </VStack>
 
-            <Flex gap={10} flexWrap="wrap">
-              <VStack align="start" spacing={3}>
-                <Text color="white" fontWeight="semibold" fontSize="sm">Plateforme</Text>
+            <Flex gap={8} flexWrap="wrap">
+              <VStack align="start" spacing={2}>
+                <Text color="white" fontWeight="semibold" fontSize="sm">{t('footer.platform')}</Text>
                 {[
-                  { to: '/catalog', label: 'Catalogue produits' },
-                  { to: '/best-deals', label: 'Meilleures offres' },
-                  { to: '/brands', label: 'Nos marques' },
-                  { to: '/how-it-works', label: 'Comment ça marche' },
+                  { to: '/catalog', label: t('footer.catalog') },
+                  { to: '/best-deals', label: t('footer.bestOffers') },
+                  { to: '/brands', label: t('footer.brands') },
+                  { to: '/how-it-works', label: t('footer.howItWorks') },
                 ].map(({ to, label }) => (
                   <Link key={to} to={to}>
                     <Text color="gray.400" fontSize="sm" _hover={{ color: 'white' }} transition="color 0.15s">{label}</Text>
@@ -1253,13 +1100,13 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 ))}
               </VStack>
 
-              <VStack align="start" spacing={3}>
-                <Text color="white" fontWeight="semibold" fontSize="sm">Compte</Text>
+              <VStack align="start" spacing={2}>
+                <Text color="white" fontWeight="semibold" fontSize="sm">{t('footer.account')}</Text>
                 {[
-                  { to: '/auth', label: 'Se connecter' },
-                  { to: '/auth', label: "S'inscrire gratuitement" },
-                  { to: '/buyer', label: 'Espace acheteur' },
-                  { to: '/vendor', label: 'Espace vendeur' },
+                  { to: '/auth', label: t('footer.login') },
+                  { to: '/auth', label: t('footer.signUpFree') },
+                  { to: '/buyer', label: t('footer.buyerSpace') },
+                  { to: '/vendor', label: t('footer.sellerSpace') },
                 ].map(({ to, label }) => (
                   <Link key={label} to={to}>
                     <Text color="gray.400" fontSize="sm" _hover={{ color: 'white' }} transition="color 0.15s">{label}</Text>
@@ -1267,8 +1114,8 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 ))}
               </VStack>
 
-              <VStack align="start" spacing={3}>
-                <Text color="white" fontWeight="semibold" fontSize="sm">Contact</Text>
+              <VStack align="start" spacing={2}>
+                <Text color="white" fontWeight="semibold" fontSize="sm">{t('footer.contact')}</Text>
                 <HStack spacing={2}><Mail size={13} color="#6B7280" /><Text color="gray.400" fontSize="sm">contact@stock212.com</Text></HStack>
                 <HStack spacing={2}><Phone size={13} color="#6B7280" /><Text color="gray.400" fontSize="sm">+33 1 XX XX XX XX</Text></HStack>
               </VStack>
@@ -1276,10 +1123,10 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
           </Flex>
         </Box>
         <Box borderTop="1px" borderColor="gray.800">
-          <Flex maxW="1400px" mx="auto" px={4} py={5} justify="space-between" align="center" flexWrap="wrap" gap={3}>
-            <Text color="gray.500" fontSize="xs">© {new Date().getFullYear()} Stock212. Tous droits réservés.</Text>
+          <Flex maxW="1400px" mx="auto" px={4} py={4} justify="space-between" align="center" flexWrap="wrap" gap={3}>
+            <Text color="gray.500" fontSize="xs">© {new Date().getFullYear()} Stock212. {t('footer.rights')}</Text>
             <HStack spacing={5} fontSize="xs">
-              {[{ to: '/legal/cgv', label: 'CGV' }, { to: '/legal/privacy', label: 'Confidentialité' }, { to: '/legal/mentions', label: 'Mentions légales' }].map(({ to, label }) => (
+              {[{ to: '/legal/cgv', label: t('footer.terms') }, { to: '/legal/privacy', label: t('footer.privacy') }, { to: '/legal/mentions', label: t('footer.legal') }].map(({ to, label }) => (
                 <Link key={to} to={to}>
                   <Text color="gray.500" _hover={{ color: 'gray.200' }} transition="color 0.15s">{label}</Text>
                 </Link>
@@ -1291,6 +1138,6 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
 
       {/* Nav basse mobile */}
       <MobileBottomNav onOpenCart={onCartOpen} />
-    </Box>
+    </Flex>
   );
 }

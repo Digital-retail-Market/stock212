@@ -3,16 +3,41 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Flex, Heading, Text, VStack, HStack, SimpleGrid, Image,
   Button, Skeleton, SkeletonText, Badge, IconButton, Wrap, WrapItem, Tag, TagLabel,
+  useToast,
 } from '@chakra-ui/react';
 import { ArrowLeft, Package, Star, ShoppingCart, Lock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
+import { lowestTierPrice } from '../../lib/pricing';
 import type { Brand, Product } from '../../types';
 
 function ProductCard({ product }: { product: Product }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, activeOrg } = useAuth();
+  const toast = useToast();
+  const [addingToCart, setAddingToCart] = useState(false);
   const bestPrice = product.price_tiers?.sort((a, b) => a.qty_min - b.qty_min)[0];
+
+  async function handleAddToCart(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!activeOrg || addingToCart) return;
+    const price = lowestTierPrice(product.price_tiers);
+    if (!price) return;
+    setAddingToCart(true);
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId: product.id,
+      quantity: product.moq,
+      unitPrice: price,
+    });
+    if (error) {
+      toast({ title: 'Erreur', description: error, status: 'error', duration: 4000, position: 'bottom-right' });
+    } else {
+      toast({ title: 'Ajouté au panier', description: product.name, status: 'success', duration: 2500, position: 'bottom-right' });
+    }
+    setAddingToCart(false);
+  }
 
   return (
     <Box
@@ -56,7 +81,7 @@ function ProductCard({ product }: { product: Product }) {
           </HStack>
         )}
         <Flex justify="space-between" align="center">
-          {user ? (
+          {activeOrg ? (
             <Box>
               {bestPrice ? (
                 <Text fontWeight="700" color="blue.800" fontSize="sm" fontFamily="mono">
@@ -71,7 +96,7 @@ function ProductCard({ product }: { product: Product }) {
             <Box
               bg="gray.50" border="1px" borderColor="gray.200" rounded="sm" px={2} py={1}
               cursor="pointer"
-              onClick={(e) => { e.stopPropagation(); navigate('/auth'); }}
+              onClick={(e) => { e.stopPropagation(); navigate(user ? '/onboarding' : '/auth'); }}
               _hover={{ bg: 'blue.50', borderColor: 'blue.200' }}
               transition="all 0.1s"
             >
@@ -83,16 +108,17 @@ function ProductCard({ product }: { product: Product }) {
           )}
           <IconButton
             aria-label="Commander"
-            icon={user ? <ShoppingCart size={13} /> : <Lock size={13} />}
+            icon={addingToCart ? undefined : activeOrg ? <ShoppingCart size={13} /> : <Lock size={13} />}
+            isLoading={addingToCart}
             size="xs"
-            colorScheme={user ? 'blue' : 'gray'}
-            variant={user ? 'solid' : 'outline'}
+            colorScheme={activeOrg ? 'blue' : 'gray'}
+            variant={activeOrg ? 'solid' : 'outline'}
             rounded="sm"
-            isDisabled={!user}
-            opacity={user ? 1 : 0.5}
-            bg={user ? 'blue.800' : undefined}
-            _hover={user ? { bg: 'blue.700' } : undefined}
-            onClick={(e) => e.stopPropagation()}
+            isDisabled={!activeOrg || !bestPrice}
+            opacity={activeOrg ? 1 : 0.5}
+            bg={activeOrg ? 'blue.800' : undefined}
+            _hover={activeOrg ? { bg: 'blue.700' } : undefined}
+            onClick={handleAddToCart}
           />
         </Flex>
       </Box>

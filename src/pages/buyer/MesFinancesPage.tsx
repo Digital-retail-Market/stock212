@@ -6,6 +6,7 @@ import { generateInvoicePDF } from '../../lib/pdf/pdfUtils';
 import {
   Box, Flex, HStack, VStack, Text, Heading, Button, Badge,
   SimpleGrid, Tabs, TabList, TabPanels, Tab, TabPanel, Divider, Spinner,
+  useToast,
 } from '@chakra-ui/react';
 import {
   ArrowLeft, FileText, Download, TrendingUp, TrendingDown,
@@ -142,6 +143,7 @@ function TxRow({ tx }: { tx: Transaction }) {
 export default function MesFinancesPage() {
   const navigate = useNavigate();
   const { activeOrg } = useAuth();
+  const toast = useToast();
   const [loading, setLoading]         = useState(true);
   const [invoices, setInvoices]       = useState<Invoice[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -341,7 +343,12 @@ export default function MesFinancesPage() {
                 <InvoiceRow
                   key={inv.id}
                   inv={inv}
-                  onDownload={() => generateInvoicePDF(inv.id).catch(() => {})}
+                  onDownload={() =>
+                    generateInvoicePDF(inv.id).catch((e) => {
+                      console.error('generateInvoicePDF', e);
+                      toast({ status: 'error', title: 'Échec de la génération du PDF', description: 'Veuillez réessayer.' });
+                    })
+                  }
                 />
               ))}
               {filtered.length === 0 && (

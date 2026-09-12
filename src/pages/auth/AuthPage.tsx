@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Button, Flex, FormControl, FormLabel, Heading, Input,
-  Text, VStack, HStack, Alert, AlertIcon, useToast,
+  Text, VStack, HStack, Alert, AlertIcon, useToast, Image,
   InputGroup, InputRightElement, InputLeftElement, IconButton,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter,
   useDisclosure, Divider,
 } from '@chakra-ui/react';
 import {
-  Eye, EyeOff, Package, Mail, Lock, User,
+  Eye, EyeOff, Mail, Lock, User,
   Shield, CheckCircle, Globe, TrendingUp, ArrowRight,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -131,16 +131,7 @@ function BrandPanel() {
 
       {/* Logo */}
       <HStack spacing={3} position="relative" mb={8}>
-        <Flex
-          w={9} h={9}
-          bg="blue.700"
-          border="1px" borderColor="blue.600"
-          rounded="sm"
-          align="center" justify="center"
-          flexShrink={0}
-        >
-          <Package size={18} color="white" />
-        </Flex>
+        <Image src="/navlogo_white.png" alt="Stock212" h="36px" w="auto" objectFit="contain" flexShrink={0} />
         <Box>
           <Text fontWeight="800" fontSize="lg" lineHeight={1} letterSpacing="-0.02em">Stock212</Text>
           <Text fontSize="11px" color="blue.300" letterSpacing="0.06em" textTransform="uppercase">
@@ -239,32 +230,11 @@ export default function AuthPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedTestRole, setSelectedTestRole] = useState<'admin' | 'seller' | 'buyer' | 'delivery' | 'agent' | null>(null);
   const [signupConfirmSent, setSignupConfirmSent] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
   const { isOpen: isForgotOpen, onOpen: openForgot, onClose: closeForgot } = useDisclosure();
-async function detectUserRole(userId: string): Promise<'admin' | 'seller' | 'buyer' | 'delivery' | null> {
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', userId)
-    .maybeSingle();
-  if (profileData?.is_admin) return 'admin';
 
-  const { data: memberData } = await supabase
-    .from('organisation_members')
-    .select('organisations(org_type)')
-    .eq('user_id', userId)
-    .eq('active', true)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  const orgType = (memberData?.organisations as { org_type?: string } | null)?.org_type;
-  if (orgType === 'seller' || orgType === 'delivery' || orgType === 'buyer') return orgType;
-  return null;
-}
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -295,22 +265,8 @@ async function detectUserRole(userId: string): Promise<'admin' | 'seller' | 'buy
           });
         }
      } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-
-        if (selectedTestRole && data.user) {
-          const actualRole = await detectUserRole(data.user.id);
-          if (actualRole && actualRole !== selectedTestRole) {
-            await supabase.auth.signOut();
-            const roleLabels: Record<string, string> = {
-              admin: 'Admin', seller: 'Vendeur', buyer: 'Acheteur', delivery: 'Livreur',
-            };
-            throw new Error(
-              `Ces identifiants correspondent à un compte "${roleLabels[actualRole]}", pas "${roleLabels[selectedTestRole]}". Vérifiez le rôle sélectionné.`
-            );
-          }
-        }
-        setSelectedTestRole(null);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -339,14 +295,7 @@ async function detectUserRole(userId: string): Promise<'admin' | 'seller' | 'buy
         <Box w="full" maxW="400px">
           {/* Mobile logo */}
           <HStack spacing={3} mb={8} display={{ base: 'flex', lg: 'none' }}>
-            <Flex
-              w={8} h={8}
-              bg="blue.800"
-              rounded="sm"
-              align="center" justify="center"
-            >
-              <Package size={17} color="white" />
-            </Flex>
+            <Image src="/navlogo.png" alt="Stock212" h="32px" w="auto" objectFit="contain" flexShrink={0} />
             <Box>
               <Text fontWeight="800" fontSize="md" color="gray.900" lineHeight={1}
                 letterSpacing="-0.02em">Stock212</Text>
@@ -551,44 +500,6 @@ async function detectUserRole(userId: string): Promise<'admin' | 'seller' | 'buy
             </>
           )}
 
-          {/* Quick test credentials */}
-          {mode === 'signin' && (
-            <Box
-              mt={6}
-              p={4}
-              rounded="md"
-              border="1px dashed"
-              borderColor="gray.200"
-              bg="gray.50"
-            >
-              <Text fontSize="10px" fontWeight="700" color="gray.400"
-                textTransform="uppercase" letterSpacing="0.08em" mb={3}>
-                Accès rapide — Test
-              </Text>
-              <HStack spacing={2} flexWrap="wrap">
-                {[
-                  { label: 'Admin',      emoji: '👑', email: 'admin@stock212.com',    color: 'purple', role: 'admin' as const,    password: 'Admin@212' },
-                  { label: 'Vendeur',    emoji: '🏭', email: 'vendeur@stock212.com',   color: 'blue',   role: 'seller' as const,   password: 'Test1234' },
-                  { label: 'Acheteur',   emoji: '🛒', email: 'acheteur@stock212.com',    color: 'green',  role: 'buyer' as const,    password: 'Test1234' },
-                  { label: 'Livreur',    emoji: '🚚', email: 'livreur@stock212.com', color: 'orange', role: 'delivery' as const, password: 'Test1234' },
-                  { label: 'Commercial', emoji: '🧑‍💼', email: 'commercial@stock212.com',  color: 'teal',   role: 'agent' as const,    password: 'Test1234' },
-                ].map(({ label, emoji, email: e, color, role, password: pw }) => (
-                  <Button
-                    key={label}
-                    size="xs"
-                    variant={selectedTestRole === role ? 'solid' : 'outline'}
-                    colorScheme={color}
-                    rounded="sm"
-                    fontWeight="600"
-                    fontSize="11px"
-                    onClick={() => { setEmail(e); setPassword(pw); setError(''); setSelectedTestRole(role); }}
-                  >
-                    {emoji} {label}
-                  </Button>
-                ))}
-              </HStack>
-            </Box>
-          )}
           {/* Security indicators */}
           <HStack justify="center" spacing={5} mt={5} flexWrap="wrap">
             {[

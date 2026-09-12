@@ -2,7 +2,7 @@
 export type CampaignType =
   | 'sponsored_product' | 'sponsored_brand' | 'sponsored_category' | 'sponsored_boutique'
   | 'destocking' | 'volume_deal' | 'promo_code' | 'trade_deal' | 'flash_sale'
-  | 'digital_sampling' | 'rfq_boost' | 'cross_sell'
+  | 'digital_sampling' | 'rfq_boost' | 'rfq_bid_boost' | 'cross_sell'
   // Blocs merchandising v2
   | 'top_banner' | 'deal_of_day' | 'footer_banner' | 'extra_remise'
   | 'category_row' | 'recommended_slot' | 'search_sponsored' | 'cart_cross_sell';

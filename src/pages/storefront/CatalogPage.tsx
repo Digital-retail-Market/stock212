@@ -15,10 +15,13 @@ import type { LandedCostResult, OptimizedLine, EanInput } from '../../lib/cartOp
 import { Search, SlidersHorizontal, ShoppingCart, Star, X, Lock, Scale, Package } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { addToCart as addToCartShared } from '../../lib/cart';
 import { useComparator } from '../../contexts/ComparatorContext';
 import { CategoryBreadcrumb } from '../../layouts/StorefrontLayout';
 import { getCatStyle } from '../../lib/categoryIcons';
+import { getCategoryLabel } from '../../lib/categoryLabel';
 import { useMarketingStorefront } from '../../hooks/useMarketingStorefront';
+import { useTranslation } from 'react-i18next';
 import { SearchSponsoredBlock } from '../../components/marketing/HomepageBlocks';
 import type { Product, Category, Brand } from '../../types';
 
@@ -78,11 +81,12 @@ interface EanGroup {
 }
 
 export default function CatalogPage() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, activeOrg } = useAuth();
-  const SORT_OPTIONS = user ? SORT_OPTIONS_AUTH : SORT_OPTIONS_GUEST;
+  const { activeOrg } = useAuth();
+  const SORT_OPTIONS = activeOrg ? SORT_OPTIONS_AUTH : SORT_OPTIONS_GUEST;
   const { sponsoredProductIds, promoCodes } = useMarketingStorefront();
   const [sponsoredProducts, setSponsoredProducts] = useState<Product[]>([]);
 
@@ -408,7 +412,7 @@ export default function CatalogPage() {
                 <Box px={4} py={3} borderBottom="1px" borderColor="gray.100">
                   <Text fontSize="10px" fontWeight="700" color="gray.400"
                     textTransform="uppercase" letterSpacing="0.08em" mb={2}>
-                    Catégories
+                    {t('catalog.categories')}
                   </Text>
                   <VStack align="stretch" spacing={0}>
                     {roots.map((root) => {
@@ -418,7 +422,7 @@ export default function CatalogPage() {
                         <Box key={root.id}>
                           <Text fontSize="11px" fontWeight="600" color="gray.600"
                             py={1.5} letterSpacing="0.02em">
-                            {root.name}
+                            {getCategoryLabel(root)}
                           </Text>
                           {subs.map((sub) => {
                             const isSelected = selectedCategoryId === sub.id;
@@ -441,7 +445,7 @@ export default function CatalogPage() {
                                 <Text fontSize="xs"
                                   color={isSelected ? 'blue.800' : 'gray.600'}
                                   fontWeight={isSelected ? '700' : '400'}>
-                                  {sub.name}
+                                  {getCategoryLabel(sub)}
                                 </Text>
                                 {countsLoaded ? (
                                   <Text fontSize="9px" color="gray.400" fontFamily="mono">
@@ -640,7 +644,7 @@ export default function CatalogPage() {
             <Text fontSize="sm" color="gray.500">
               {loading ? '...' : `${total} produit${total !== 1 ? 's' : ''} trouvé${total !== 1 ? 's' : ''}`}
               {selectedCat && (
-                <Text as="span" fontWeight="semibold" color="gray.700"> dans {selectedCat.name}</Text>
+                <Text as="span" fontWeight="semibold" color="gray.700"> dans {getCategoryLabel(selectedCat)}</Text>
               )}
             </Text>
             {activeFiltersCount > 0 && (
@@ -760,7 +764,7 @@ export default function CatalogPage() {
               <Flex w={16} h={16} bg="gray.100" rounded="xl" align="center" justify="center" mx="auto" mb={3}>
                 <Package size={28} color="#cbd5e1" />
               </Flex>
-              <Text fontSize="sm">Aucun produit EAN trouvé</Text>
+              <Text fontSize="sm">{t('catalog.noProductsEAN')}</Text>
             </Box>
           ) : (
             <VStack spacing={3} align="stretch">
@@ -1048,7 +1052,7 @@ export default function CatalogPage() {
               {/* ── Stats summary ── */}
               <SimpleGrid columns={3} spacing={3}>
                 <Box bg="green.50" rounded="xl" p={4} textAlign="center">
-                  <Text fontSize="10px" color="green.600" fontWeight="700" textTransform="uppercase" letterSpacing="0.06em" mb={1}>Total produits</Text>
+                  <Text fontSize="10px" color="green.600" fontWeight="700" textTransform="uppercase" letterSpacing="0.06em" mb={1}>{t('catalog.totalProducts')}</Text>
                   <Text fontSize="xl" fontWeight="800" color="green.700">{(optResult?.totalProductCost ?? 0).toFixed(2)} MAD</Text>
                 </Box>
                 <Box bg="blue.50" rounded="xl" p={4} textAlign="center">
@@ -1155,7 +1159,7 @@ export default function CatalogPage() {
                           Déplacer <b>{opt.eansToMove.length} article{opt.eansToMove.length > 1 ? 's' : ''}</b> de <b>{opt.dropVendorName}</b> → <b>{opt.absorbVendorName}</b>
                         </Text>
                         <HStack spacing={4} flexWrap="wrap">
-                          <Text fontSize="xs" color="orange.600">Δ produit : +{opt.productCostIncrease.toFixed(2)} MAD</Text>
+                          <Text fontSize="xs" color="orange.600">{t('catalog.productCostIncrease', { amount: opt.productCostIncrease.toFixed(2) })}</Text>
                           <Text fontSize="xs" color="green.600">Économie livraison : −{opt.deliverySaving.toFixed(2)} MAD</Text>
                           <Text fontSize="xs" fontWeight="800" color={opt.netSaving > 0 ? 'green.700' : 'red.600'}>
                             Net : {opt.netSaving > 0 ? '−' : '+'}{Math.abs(opt.netSaving).toFixed(2)} MAD
@@ -1211,7 +1215,7 @@ const TEMP_BADGE: Record<string, { bg: string; color: string; label: string }> =
 
 function CatalogProductCard({ product }: { product: Product }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { activeOrg } = useAuth();
   const { addItem, removeItem, hasItem } = useComparator();
   const toast = useToast();
 
@@ -1223,6 +1227,7 @@ function CatalogProductCard({ product }: { product: Product }) {
 
   const inComparator = hasItem(product.id);
   const tempBadge = TEMP_BADGE[product.temperature];
+  const [addingToCart, setAddingToCart] = useState(false);
 
   function toggleCompare(e: React.MouseEvent) {
     e.stopPropagation();
@@ -1232,6 +1237,24 @@ function CatalogProductCard({ product }: { product: Product }) {
       addItem(product);
       toast({ title: 'Ajouté au comparateur', status: 'info', duration: 2000, isClosable: true, position: 'bottom-right' });
     }
+  }
+
+  async function handleAddToCart(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!activeOrg || !firstTier || addingToCart) return;
+    setAddingToCart(true);
+    const { error } = await addToCartShared({
+      buyerOrgId: activeOrg.id,
+      productId: product.id,
+      quantity: product.moq,
+      unitPrice: firstTier.unit_price,
+    });
+    if (error) {
+      toast({ title: 'Erreur', description: error, status: 'error', duration: 4000, isClosable: true, position: 'bottom-right' });
+    } else {
+      toast({ title: 'Ajouté au panier', description: product.name, status: 'success', duration: 2500, isClosable: true, position: 'bottom-right' });
+    }
+    setAddingToCart(false);
   }
 
   return (
@@ -1293,7 +1316,7 @@ function CatalogProductCard({ product }: { product: Product }) {
         <Flex position="absolute" bottom={2.5} left={2.5} right={2.5}
           align="center" justify="space-between">
           <HStack spacing={1.5}>
-            {user && product.moq > 1 && (
+            {activeOrg && product.moq > 1 && (
               <Box px={2} py={0.5} rounded="md"
                 style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}>
                 <Text fontSize="9px" fontWeight="700" color="white">MOQ {product.moq}</Text>
@@ -1367,7 +1390,7 @@ function CatalogProductCard({ product }: { product: Product }) {
 
         {/* Prix + CTA */}
         <Flex justify="space-between" align="end" gap={2}>
-          {user ? (
+          {activeOrg ? (
             <Box flex={1} minW={0}>
               {firstTier ? (
                 <>
@@ -1409,7 +1432,7 @@ function CatalogProductCard({ product }: { product: Product }) {
 
           {/* Bouton panier */}
           <Tooltip
-            label={!user ? 'Connexion requise' : 'Ajouter au panier'}
+            label={!activeOrg ? 'Connexion requise' : !firstTier ? 'Sur devis' : 'Ajouter au panier'}
             placement="top"
           >
             <Box
@@ -1418,16 +1441,18 @@ function CatalogProductCard({ product }: { product: Product }) {
               display="flex" alignItems="center" justifyContent="center"
               flexShrink={0}
               style={{
-                background: user ? C.navy : '#f1f5f9',
-                border: `1px solid ${user ? C.navyMid : C.border}`,
-                opacity: user ? 1 : 0.5,
+                background: activeOrg ? C.navy : '#f1f5f9',
+                border: `1px solid ${activeOrg ? C.navyMid : C.border}`,
+                opacity: activeOrg && firstTier && !addingToCart ? 1 : 0.5,
               }}
-              _hover={user ? { opacity: 0.85 } : undefined}
+              _hover={activeOrg ? { opacity: 0.85 } : undefined}
               transition="opacity 0.15s"
-              disabled={!user}
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              disabled={!activeOrg || !firstTier || addingToCart}
+              onClick={handleAddToCart}
             >
-              <ShoppingCart size={15} color={user ? 'white' : C.muted} />
+              {addingToCart
+                ? <Spinner size="xs" color="white" />
+                : <ShoppingCart size={15} color={activeOrg ? 'white' : C.muted} />}
             </Box>
           </Tooltip>
         </Flex>

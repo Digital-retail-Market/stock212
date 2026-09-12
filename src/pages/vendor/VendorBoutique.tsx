@@ -45,18 +45,6 @@ const COUNTRY_OPTIONS = [
   'Tunisie', 'Sénégal', 'Côte d\'Ivoire', 'Canada', 'UAE', 'USA',
 ];
 
-const VENDOR_SUBTYPES = [
-  { value: 'fabricant',    label: 'Fabricant / Producteur' },
-  { value: 'importateur',  label: 'Importateur / Exportateur' },
-  { value: 'grossiste',    label: 'Grossiste / Distributeur' },
-  { value: 'revendeur',    label: 'Revendeur / Négociant' },
-  { value: 'cooperative',  label: 'Coopérative' },
-  { value: 'agent',        label: 'Agent / Mandataire' },
-  { value: 'torrefacteur', label: 'Torréfacteur' },
-  { value: 'conserverie',  label: 'Conserverie' },
-  { value: 'artisan',      label: 'Artisan-producteur' },
-];
-
 // ─── Helper score de complétude ───────────────────────────────────────────────
 function completenessScore(form: SellerForm): number {
   const checks = [
@@ -111,6 +99,7 @@ export default function VendorBoutique() {
   const [form, setForm] = useState<SellerForm>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [flash, setFlash] = useState<{ type: 'success' | 'error'; content: string } | null>(null);
+  const [vendorSubtypes, setVendorSubtypes] = useState<{ value: string; label: string }[]>([]);
 
   function showFlash(type: 'success' | 'error', content: string) {
     setFlash({ type, content });
@@ -129,6 +118,19 @@ export default function VendorBoutique() {
         : (f[key] as string[]).filter(v => v !== value),
     }));
   }
+
+  // ── Types d'activité vendeur (configurables par l'admin, même liste qu'à l'onboarding) ──
+  useEffect(() => {
+    supabase
+      .from('business_categories')
+      .select('name')
+      .eq('actor_type', 'seller')
+      .eq('active', true)
+      .order('name')
+      .then(({ data }) => {
+        setVendorSubtypes((data ?? []).map(d => ({ value: d.name, label: d.name })));
+      });
+  }, []);
 
   // ── Chargement initial ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -269,12 +271,13 @@ export default function VendorBoutique() {
                     <FormField label="Raison sociale" description="Nom affiché sur votre boutique">
                       <Input value={form.name} onChange={e => set('name', e.detail.value)} />
                     </FormField>
-                    <FormField label="Type de vendeur">
+                    <FormField label="Type de vendeur" description="Liste gérée par l'équipe Stock212 (Types d'acteurs)">
                       <Select
-                        selectedOption={VENDOR_SUBTYPES.find(o => o.value === form.sub_type) ?? null}
-                        options={VENDOR_SUBTYPES}
+                        selectedOption={vendorSubtypes.find(o => o.value === form.sub_type) ?? null}
+                        options={vendorSubtypes}
                         onChange={e => set('sub_type', e.detail.selectedOption?.value ?? '')}
                         placeholder="Sélectionner..."
+                        empty="Aucun type configuré"
                       />
                     </FormField>
                   </ColumnLayout>
@@ -463,7 +466,31 @@ export default function VendorBoutique() {
             label: 'Livraison & export',
             content: (
               <SpaceBetween size="l">
-                <Container header={<Header variant="h2">Modes de livraison</Header>}>
+                <Container
+                  header={
+                    <Header
+                      variant="h2"
+                      description={'Détermine si "Flotte du vendeur" apparaît comme option d\'opérateur dans la section Opérateur de livraison du checkout acheteur.'}
+                    >
+                      Livraison par vos propres moyens
+                    </Header>
+                  }
+                >
+                  <Toggle
+                    checked={form.default_delivery_methods.includes('seller_fleet')}
+                    onChange={e => toggleArray('default_delivery_methods', 'seller_fleet', e.detail.checked)}
+                  >
+                    Je livre moi-même avec ma flotte ("Flotte du vendeur" au checkout)
+                  </Toggle>
+                </Container>
+
+                <Container
+                  header={
+                    <Header variant="h2" description="Formats et rapidité de livraison que vous proposez — affiché sur votre fiche vendeur, indicatif pour l'acheteur.">
+                      Formats de livraison
+                    </Header>
+                  }
+                >
                   <SpaceBetween size="m">
                     {DELIVERY_OPTIONS.map(({ value, label }) => (
                       <Toggle

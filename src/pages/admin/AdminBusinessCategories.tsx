@@ -12,11 +12,13 @@ interface SubTypeRow {
   count: number;
 }
 
-interface SubTypeDef {
+interface CategoryDef {
   id: string;
   name: string;
-  org_type: string;
+  actor_type: string;
   description: string | null;
+  active: boolean;
+  display_order: number;
 }
 
 const ORG_TYPE_COLOR: Record<string, 'blue' | 'green' | 'grey'> = {
@@ -31,22 +33,22 @@ const ORG_TYPE_LABEL: Record<string, string> = {
 
 export default function AdminBusinessCategories() {
   const [usedSubTypes, setUsedSubTypes]   = useState<SubTypeRow[]>([]);
-  const [definitions, setDefinitions]     = useState<SubTypeDef[]>([]);
+  const [definitions, setDefinitions]     = useState<CategoryDef[]>([]);
   const [loading, setLoading]             = useState(true);
   const [filterText, setFilterText]       = useState('');
   const [flash, setFlash] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [editDef, setEditDef]     = useState<SubTypeDef | null>(null);
-  const [form, setForm] = useState({ name: '', org_type: 'buyer', description: '' });
+  const [editDef, setEditDef]     = useState<CategoryDef | null>(null);
+  const [form, setForm] = useState({ name: '', actor_type: 'buyer', description: '' });
   const [saving, setSaving]       = useState(false);
 
   async function load() {
     setLoading(true);
     const [orgRes, defRes] = await Promise.all([
       supabase.from('organisations').select('sub_type, org_type').not('sub_type', 'is', null),
-      supabase.from('org_subtypes').select('*').order('org_type').order('name').catch(() => ({ data: null, error: null })),
+      supabase.from('business_categories').select('*').order('actor_type').order('display_order').order('name'),
     ]);
 
     // Aggregate used sub_types
@@ -58,8 +60,8 @@ export default function AdminBusinessCategories() {
     });
     setUsedSubTypes(Object.values(agg).sort((a, b) => b.count - a.count));
 
-    if ((defRes as { data: SubTypeDef[] | null }).data) {
-      setDefinitions(((defRes as { data: SubTypeDef[] | null }).data) ?? []);
+    if (defRes.data) {
+      setDefinitions(defRes.data as CategoryDef[]);
     }
     setLoading(false);
   }
@@ -68,25 +70,27 @@ export default function AdminBusinessCategories() {
 
   function openCreate() {
     setEditDef(null);
-    setForm({ name: '', org_type: 'buyer', description: '' });
+    setForm({ name: '', actor_type: 'buyer', description: '' });
     setShowModal(true);
   }
 
-  function openEdit(d: SubTypeDef) {
+  function openEdit(d: CategoryDef) {
     setEditDef(d);
-    setForm({ name: d.name, org_type: d.org_type, description: d.description ?? '' });
+    setForm({ name: d.name, actor_type: d.actor_type, description: d.description ?? '' });
     setShowModal(true);
   }
 
   async function handleSave() {
     if (!form.name.trim()) return;
     setSaving(true);
-    const payload = { name: form.name.trim(), org_type: form.org_type, description: form.description || null };
+    const payload = { name: form.name.trim(), actor_type: form.actor_type, description: form.description || null };
     let err;
     if (editDef) {
-      ({ error: err } = await supabase.from('org_subtypes').update(payload).eq('id', editDef.id));
+      ({ error: err } = await supabase.from('business_categories').update(payload).eq('id', editDef.id));
     } else {
-      ({ error: err } = await supabase.from('org_subtypes').insert(payload));
+      const siblings = definitions.filter((d) => d.actor_type === form.actor_type);
+      const nextOrder = siblings.length ? Math.max(...siblings.map((d) => d.display_order)) + 1 : 0;
+      ({ error: err } = await supabase.from('business_categories').insert({ ...payload, active: true, display_order: nextOrder }));
     }
     if (err) {
       setFlash({ type: 'error', msg: err.message });
@@ -98,8 +102,37 @@ export default function AdminBusinessCategories() {
     setSaving(false);
   }
 
-  async function handleDelete(d: SubTypeDef) {
-    await supabase.from('org_subtypes').delete().eq('id', d.id);
+  async function moveDef(d: CategoryDef, dir: -1 | 1) {
+    const siblings = definitions.filter((x) => x.actor_type === d.actor_type);
+    const pos = siblings.findIndex((x) => x.id === d.id);
+    const swapWith = siblings[pos + dir];
+    if (!swapWith) return;
+
+    const a = { id: d.id, display_order: swapWith.display_order };
+    const b = { id: swapWith.id, display_order: d.display_order };
+    const [{ error: err1 }, { error: err2 }] = await Promise.all([
+      supabase.from('business_categories').update({ display_order: a.display_order }).eq('id', a.id),
+      supabase.from('business_categories').update({ display_order: b.display_order }).eq('id', b.id),
+    ]);
+    if (err1 || err2) {
+      setFlash({ type: 'error', msg: (err1 ?? err2)?.message ?? 'Erreur de réordonnancement.' });
+      return;
+    }
+    setDefinitions((prev) => prev.map((x) => {
+      if (x.id === a.id) return { ...x, display_order: a.display_order };
+      if (x.id === b.id) return { ...x, display_order: b.display_order };
+      return x;
+    }));
+  }
+
+  async function handleToggleActive(d: CategoryDef) {
+    await supabase.from('business_categories').update({ active: !d.active }).eq('id', d.id);
+    setFlash({ type: 'success', msg: `Type "${d.name}" ${d.active ? 'désactivé' : 'réactivé'}.` });
+    load();
+  }
+
+  async function handleDelete(d: CategoryDef) {
+    await supabase.from('business_categories').delete().eq('id', d.id);
     setFlash({ type: 'success', msg: `Type "${d.name}" supprimé.` });
     load();
   }
@@ -157,7 +190,7 @@ export default function AdminBusinessCategories() {
           <Header
             variant="h2"
             actions={<Button variant="primary" onClick={openCreate}>+ Nouveau type</Button>}
-            description="Définissez les types autorisés — les vendeurs/acheteurs les voient pendant l'onboarding."
+            description="Définissez les types autorisés — les vendeurs/acheteurs les voient pendant l'onboarding, dans l'ordre d'importance ci-dessous (flèches pour réordonner)."
           >
             Définitions officielles
           </Header>
@@ -169,9 +202,24 @@ export default function AdminBusinessCategories() {
           trackBy="id"
           columnDefinitions={[
             {
-              id: 'org_type',
+              id: 'order',
+              header: 'Importance',
+              width: 100,
+              cell: (d) => {
+                const siblings = definitions.filter((x) => x.actor_type === d.actor_type);
+                const idx = siblings.findIndex((x) => x.id === d.id);
+                return (
+                  <SpaceBetween direction="horizontal" size="xxs">
+                    <Button variant="icon" iconName="angle-up" disabled={idx === 0} onClick={() => moveDef(d, -1)} ariaLabel="Monter" />
+                    <Button variant="icon" iconName="angle-down" disabled={idx === siblings.length - 1} onClick={() => moveDef(d, 1)} ariaLabel="Descendre" />
+                  </SpaceBetween>
+                );
+              },
+            },
+            {
+              id: 'actor_type',
               header: 'Type d\'acteur',
-              cell: (d) => <Badge color={ORG_TYPE_COLOR[d.org_type] ?? 'grey'}>{ORG_TYPE_LABEL[d.org_type] ?? d.org_type}</Badge>,
+              cell: (d) => <Badge color={ORG_TYPE_COLOR[d.actor_type] ?? 'grey'}>{ORG_TYPE_LABEL[d.actor_type] ?? d.actor_type}</Badge>,
             },
             {
               id: 'name',
@@ -185,13 +233,23 @@ export default function AdminBusinessCategories() {
               minWidth: 200,
             },
             {
+              id: 'active',
+              header: 'Statut',
+              cell: (d) => <Badge color={d.active ? 'green' : 'grey'}>{d.active ? 'Actif' : 'Désactivé'}</Badge>,
+            },
+            {
               id: 'actions',
               header: '',
               cell: (d) => (
                 <ButtonDropdown
-                  items={[{ id: 'edit', text: 'Modifier' }, { id: 'delete', text: 'Supprimer' }]}
+                  items={[
+                    { id: 'edit', text: 'Modifier' },
+                    { id: 'toggle', text: d.active ? 'Désactiver' : 'Réactiver' },
+                    { id: 'delete', text: 'Supprimer' },
+                  ]}
                   onItemClick={({ detail: det }) => {
                     if (det.id === 'edit')   openEdit(d);
+                    if (det.id === 'toggle') handleToggleActive(d);
                     if (det.id === 'delete') handleDelete(d);
                   }}
                 >
@@ -236,8 +294,8 @@ export default function AdminBusinessCategories() {
               {(['buyer', 'seller', 'delivery'] as const).map((t) => (
                 <Button
                   key={t}
-                  variant={form.org_type === t ? 'primary' : 'normal'}
-                  onClick={() => setForm({ ...form, org_type: t })}
+                  variant={form.actor_type === t ? 'primary' : 'normal'}
+                  onClick={() => setForm({ ...form, actor_type: t })}
                 >
                   {ORG_TYPE_LABEL[t]}
                 </Button>

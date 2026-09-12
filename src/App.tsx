@@ -36,7 +36,6 @@ const BrandPage            = lazy(() => import('./pages/storefront/BrandPage'));
 const BuyerDashboard       = lazy(() => import('./pages/buyer/BuyerDashboard'));
 const MesCommandesPage     = lazy(() => import('./pages/buyer/MesCommandesPage'));
 const BuyerOrderDetail     = lazy(() => import('./pages/buyer/BuyerOrderDetail'));
-const MesPaniersPage       = lazy(() => import('./pages/buyer/MesPaniersPage'));
 const InsightsPage         = lazy(() => import('./pages/buyer/InsightsPage'));
 const WishlistPage         = lazy(() => import('./pages/buyer/WishlistPage'));
 const MesFinancesPage      = lazy(() => import('./pages/buyer/MesFinancesPage'));
@@ -80,6 +79,7 @@ const AdminCategories         = lazy(() => import('./pages/admin/AdminCategories
 const AdminBrands             = lazy(() => import('./pages/admin/AdminBrands'));
 const AdminSuppliers          = lazy(() => import('./pages/admin/AdminSuppliers'));
 const AdminBusinessCategories = lazy(() => import('./pages/admin/AdminBusinessCategories'));
+const AdminOnboardingFields   = lazy(() => import('./pages/admin/AdminOnboardingFields'));
 const AdminContent            = lazy(() => import('./pages/admin/AdminContent'));
 const AdminStats              = lazy(() => import('./pages/admin/AdminStats'));
 const AdminOrganisations      = lazy(() => import('./pages/admin/AdminOrganisations'));
@@ -265,7 +265,8 @@ function RedirectAuthenticated() {
   if (from && from !== '/auth') return <Navigate to={from} replace />;
   if (activeOrg?.org_type === 'seller') return <Navigate to="/vendor" replace />;
   if (activeOrg?.org_type === 'delivery') return <Navigate to="/delivery" replace />;
-  return <Navigate to="/buyer" replace />;
+  // Acheteur → directement le catalogue (le tableau de bord reste accessible via "Accueil")
+  return <Navigate to="/buyer/catalog" replace />;
 }
 // Accès limité : dashboard visible, onboarding obligatoire
 function RequireOnboarding({ children }: { children: React.ReactNode }) {
@@ -494,18 +495,6 @@ function AppRoutes() {
             <RequireBuyer>
               <StorefrontLayout>
                 <BuyerOrderDetail />
-              </StorefrontLayout>
-            </RequireBuyer>
-          </RequireOnboarding>
-        }
-      />
-      <Route
-        path="/buyer/carts"
-        element={
-          <RequireOnboarding>
-            <RequireBuyer>
-              <StorefrontLayout>
-                <MesPaniersPage />
               </StorefrontLayout>
             </RequireBuyer>
           </RequireOnboarding>
@@ -1057,6 +1046,16 @@ function AppRoutes() {
           <RequireAdmin>
             <AdminLayout breadcrumbs={[{ text: 'Admin', href: '/admin' }, { text: 'Types d\'acteurs', href: '/admin/business-categories' }]}>
               <AdminBusinessCategories />
+            </AdminLayout>
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/admin/onboarding-fields"
+        element={
+          <RequireAdmin>
+            <AdminLayout breadcrumbs={[{ text: 'Admin', href: '/admin' }, { text: 'Champs onboarding', href: '/admin/onboarding-fields' }]}>
+              <AdminOnboardingFields />
             </AdminLayout>
           </RequireAdmin>
         }

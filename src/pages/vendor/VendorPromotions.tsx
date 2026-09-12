@@ -14,10 +14,46 @@ import {
   Toggle,
   Alert,
   StatusIndicator,
+  Autosuggest,
+  Multiselect,
+  SegmentedControl,
 } from '@cloudscape-design/components';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Promotion } from '../../types';
+
+// Noms de campagne suggérés — mélange calendrier commercial marocain et
+// occasions génériques. Le vendeur peut aussi saisir son propre nom.
+const PROMO_NAME_SUGGESTIONS = [
+  'Promo Ramadan',
+  'Promo Aïd Al-Fitr',
+  'Promo Aïd Al-Adha',
+  'Promo Achoura',
+  'Promo Fête du Trône',
+  'Promo Rentrée scolaire',
+  "Soldes d'été",
+  'Déstockage fin de série',
+  'Vente flash 48h',
+  'Offre nouveaux clients',
+  "Promo fin d'année",
+  'Promo volume gros clients',
+];
+
+interface VendorProductOption { id: string; name: string; ean: string | null }
+interface CategoryOption { id: string; name: string; parent_id: string | null; display_order: number }
+
+const EMPTY_FORM = {
+  name: '',
+  promo_type: 'percentage',
+  discount_value: '',
+  application: 'all_products',
+  product_ids: [] as string[],
+  category_id: '',
+  min_qty: '1',
+  starts_at: '',
+  ends_at: '',
+  stackable: false,
+};
 
 export default function VendorPromotions() {
   const { activeOrg } = useAuth();
@@ -28,16 +64,11 @@ export default function VendorPromotions() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const [form, setForm] = useState({
-    name: '',
-    promo_type: 'percentage',
-    discount_value: '',
-    application: 'all_products',
-    min_qty: '1',
-    starts_at: '',
-    ends_at: '',
-    stackable: false,
-  });
+  const [vendorProducts, setVendorProducts] = useState<VendorProductOption[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [campaignType, setCampaignType] = useState<'promotion' | 'destockage'>('promotion');
+
+  const [form, setForm] = useState({ ...EMPTY_FORM });
 
   async function fetchPromos() {
     if (!activeOrg) return;
@@ -53,8 +84,54 @@ export default function VendorPromotions() {
 
   useEffect(() => { fetchPromos(); }, [activeOrg]);
 
+  // Produits et catégories du vendeur — chargés une fois pour peupler les
+  // sélecteurs de portée (« Produits spécifiques » / « Catégorie »).
+  useEffect(() => {
+    if (!activeOrg) return;
+    supabase.from('products').select('id, name, ean')
+      .eq('seller_org_id', activeOrg.id).eq('status', 'active').order('name')
+      .then(({ data }) => setVendorProducts((data as VendorProductOption[]) ?? []));
+    supabase.from('categories').select('id, name, parent_id, display_order')
+      .eq('active', true).order('display_order')
+      .then(({ data }) => setCategories((data as CategoryOption[]) ?? []));
+  }, [activeOrg]);
+
+  // Liste plate triée par groupe (racine puis ses sous-catégories), avec un
+  // libellé "Parent — Enfant" pour lever l'ambiguïté entre sous-catégories homonymes.
+  const categoryOptions = (() => {
+    const roots = categories.filter((c) => !c.parent_id).sort((a, b) => a.display_order - b.display_order);
+    const options: { value: string; label: string }[] = [];
+    for (const root of roots) {
+      options.push({ value: root.id, label: root.name });
+      categories
+        .filter((c) => c.parent_id === root.id)
+        .sort((a, b) => a.display_order - b.display_order)
+        .forEach((child) => options.push({ value: child.id, label: `${root.name} — ${child.name}` }));
+    }
+    return options;
+  })();
+
+  function openNew() {
+    setForm({ ...EMPTY_FORM });
+    setCampaignType('promotion');
+    setError('');
+    setShowNew(true);
+  }
+
+  function selectCampaignType(type: 'promotion' | 'destockage') {
+    setCampaignType(type);
+    // Un déstockage cible toujours des produits précis — pas de sens sur tout le catalogue.
+    if (type === 'destockage') {
+      setForm((f) => ({ ...f, application: 'specific_products' }));
+    }
+  }
+
+  const scopeMissing =
+    (form.application === 'specific_products' && form.product_ids.length === 0) ||
+    (form.application === 'category' && !form.category_id);
+
   async function handleCreate() {
-    if (!activeOrg || !form.name || !form.discount_value) return;
+    if (!activeOrg || !form.name || !form.discount_value || scopeMissing) return;
     setSaving(true);
     setError('');
     try {
@@ -64,6 +141,8 @@ export default function VendorPromotions() {
         promo_type: form.promo_type,
         discount_value: parseFloat(form.discount_value),
         application: form.application,
+        product_ids: form.application === 'specific_products' ? form.product_ids : [],
+        category_id: form.application === 'category' ? form.category_id : null,
         min_qty: parseInt(form.min_qty) || 1,
         starts_at: form.starts_at || null,
         ends_at: form.ends_at || null,
@@ -72,7 +151,7 @@ export default function VendorPromotions() {
       });
       if (err) throw err;
       setShowNew(false);
-      setForm({ name: '', promo_type: 'percentage', discount_value: '', application: 'all_products', min_qty: '1', starts_at: '', ends_at: '', stackable: false });
+      setForm({ ...EMPTY_FORM });
       fetchPromos();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erreur');
@@ -98,6 +177,15 @@ export default function VendorPromotions() {
     return 'success';
   }
 
+  // Une promotion apparaît dans l'onglet « Déstockage » de la vitrine acheteur si elle
+  // cible des produits précis et se termine sous 48h (cf. storefront/BestDealsPage) —
+  // sinon elle s'affiche comme une promotion standard.
+  function isDestockage(promo: Promotion): boolean {
+    if (!promo.ends_at || (promo.product_ids ?? []).length === 0) return false;
+    const hoursLeft = (new Date(promo.ends_at).getTime() - now.getTime()) / 3_600_000;
+    return hoursLeft > 0 && hoursLeft <= 48;
+  }
+
   return (
     <SpaceBetween size="l">
       <Table
@@ -105,8 +193,9 @@ export default function VendorPromotions() {
           <Header
             variant="h1"
             counter={`(${filtered.length})`}
+            description="Créez des promotions classiques ou des campagnes de déstockage pour écouler du stock rapidement."
             actions={
-              <Button variant="primary" onClick={() => setShowNew(true)}>+ Nouvelle promotion</Button>
+              <Button variant="primary" onClick={openNew}>+ Nouvelle promotion</Button>
             }
           >
             Promotions
@@ -131,22 +220,36 @@ export default function VendorPromotions() {
             sortingField: 'name',
           },
           {
+            id: 'campaign',
+            header: 'Campagne',
+            cell: (p: Promotion) => (
+              isDestockage(p)
+                ? <Badge color="severity-high">🔥 Déstockage</Badge>
+                : <Badge color="grey">Promotion</Badge>
+            ),
+          },
+          {
             id: 'type',
-            header: 'Type',
+            header: 'Remise',
             cell: (p: Promotion) => (
               <Badge color={p.promo_type === 'percentage' ? 'blue' : 'green'}>
-                {p.promo_type === 'percentage' ? `${p.discount_value}%` : `${p.discount_value} €`}
+                {p.promo_type === 'percentage' ? `${p.discount_value}%` : `${p.discount_value} MAD`}
               </Badge>
             ),
           },
           {
             id: 'application',
-            header: 'Application',
-            cell: (p: Promotion) => ({
-              all_products: 'Tous produits',
-              specific_products: 'Produits spécifiques',
-              category: 'Catégorie',
-            }[p.application] ?? p.application),
+            header: 'Portée',
+            cell: (p: Promotion) => {
+              if (p.application === 'specific_products') {
+                const n = (p.product_ids ?? []).length;
+                return `${n} produit${n > 1 ? 's' : ''}`;
+              }
+              if (p.application === 'category') {
+                return categoryOptions.find((c) => c.value === p.category_id)?.label ?? 'Catégorie';
+              }
+              return 'Tous produits';
+            },
           },
           {
             id: 'validity',
@@ -178,7 +281,7 @@ export default function VendorPromotions() {
           <Box textAlign="center" color="inherit">
             <b>Aucune promotion</b>
             <Box variant="p" color="inherit">Créez votre première promotion.</Box>
-            <Button variant="primary" onClick={() => setShowNew(true)}>+ Créer</Button>
+            <Button variant="primary" onClick={openNew}>+ Créer</Button>
           </Box>
         }
       />
@@ -192,39 +295,81 @@ export default function VendorPromotions() {
           <Box float="right">
             <SpaceBetween direction="horizontal" size="xs">
               <Button variant="link" onClick={() => setShowNew(false)}>Annuler</Button>
-              <Button variant="primary" loading={saving} onClick={handleCreate}>Créer</Button>
+              <Button variant="primary" loading={saving} disabled={scopeMissing} onClick={handleCreate}>Créer</Button>
             </SpaceBetween>
           </Box>
         }
       >
         <SpaceBetween size="m">
           {error && <Alert type="error">{error}</Alert>}
-          <FormField label="Nom de la promotion *">
-            <Input value={form.name} onChange={({ detail }) => setForm({ ...form, name: detail.value })} placeholder="Promo été 2026" />
+
+          <FormField label="Type de campagne">
+            <SegmentedControl
+              selectedId={campaignType}
+              onChange={({ detail }) => selectCampaignType(detail.selectedId as 'promotion' | 'destockage')}
+              options={[
+                { id: 'promotion', text: 'Promotion' },
+                { id: 'destockage', text: '🔥 Déstockage' },
+              ]}
+            />
           </FormField>
+
+          {campaignType === 'destockage' && (
+            <Alert type="info">
+              Un déstockage cible des produits précis et doit se terminer sous 48h pour
+              apparaître dans l'onglet « Déstockage » de la vitrine acheteur.
+            </Alert>
+          )}
+
+          <FormField label="Nom de la promotion *" description="Choisissez un nom suggéré ou saisissez le vôtre">
+            <Autosuggest
+              value={form.name}
+              onChange={({ detail }) => setForm({ ...form, name: detail.value })}
+              options={PROMO_NAME_SUGGESTIONS.map((n) => ({ value: n }))}
+              enteredTextLabel={(v) => `Utiliser "${v}"`}
+              placeholder="Ex: Promo Ramadan"
+              filteringType="auto"
+            />
+          </FormField>
+
           <FormField label="Type de remise">
             <Select
-              selectedOption={{ value: form.promo_type, label: form.promo_type === 'percentage' ? 'Pourcentage (%)' : 'Montant fixe (€)' }}
+              selectedOption={{
+                value: form.promo_type,
+                label: form.promo_type === 'percentage' ? 'Pourcentage (%)'
+                     : form.promo_type === 'fixed' ? 'Montant fixe (MAD)' : 'Remise volume',
+              }}
               onChange={({ detail }) => setForm({ ...form, promo_type: detail.selectedOption.value ?? 'percentage' })}
               options={[
                 { value: 'percentage', label: 'Pourcentage (%)' },
-                { value: 'fixed', label: 'Montant fixe (€)' },
+                { value: 'fixed', label: 'Montant fixe (MAD)' },
                 { value: 'volume', label: 'Remise volume' },
               ]}
             />
           </FormField>
-          <FormField label={form.promo_type === 'percentage' ? 'Valeur de la remise (%)' : 'Montant de la remise (€)'}>
+
+          <FormField label={form.promo_type === 'percentage' ? 'Valeur de la remise (%)' : 'Montant de la remise (MAD)'}>
             <Input
               type="number"
               value={form.discount_value}
               onChange={({ detail }) => setForm({ ...form, discount_value: detail.value })}
-              placeholder={form.promo_type === 'percentage' ? 'Ex: 10' : 'Ex: 5.00'}
+              placeholder={form.promo_type === 'percentage' ? 'Ex: 10' : 'Ex: 50.00'}
             />
           </FormField>
+
           <FormField label="Application">
             <Select
-              selectedOption={{ value: form.application, label: form.application === 'all_products' ? 'Tous les produits' : 'Produits spécifiques' }}
-              onChange={({ detail }) => setForm({ ...form, application: detail.selectedOption.value ?? 'all_products' })}
+              selectedOption={{
+                value: form.application,
+                label: form.application === 'all_products' ? 'Tous les produits'
+                     : form.application === 'category' ? 'Catégorie' : 'Produits spécifiques',
+              }}
+              disabled={campaignType === 'destockage'}
+              onChange={({ detail }) => setForm({
+                ...form,
+                application: detail.selectedOption.value ?? 'all_products',
+                product_ids: [], category_id: '',
+              })}
               options={[
                 { value: 'all_products', label: 'Tous les produits' },
                 { value: 'specific_products', label: 'Produits spécifiques' },
@@ -232,6 +377,40 @@ export default function VendorPromotions() {
               ]}
             />
           </FormField>
+
+          {form.application === 'specific_products' && (
+            <FormField
+              label="Produits ciblés *"
+              description={vendorProducts.length === 0 ? 'Aucun produit actif dans votre catalogue.' : undefined}
+              errorText={scopeMissing ? 'Sélectionnez au moins un produit.' : undefined}
+            >
+              <Multiselect
+                selectedOptions={form.product_ids.map((id) => {
+                  const p = vendorProducts.find((vp) => vp.id === id);
+                  return { value: id, label: p?.name ?? id };
+                })}
+                options={vendorProducts.map((p) => ({ value: p.id, label: p.name, description: p.ean ?? undefined }))}
+                onChange={({ detail }) => setForm({ ...form, product_ids: detail.selectedOptions.map((o) => o.value ?? '') })}
+                placeholder="Choisir des produits..."
+                filteringType="auto"
+                empty="Aucun produit actif"
+              />
+            </FormField>
+          )}
+
+          {form.application === 'category' && (
+            <FormField label="Catégorie ciblée *" errorText={scopeMissing ? 'Sélectionnez une catégorie.' : undefined}>
+              <Select
+                selectedOption={categoryOptions.find((c) => c.value === form.category_id) ?? null}
+                options={categoryOptions}
+                onChange={({ detail }) => setForm({ ...form, category_id: detail.selectedOption.value ?? '' })}
+                placeholder="Choisir une catégorie..."
+                filteringType="auto"
+                empty="Aucune catégorie configurée"
+              />
+            </FormField>
+          )}
+
           <FormField label="Quantité minimale">
             <Input type="number" value={form.min_qty} onChange={({ detail }) => setForm({ ...form, min_qty: detail.value })} />
           </FormField>
