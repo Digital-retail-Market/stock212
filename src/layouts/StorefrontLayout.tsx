@@ -114,10 +114,11 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
     setOpen(false); setQuery('');
   }
 
+  const { t } = useTranslation();
   const roots = allCategories.filter((c) => !c.parent_id);
   const subs = allCategories.filter((c) => !!c.parent_id);
   const isEmpty = products.length === 0 && matchedCats.length === 0;
-  const ph = selectedCat ? `Rechercher dans ${selectedCat.name}…` : 'Rechercher produits, marques, EAN...';
+  const ph = selectedCat ? t('header.searchIn', { category: selectedCat.name }) : t('header.searchProducts');
 
   const inputH = size === 'lg' ? '52px' : size === 'sm' ? '36px' : '44px';
   const plOffset = '96px';
@@ -133,14 +134,14 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                 rightIcon={<ChevronDown size={10} />}
                 h="30px" minW="auto" px={2} ml={1} fontSize="xs" fontWeight="medium"
                 onClick={() => setCatMenuOpen(!catMenuOpen)}
-                aria-label="Sélectionner une catégorie">
+                aria-label={t('header.selectCategory')}>
                 {selectedCat ? (
                   <HStack spacing={1}>
                     <CatIcon name={selectedCat.name} size={13} />
-                    <Text display={{ base: 'none', md: 'block' }} noOfLines={1} maxW="80px">{selectedCat.name}</Text>
+                    <Text display={{ base: 'none', md: 'block' }} noOfLines={1} maxW="80px">{getCategoryLabel(selectedCat)}</Text>
                   </HStack>
                 ) : (
-                  <HStack spacing={1}><Globe size={13} /><Text display={{ base: 'none', md: 'block' }}>Toutes</Text></HStack>
+                  <HStack spacing={1}><Globe size={13} /><Text display={{ base: 'none', md: 'block' }}>{t('header.allCategories')}</Text></HStack>
                 )}
               </MenuButton>
               <MenuList minW="210px" shadow="xl" rounded="xl" zIndex={400} fontSize="sm">
@@ -148,7 +149,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                   onClick={() => { setSelectedCat(null); setCatMenuOpen(false); }}
                   fontWeight={!selectedCat ? 'semibold' : 'normal'}
                   color={!selectedCat ? 'blue.600' : 'gray.700'}>
-                  Toutes les catégories
+                  {t('categories.seeAll')}
                 </MenuItem>
                 <MenuDivider />
                 {roots.map((root) => {
@@ -158,7 +159,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                       <MenuItem icon={<Icon size={14} />} fontWeight="semibold" color="gray.700"
                         onClick={() => { setSelectedCat(root); setCatMenuOpen(false); }}
                         bg={selectedCat?.id === root.id ? 'blue.50' : undefined}>
-                        {root.name}
+                        {getCategoryLabel(root)}
                       </MenuItem>
                       {subs.filter((s) => s.parent_id === root.id).map((sub) => {
                         const { Icon: SubIcon } = getCatStyle(sub.name);
@@ -167,7 +168,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                             icon={<SubIcon size={12} />}
                             onClick={() => { setSelectedCat(sub); setCatMenuOpen(false); }}
                             bg={selectedCat?.id === sub.id ? 'blue.50' : undefined}>
-                            {sub.name}
+                            {getCategoryLabel(sub)}
                           </MenuItem>
                         );
                       })}
@@ -188,7 +189,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
           <InputRightElement h={inputH} w="40px">
             {loading ? <Spinner size="xs" color="blue.400" /> :
               query ? (
-                <IconButton aria-label="Effacer" icon={<X size={13} color="#9CA3AF" />}
+                <IconButton aria-label={t('header.closeSearch')} icon={<X size={13} color="#9CA3AF" />}
                   size="xs" variant="ghost" rounded="full"
                   onClick={() => { setQuery(''); setOpen(false); }} />
               ) : <Search size={15} color="#9CA3AF" />}
@@ -203,20 +204,20 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
           {loading && isEmpty && (
             <Flex align="center" justify="center" py={8} gap={3}>
               <Spinner size="sm" color="blue.400" />
-              <Text fontSize="sm" color="gray.500">Recherche en cours...</Text>
+              <Text fontSize="sm" color="gray.500">{t('common.loading')}</Text>
             </Flex>
           )}
           {!loading && isEmpty && (
             <Box p={6} textAlign="center">
-              <Text fontSize="sm" color="gray.500" mb={2}>Aucun résultat pour <strong>"{query}"</strong></Text>
-              {!user && <Text fontSize="xs" color="blue.500">Inscrivez-vous pour l'offre complète.</Text>}
+              <Text fontSize="sm" color="gray.500" mb={2}>{t('header.noResults', { query })}</Text>
+              {!user && <Text fontSize="xs" color="blue.500">{t('header.signUpForMore')}</Text>}
             </Box>
           )}
 
           {matchedCats.length > 0 && (
             <Box>
               <Text fontSize="10px" fontWeight="bold" color="gray.400" px={4} pt={3} pb={1} letterSpacing="wider">
-                CATÉGORIES
+                {t('header.searchCategories').toUpperCase()}
               </Text>
               {matchedCats.map((cat) => {
                 const { Icon: CI, bg: cBg, color: cColor } = getCatStyle(cat.name);
@@ -229,7 +230,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                       <CI size={14} color={cColor} />
                     </Flex>
                     <Box flex={1}>
-                      <Text fontSize="sm" color="gray.700" fontWeight="medium">{cat.name}</Text>
+                      <Text fontSize="sm" color="gray.700" fontWeight="medium">{getCategoryLabel(cat)}</Text>
                       {cat.description && <Text fontSize="10px" color="gray.400" noOfLines={1}>{cat.description}</Text>}
                     </Box>
                   </Flex>
@@ -242,7 +243,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
           {products.length > 0 && (
             <Box>
               <Text fontSize="10px" fontWeight="bold" color="gray.400" px={4} pt={3} pb={1} letterSpacing="wider">
-                PRODUITS
+                {t('header.searchProducts').toUpperCase()}
               </Text>
               {products.map((p) => {
                 const tier = p.price_tiers?.slice().sort((a, b) => a.qty_min - b.qty_min)[0];
@@ -300,7 +301,7 @@ export function SearchAutocomplete({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' 
                   navigate(`/catalog?${p.toString()}`);
                   setOpen(false); setQuery('');
                 }}>
-                Tous les résultats pour "{query}"
+                {t('header.allResults', { query })}
               </Button>
             </Box>
           )}
@@ -365,6 +366,7 @@ export function CategoryBreadcrumb({ category, roots, subCategories, productName
   category?: Category | null; roots: Category[]; subCategories: Category[];
   productName?: string; searchTerm?: string;
 }) {
+  const { t } = useTranslation();
   const allCats = [...roots, ...subCategories];
   const parentCat = category?.parent_id ? allCats.find((c) => c.id === category.parent_id) : null;
 
@@ -373,18 +375,18 @@ export function CategoryBreadcrumb({ category, roots, subCategories, productName
       fontSize="sm" mb={4}>
       <BreadcrumbItem>
         <BreadcrumbLink as={Link} to="/" color="gray.500" _hover={{ color: 'blue.600' }}>
-          <HStack spacing={1}><Home size={13} /><Text>Accueil</Text></HStack>
+          <HStack spacing={1}><Home size={13} /><Text>{t('nav.home')}</Text></HStack>
         </BreadcrumbLink>
       </BreadcrumbItem>
       {searchTerm ? (
         <BreadcrumbItem isCurrentPage>
-          <BreadcrumbLink color="gray.800" fontWeight="medium">Recherche : "{searchTerm}"</BreadcrumbLink>
+          <BreadcrumbLink color="gray.800" fontWeight="medium">{t('common.search')} : "{searchTerm}"</BreadcrumbLink>
         </BreadcrumbItem>
       ) : (
         <>
           <BreadcrumbItem>
             <BreadcrumbLink as={Link} to="/catalog" color="gray.500" _hover={{ color: 'blue.600' }}>
-              Catalogue
+              {t('nav.catalog')}
             </BreadcrumbLink>
           </BreadcrumbItem>
           {parentCat && (
@@ -406,7 +408,7 @@ export function CategoryBreadcrumb({ category, roots, subCategories, productName
                 _hover={productName ? { color: 'blue.600' } : undefined}>
                 <HStack spacing={1}>
                   <CatIcon name={category.name} size={12} />
-                  <Text>{category.name}</Text>
+                  <Text>{getCategoryLabel(category, i18n.language)}</Text>
                 </HStack>
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -428,6 +430,7 @@ export function CategoryBreadcrumb({ category, roots, subCategories, productName
 export function LangSwitcher({ variant = 'dark' }: { variant?: 'dark' | 'light' }) {
   const { lang, setLang } = useLanguage();
   const opts: { key: SupportedLang; label: string }[] = [
+    { key: 'en', label: 'EN' },
     { key: 'fr', label: 'FR' },
     { key: 'ar', label: 'العربية' },
   ];
@@ -559,7 +562,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   Stock212
                 </Text>
                 <Text fontSize="9px" color="gray.400" fontWeight="500" letterSpacing="0.5px" mt="1px">
-                  B2B FMCG MARKETPLACE
+                  {t('header.tagline')}
                 </Text>
               </Box>
             </HStack>
@@ -599,9 +602,9 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 {/* Favoris — acheteurs uniquement */}
                 {(!activeOrg || activeOrg.org_type === 'buyer') && (
                   <Box position="relative" display="inline-flex">
-                    <Tooltip label="Mes favoris" placement="bottom" hasArrow openDelay={400}>
+                    <Tooltip label={t('header.myFavorites')} placement="bottom" hasArrow openDelay={400}>
                       <IconButton
-                        aria-label="Mes favoris"
+                        aria-label={t('header.myFavorites')}
                         icon={<Heart size={17} fill={wishlistCount > 0 ? '#e11d48' : 'none'} color={wishlistCount > 0 ? '#e11d48' : 'currentColor'} />}
                         variant="ghost"
                         rounded="full"
@@ -627,9 +630,9 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 {/* Cart — masqué pour les livreurs */}
                 {activeOrg?.org_type !== 'delivery' && (
                   <Box position="relative" display="inline-flex">
-                    <Tooltip label="Panier" placement="bottom" hasArrow openDelay={400}>
+                    <Tooltip label={t('nav.cart')} placement="bottom" hasArrow openDelay={400}>
                       <IconButton
-                        aria-label="Panier"
+                        aria-label={t('nav.cart')}
                         icon={<ShoppingCart size={17} />}
                         variant="ghost"
                         rounded="full"
@@ -714,7 +717,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                         onClick={() => navigate(getDashPath())}
                         color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                       >
-                        Tableau de bord
+                        {t('header.dashboard')}
                       </MenuItem>
                       {activeOrg?.org_type !== 'delivery' && (
                         <>
@@ -723,28 +726,28 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                             onClick={() => navigate('/buyer/orders')}
                             color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                           >
-                            Mes commandes
+                            {t('header.myOrders')}
                           </MenuItem>
                           <MenuItem
                             icon={<FileText size={15} />}
                             onClick={() => navigate('/buyer/quotes')}
                             color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                           >
-                            Mes devis
+                            {t('header.myQuotes')}
                           </MenuItem>
                           <MenuItem
                             icon={<Truck size={15} />}
                             onClick={() => navigate('/buyer/orders')}
                             color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                           >
-                            Suivi livraisons
+                            {t('header.deliveryTracking')}
                           </MenuItem>
                           <MenuItem
                             icon={<Settings size={15} />}
                             onClick={() => navigate('/buyer/account')}
                             color="gray.700" _hover={{ bg: 'blue.50', color: 'blue.700' }}
                           >
-                            Paramètres
+                            {t('header.settings')}
                           </MenuItem>
                         </>
                       )}
@@ -757,7 +760,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                         onClick={async () => { await signOut(); navigate('/auth'); }}
                         _hover={{ bg: 'red.50' }}
                       >
-                        Déconnexion
+                        {t('header.logout')}
                       </MenuItem>
                     </Box>
                   </MenuList>
@@ -771,7 +774,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   _hover={{ bg: 'gray.50', color: 'blue.600' }}
                   onClick={() => navigate('/auth')}
                 >
-                  Connexion
+                  {t('footer.login')}
                 </Button>
                 <Button
                   size="sm" colorScheme="blue" rounded="full" fontWeight="600" px={4}
@@ -781,7 +784,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   transition="all 0.15s"
                   onClick={() => navigate('/auth')}
                 >
-                  S'inscrire
+                  {t('footer.signUpFree')}
                 </Button>
               </HStack>
             )}
@@ -818,19 +821,20 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
             css={{ '&::-webkit-scrollbar': { display: 'none' } }}
           >
             {([
-              { to: '/buyer',               label: 'Accueil',       exact: true  },
-              { to: '/buyer/catalog',       label: 'Catalogue',     exact: false },
-              { to: '/buyer/destockage',    label: 'Déstockage',    exact: false },
-              { to: '/buyer/orders',        label: 'Commandes',     exact: false },
-              { to: '/buyer/quotes',        label: 'Devis',         exact: false },
-              { to: '/buyer/compare',       label: 'Comparateur',   exact: false },
-              { to: '/buyer/optimizer',     label: 'Optimiseur',    exact: false },
-              { to: '/buyer/ean-catalogue', label: 'Réf. EAN',      exact: false },
-              { to: '/buyer/wishlist',      label: 'Favoris',       exact: false },
-              { to: '/buyer/insights',      label: 'Insights',      exact: false },
-              { to: '/buyer/finances',      label: 'Finances',      exact: false },
-              { to: '/buyer/account',       label: 'Compte',        exact: false },
-            ] as { to: string; label: string; exact: boolean }[]).map(({ to, label, exact }) => {
+              { to: '/buyer',               labelKey: 'nav.home',       exact: true  },
+              { to: '/buyer/catalog',       labelKey: 'nav.catalog',     exact: false },
+              { to: '/buyer/destockage',    labelKey: 'nav.destocking',    exact: false },
+              { to: '/buyer/orders',        labelKey: 'nav.orders',     exact: false },
+              { to: '/buyer/quotes',        labelKey: 'nav.quotes',         exact: false },
+              { to: '/buyer/compare',       labelKey: 'nav.comparator',   exact: false },
+              { to: '/buyer/optimizer',     labelKey: 'nav.optimizer',    exact: false },
+              { to: '/buyer/ean-catalogue', labelKey: 'nav.eanCatalog',      exact: false },
+              { to: '/buyer/wishlist',      labelKey: 'nav.favorites',       exact: false },
+              { to: '/buyer/insights',      labelKey: 'nav.insights',      exact: false },
+              { to: '/buyer/finances',      labelKey: 'nav.finances',      exact: false },
+              { to: '/buyer/account',       labelKey: 'nav.account',        exact: false },
+            ] as { to: string; labelKey: string; exact: boolean }[]).map(({ to, labelKey, exact }) => {
+              const label = t(labelKey);
               const active = exact
                 ? loc.pathname === to
                 : loc.pathname.startsWith(to);
@@ -883,7 +887,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   Stock212
                 </Text>
                 <Text fontSize="8px" color="gray.400" fontWeight="500" letterSpacing="0.5px">
-                  B2B FMCG MARKETPLACE
+                  {t('header.tagline')}
                 </Text>
               </Box>
             </HStack>
@@ -900,11 +904,11 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               </Box>
 
               {[
-                { to: '/',           label: 'Accueil' },
-                { to: '/catalog',    label: 'Catalogue' },
-                { to: '/brands',     label: 'Marques' },
-                { to: '/boutiques',  label: 'Boutiques' },
-                { to: '/best-deals', label: 'Best Deals' },
+                { to: '/',           label: t('nav.home') },
+                { to: '/catalog',    label: t('nav.catalog') },
+                { to: '/brands',     label: t('nav.brands') },
+                { to: '/boutiques',  label: t('nav.shops') },
+                { to: '/best-deals', label: t('nav.bestDeals') },
               ].map(({ to, label }) => (
                 <Link key={to} to={to} onClick={onClose}>
                   <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
@@ -918,7 +922,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   <Divider />
                   <Box px={5} pt={3} pb={1}>
                     <Text fontSize="10px" fontWeight="bold" color="gray.400" letterSpacing="wider">
-                      CATÉGORIES
+                      {t('categories.title').toUpperCase()}
                     </Text>
                   </Box>
                   <Accordion allowMultiple>
@@ -960,29 +964,29 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 <VStack align="stretch" spacing={0}>
                   <Box px={5} pt={3} pb={1}>
                     <Text fontSize="10px" fontWeight="bold" color="gray.400" letterSpacing="wider">
-                      MON ESPACE
+                      {t('footer.account').toUpperCase()}
                     </Text>
                   </Box>
                   <Link to={getDashPath()} onClick={onClose}>
                     <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                      <Text fontSize="sm" fontWeight="medium" color="gray.700">Tableau de bord</Text>
+                      <Text fontSize="sm" fontWeight="medium" color="gray.700">{t('header.dashboard')}</Text>
                     </Box>
                   </Link>
                   {activeOrg?.org_type !== 'delivery' && (
                     <>
                       <Link to="/buyer/orders" onClick={onClose}>
                         <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Mes commandes</Text>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700">{t('header.myOrders')}</Text>
                         </Box>
                       </Link>
                       <Link to="/buyer/quotes" onClick={onClose}>
                         <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Mes devis</Text>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700">{t('header.myQuotes')}</Text>
                         </Box>
                       </Link>
                       <Link to="/buyer/ean-catalogue" onClick={onClose}>
                         <Box py={3} px={5} _hover={{ bg: 'gray.50' }}>
-                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Référence EAN</Text>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700">{t('header.eanReference')}</Text>
                         </Box>
                       </Link>
                     </>
@@ -990,7 +994,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   <Divider my={1} />
                   <Box py={3} px={5} cursor="pointer" _hover={{ bg: 'red.50' }}
                     onClick={async () => { await signOut(); onClose(); navigate('/auth'); }}>
-                    <Text fontSize="sm" fontWeight="medium" color="red.500">Déconnexion</Text>
+                    <Text fontSize="sm" fontWeight="medium" color="red.500">{t('header.logout')}</Text>
                   </Box>
                 </VStack>
               ) : (
@@ -998,9 +1002,9 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                   <Button w="full" rounded="full" size="sm" fontWeight="700"
                     style={{ background: N.navy, color: 'white' }}
                     _hover={{ opacity: 0.9 }}
-                    onClick={() => { navigate('/auth'); onClose(); }}>S'inscrire gratuitement</Button>
+                    onClick={() => { navigate('/auth'); onClose(); }}>{t('footer.signUpFree')}</Button>
                   <Button w="full" variant="outline" rounded="full" size="sm"
-                    onClick={() => { navigate('/auth'); onClose(); }}>Se connecter</Button>
+                    onClick={() => { navigate('/auth'); onClose(); }}>{t('footer.login')}</Button>
                 </VStack>
               )}
             </VStack>
@@ -1029,7 +1033,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         <Box bg="blue.700" px={4} py={2.5}>
           <Flex maxW="1400px" mx="auto" align="center" gap={2}>
             <Text fontSize="sm" color="white" fontWeight="500">
-              ⏳ Votre dossier est en cours de validation — un commercial vous contactera sous 24–48h pour activer votre accès complet.
+              {t('header.pendingValidation')}
             </Text>
           </Flex>
         </Box>
@@ -1038,7 +1042,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         <Box bg="red.600" px={4} py={2.5}>
           <Flex maxW="1400px" mx="auto" align="center" gap={2}>
             <Text fontSize="sm" color="white" fontWeight="500">
-              ❌ Votre dossier a été refusé. Contactez-nous à{' '}
+              {t('header.validationRejected', { email: 'commercial@stock212.com' }).split('{{email}}')[0]}
               <Text as="a" href="mailto:commercial@stock212.com" textDecoration="underline" display="inline">
                 commercial@stock212.com
               </Text>
@@ -1069,7 +1073,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 objectFit="contain"
               />
               <Text color="gray.400" fontSize="sm" lineHeight={1.7}>
-                La marketplace B2B de référence pour les professionnels FMCG en Afrique.
+                {t('footer.tagline')}
               </Text>
               <HStack spacing={3}>
                 {[Facebook, Twitter, Linkedin, Instagram].map((Icon, i) => (
@@ -1083,12 +1087,12 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
 
             <Flex gap={8} flexWrap="wrap">
               <VStack align="start" spacing={2}>
-                <Text color="white" fontWeight="semibold" fontSize="sm">Plateforme</Text>
+                <Text color="white" fontWeight="semibold" fontSize="sm">{t('footer.platform')}</Text>
                 {[
-                  { to: '/catalog', label: 'Catalogue produits' },
-                  { to: '/best-deals', label: 'Meilleures offres' },
-                  { to: '/brands', label: 'Nos marques' },
-                  { to: '/how-it-works', label: 'Comment ça marche' },
+                  { to: '/catalog', label: t('footer.catalog') },
+                  { to: '/best-deals', label: t('footer.bestOffers') },
+                  { to: '/brands', label: t('footer.brands') },
+                  { to: '/how-it-works', label: t('footer.howItWorks') },
                 ].map(({ to, label }) => (
                   <Link key={to} to={to}>
                     <Text color="gray.400" fontSize="sm" _hover={{ color: 'white' }} transition="color 0.15s">{label}</Text>
@@ -1097,12 +1101,12 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               </VStack>
 
               <VStack align="start" spacing={2}>
-                <Text color="white" fontWeight="semibold" fontSize="sm">Compte</Text>
+                <Text color="white" fontWeight="semibold" fontSize="sm">{t('footer.account')}</Text>
                 {[
-                  { to: '/auth', label: 'Se connecter' },
-                  { to: '/auth', label: "S'inscrire gratuitement" },
-                  { to: '/buyer', label: 'Espace acheteur' },
-                  { to: '/vendor', label: 'Espace vendeur' },
+                  { to: '/auth', label: t('footer.login') },
+                  { to: '/auth', label: t('footer.signUpFree') },
+                  { to: '/buyer', label: t('footer.buyerSpace') },
+                  { to: '/vendor', label: t('footer.sellerSpace') },
                 ].map(({ to, label }) => (
                   <Link key={label} to={to}>
                     <Text color="gray.400" fontSize="sm" _hover={{ color: 'white' }} transition="color 0.15s">{label}</Text>
@@ -1111,7 +1115,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               </VStack>
 
               <VStack align="start" spacing={2}>
-                <Text color="white" fontWeight="semibold" fontSize="sm">Contact</Text>
+                <Text color="white" fontWeight="semibold" fontSize="sm">{t('footer.contact')}</Text>
                 <HStack spacing={2}><Mail size={13} color="#6B7280" /><Text color="gray.400" fontSize="sm">contact@stock212.com</Text></HStack>
                 <HStack spacing={2}><Phone size={13} color="#6B7280" /><Text color="gray.400" fontSize="sm">+33 1 XX XX XX XX</Text></HStack>
               </VStack>
@@ -1120,9 +1124,9 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         </Box>
         <Box borderTop="1px" borderColor="gray.800">
           <Flex maxW="1400px" mx="auto" px={4} py={4} justify="space-between" align="center" flexWrap="wrap" gap={3}>
-            <Text color="gray.500" fontSize="xs">© {new Date().getFullYear()} Stock212. Tous droits réservés.</Text>
+            <Text color="gray.500" fontSize="xs">© {new Date().getFullYear()} Stock212. {t('footer.rights')}</Text>
             <HStack spacing={5} fontSize="xs">
-              {[{ to: '/legal/cgv', label: 'CGV' }, { to: '/legal/privacy', label: 'Confidentialité' }, { to: '/legal/mentions', label: 'Mentions légales' }].map(({ to, label }) => (
+              {[{ to: '/legal/cgv', label: t('footer.terms') }, { to: '/legal/privacy', label: t('footer.privacy') }, { to: '/legal/mentions', label: t('footer.legal') }].map(({ to, label }) => (
                 <Link key={to} to={to}>
                   <Text color="gray.500" _hover={{ color: 'gray.200' }} transition="color 0.15s">{label}</Text>
                 </Link>
