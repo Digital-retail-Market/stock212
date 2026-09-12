@@ -629,11 +629,11 @@ export default function HomePage() {
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
-          CATÉGORIES — deux lignes défilables horizontalement
+          CATÉGORIES — Circular category display with images
       ══════════════════════════════════════════════════════════════ */}
-      <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+      <Box bg="white" py={8} style={{ borderBottom: `1px solid ${C.border}` }}>
         <Container>
-          <Flex align="center" justify="space-between" mb={5}>
+          <Flex align="center" justify="space-between" mb={8}>
             <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
               {t('categories.title')}
             </Heading>
@@ -644,22 +644,31 @@ export default function HomePage() {
             </Button>
           </Flex>
 
-          <Box
-            display="grid"
-            style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 1fr)' }}
-            sx={{
-              gridAutoColumns: { base: '116px', sm: '138px', md: '160px' },
-              '&::-webkit-scrollbar': { display: 'none' },
-            }}
-            gap={{ base: 2, md: 4 }}
-            overflowX="auto"
-            pb={1}
-            scrollbarWidth="none"
-          >
-            {orderedCategories.map((cat) => (
-              <CategoryTile key={cat.id} category={cat} onClick={() => navigate(`/catalog?category=${cat.id}`)} />
+          <SimpleGrid columns={{ base: 3, sm: 4, md: 5, lg: 7 }} spacing={{ base: 4, md: 6 }} w="full">
+            {[
+              { name: 'Beverages', image: '/categories/Beverages.png' },
+              { name: 'Dairy', image: '/categories/Dairy.png' },
+              { name: 'Meat', image: '/categories/Meat.png' },
+              { name: 'Cooking Oils', image: '/categories/cooking oils.png' },
+              { name: 'Frozen', image: '/categories/frozen.png' },
+              { name: 'Fruits', image: '/categories/fruit.png' },
+              { name: 'Packaging', image: '/categories/packaging.png' },
+            ].map((cat) => (
+              <Flex key={cat.name} direction="column" align="center" gap={3} cursor="pointer"
+                onClick={() => navigate('/catalog')} _hover={{ transform: 'translateY(-4px)' }}
+                transition="all 0.2s">
+                <Box position="relative" w={{ base: '80px', sm: '100px', md: '120px' }} h={{ base: '80px', sm: '100px', md: '120px' }}
+                  rounded="full" overflow="hidden" bg={C.bgAlt} border="3px solid" borderColor={C.border}
+                  _hover={{ borderColor: C.accent, boxShadow: `0 0 0 2px ${C.accent}20` }} transition="all 0.3s">
+                  <Image src={cat.image} alt={cat.name} w="full" h="full" objectFit="cover" />
+                </Box>
+                <Text fontSize={{ base: '11px', sm: 'xs', md: 'sm' }} fontWeight="600" textAlign="center"
+                  color={C.text} noOfLines={2} maxW="120px">
+                  {cat.name}
+                </Text>
+              </Flex>
             ))}
-          </Box>
+          </SimpleGrid>
         </Container>
       </Box>
 
