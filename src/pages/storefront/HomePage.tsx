@@ -623,7 +623,7 @@ export default function HomePage() {
                   </HStack>
                 </Flex>
 
-                <Box position="relative" w="full" h={{ base: '200px', sm: '250px', md: '320px' }} overflow="hidden" rounded="lg" style={{
+                <Box position="relative" w="full" h={{ base: '120px', sm: '140px', md: '160px' }} overflow="hidden" rounded="lg" style={{
                   background: 'rgba(255,255,255,0.1)',
                   border: '3px solid rgba(255,255,255,0.3)'
                 }}>
