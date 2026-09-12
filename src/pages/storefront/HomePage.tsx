@@ -854,9 +854,9 @@ export default function HomePage() {
       {(() => {
         const [timeLeft, setTimeLeft] = useState(3600);
         const sideAds = [
-          '/sideads/side1.jfif', '/sideads/side4.jfif', '/sideads/side6.jfif',
-          '/sideads/side8.jfif', '/sideads/side10.jfif', '/sideads/side11.jfif', '/sideads/side12.jfif',
-          '/sideads/side13.jfif', '/sideads/side14.jfif', '/sideads/side15.jfif', '/sideads/side16.jfif'
+          '/sideads/side1.jfif', '/sideads/side6.jfif',
+          '/sideads/side10.jfif', '/sideads/side11.jfif', '/sideads/side12.jfif',
+          '/sideads/side13.jfif', '/sideads/side14.jfif', '/sideads/side15.jfif'
         ];
         const [currentAdIdx, setCurrentAdIdx] = useState(0);
 
@@ -911,7 +911,7 @@ export default function HomePage() {
                   height: 100%;
                 }
                 .offre-ad-item {
-                  flex: 0 0 calc(100% / 11);
+                  flex: 0 0 calc(100% / 8);
                   display: flex;
                   align-items: center;
                   justify-content: center;
