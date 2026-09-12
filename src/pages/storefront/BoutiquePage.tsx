@@ -15,6 +15,8 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { addToCart as addToCartShared } from '../../lib/cart';
 import { lowestTierPrice } from '../../lib/pricing';
+import { getCategoryLabel } from '../../lib/categoryLabel';
+import { useTranslation } from 'react-i18next';
 import type { Organisation, Product, Brand, Category } from '../../types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -555,7 +557,7 @@ export default function BoutiquePage() {
                     flexShrink={0}
                     bg={activeCategory === cat.id ? 'blue.700' : undefined}
                   >
-                    {cat.name} ({products.filter(p => p.categories?.id === cat.id).length})
+                    {getCategoryLabel(cat)} ({products.filter(p => p.categories?.id === cat.id).length})
                   </Button>
                 ))}
               </Flex>

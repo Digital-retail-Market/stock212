@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { addToCart as addToCartShared } from '../../lib/cart';
 import { lowestTierPrice } from '../../lib/pricing';
 import { useWishlist } from '../../hooks/useWishlist';
+import { getCategoryLabel } from '../../lib/categoryLabel';
 import { rankCatalogGroups, type CatalogGroupInput } from '../../lib/recommendation';
 
 interface CatalogProduct {
@@ -300,7 +301,7 @@ export default function BuyerCatalog() {
                 {roots.map(root => (
                   <ExpandableSection
                     key={root.id}
-                    headerText={root.name}
+                    headerText={getCategoryLabel(root)}
                     variant="footer"
                     defaultExpanded={categoryId === root.id || children(root.id).some(c => c.id === categoryId)}
                   >
@@ -308,13 +309,13 @@ export default function BuyerCatalog() {
                       <div onClick={() => setCategoryId(root.id)}
                         style={{ cursor: 'pointer', fontWeight: categoryId === root.id ? 700 : 400,
                           color: categoryId === root.id ? '#0972d3' : '#5f6b7a', fontSize: 13, paddingLeft: 4 }}>
-                        Tous — {root.name}
+                        Tous — {getCategoryLabel(root)}
                       </div>
                       {children(root.id).map(child => (
                         <div key={child.id} onClick={() => setCategoryId(child.id)}
                           style={{ cursor: 'pointer', fontWeight: categoryId === child.id ? 700 : 400,
                             color: categoryId === child.id ? '#0972d3' : '#5f6b7a', fontSize: 13, paddingLeft: 12 }}>
-                          {child.name}
+                          {getCategoryLabel(child)}
                         </div>
                       ))}
                     </SpaceBetween>

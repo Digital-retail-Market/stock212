@@ -19,7 +19,9 @@ import { addToCart as addToCartShared } from '../../lib/cart';
 import { useComparator } from '../../contexts/ComparatorContext';
 import { CategoryBreadcrumb } from '../../layouts/StorefrontLayout';
 import { getCatStyle } from '../../lib/categoryIcons';
+import { getCategoryLabel } from '../../lib/categoryLabel';
 import { useMarketingStorefront } from '../../hooks/useMarketingStorefront';
+import { useTranslation } from 'react-i18next';
 import { SearchSponsoredBlock } from '../../components/marketing/HomepageBlocks';
 import type { Product, Category, Brand } from '../../types';
 
@@ -419,7 +421,7 @@ export default function CatalogPage() {
                         <Box key={root.id}>
                           <Text fontSize="11px" fontWeight="600" color="gray.600"
                             py={1.5} letterSpacing="0.02em">
-                            {root.name}
+                            {getCategoryLabel(root)}
                           </Text>
                           {subs.map((sub) => {
                             const isSelected = selectedCategoryId === sub.id;
@@ -442,7 +444,7 @@ export default function CatalogPage() {
                                 <Text fontSize="xs"
                                   color={isSelected ? 'blue.800' : 'gray.600'}
                                   fontWeight={isSelected ? '700' : '400'}>
-                                  {sub.name}
+                                  {getCategoryLabel(sub)}
                                 </Text>
                                 {countsLoaded ? (
                                   <Text fontSize="9px" color="gray.400" fontFamily="mono">
@@ -641,7 +643,7 @@ export default function CatalogPage() {
             <Text fontSize="sm" color="gray.500">
               {loading ? '...' : `${total} produit${total !== 1 ? 's' : ''} trouvé${total !== 1 ? 's' : ''}`}
               {selectedCat && (
-                <Text as="span" fontWeight="semibold" color="gray.700"> dans {selectedCat.name}</Text>
+                <Text as="span" fontWeight="semibold" color="gray.700"> dans {getCategoryLabel(selectedCat)}</Text>
               )}
             </Text>
             {activeFiltersCount > 0 && (
