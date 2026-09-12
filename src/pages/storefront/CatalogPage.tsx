@@ -34,10 +34,22 @@ function CatIcon({ name }: { name: string }) {
   );
 }
 
-// Note: SORT_OPTIONS now dynamically populated using i18n in component
+const SORT_OPTIONS_AUTH = [
+  { value: 'created_at:desc', label: 'Plus récents' },
+  { value: 'avg_rating:desc', label: 'Mieux notés' },
+  { value: 'price:asc', label: 'Prix croissant' },
+  { value: 'price:desc', label: 'Prix décroissant' },
+];
+
+const SORT_OPTIONS_GUEST = [
+  { value: 'created_at:desc', label: 'Plus récents' },
+  { value: 'avg_rating:desc', label: 'Mieux notés' },
+];
 
 const TEMPERATURES = ['ambient', 'refrigerated', 'fresh', 'frozen'];
-// TEMP_LABELS now dynamically generated using i18n
+const TEMP_LABELS: Record<string, string> = {
+  ambient: 'Ambiant', refrigerated: 'Réfrigéré', fresh: 'Frais', frozen: 'Surgelé',
+};
 
 const CERT_OPTIONS = ['Bio', 'Halal', 'Kasher', 'Fairtrade', 'MSC', 'FSC', 'ISO 22000', 'IFS', 'BRC'];
 
