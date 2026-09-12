@@ -581,6 +581,38 @@ export default function HomePage() {
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
+          SIDE ADS CAROUSEL — Horizontal promotional banner
+      ══════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const [sideAdsIdx, setSideAdsIdx] = useState(0);
+        const sideAds = ['/sideads/side1.jfif', '/sideads/side2.jfif', '/sideads/side3.jfif', '/sideads/side4.jfif', '/sideads/side5.jfif', '/sideads/side6.jfif', '/sideads/side7.jfif', '/sideads/side8.jfif', '/sideads/side9.jfif'];
+
+        useEffect(() => {
+          const interval = setInterval(() => {
+            setSideAdsIdx((prev) => (prev + 1) % sideAds.length);
+          }, 6000);
+          return () => clearInterval(interval);
+        }, []);
+
+        return (
+          <Box bg="white" py={2} style={{ borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}` }}>
+            <Box position="relative" w="full" h={{ base: '180px', sm: '220px', md: '280px' }} overflow="hidden">
+              <Image src={sideAds[sideAdsIdx]} alt={`Side Ad ${sideAdsIdx + 1}`} w="full" h="full" objectFit="cover"
+                transition="opacity 0.5s ease-in-out" />
+              <Flex position="absolute" bottom={3} left="50%" transform="translateX(-50%)" gap={1.5}>
+                {sideAds.map((_, i) => (
+                  <Box key={i} w={2} h={2} rounded="full"
+                    bg={i === sideAdsIdx ? C.accent : 'rgba(0,0,0,0.3)'} cursor="pointer"
+                    onClick={() => setSideAdsIdx(i)} transition="all 0.2s"
+                    _hover={{ bg: i === sideAdsIdx ? C.accent : 'rgba(0,0,0,0.6)' }} />
+                ))}
+              </Flex>
+            </Box>
+          </Box>
+        );
+      })()}
+
+      {/* ══════════════════════════════════════════════════════════════
           MARQUES DISPONIBLES — Auto-scrolling brands carousel
       ══════════════════════════════════════════════════════════════ */}
       <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}`, overflow: 'hidden' }}>
