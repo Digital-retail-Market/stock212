@@ -1,9 +1,10 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import en from './locales/en.json';
 import fr from './locales/fr.json';
 import ar from './locales/ar.json';
 
-export const SUPPORTED_LANGS = ['fr', 'ar'] as const;
+export const SUPPORTED_LANGS = ['en', 'fr', 'ar'] as const;
 export type SupportedLang = (typeof SUPPORTED_LANGS)[number];
 export const LANG_STORAGE_KEY = 'stock212_lang';
 export const RTL_LANGS: SupportedLang[] = ['ar'];
@@ -18,9 +19,9 @@ export function getInitialLang(): SupportedLang {
 }
 
 i18n.use(initReactI18next).init({
-  resources: { fr: { translation: fr }, ar: { translation: ar } },
+  resources: { en: { translation: en }, fr: { translation: fr }, ar: { translation: ar } },
   lng: getInitialLang(),
-  fallbackLng: 'fr',
+  fallbackLng: 'en',
   interpolation: { escapeValue: false },
 });
 
