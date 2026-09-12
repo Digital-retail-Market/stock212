@@ -592,6 +592,54 @@ export default function HomePage() {
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
+          FEATURED PRODUCTS — Vibrant grid with attention-grabbing design
+      ══════════════════════════════════════════════════════════════ */}
+      {(loadingPromos || promos.length > 0) && (
+        <Box bg={C.orangeLight} py={{ base: 5, md: 7 }} style={{
+          borderBottom: `3px solid ${C.warning}`,
+          borderTop: `4px solid ${C.primary}`
+        }}>
+          <Container>
+            <Flex align="center" justify="space-between" mb={5} display={{ base: 'none', md: 'flex' }}>
+              <HStack spacing={3} align="center">
+                <Heading size="lg" fontWeight="900" style={{
+                  background: `linear-gradient(135deg, ${C.warning} 0%, ${C.accent} 100%)`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  ⭐ {t('sections.sponsored')}
+                </Heading>
+                <Box rounded="full" px={3} py={1.5} style={{
+                  background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryMid} 100%)`,
+                  border: `2px solid ${C.accent}`
+                }}>
+                  <Text fontSize="11px" fontWeight="800" style={{ color: C.accent }}>🔥 {t('sections.topRated')}</Text>
+                </Box>
+              </HStack>
+              <Button size="sm" fontWeight="700" fontSize="sm"
+                bg={C.warning} color="white" _hover={{ bg: C.warningDark }}
+                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+                {t('common.seeAll')} →
+              </Button>
+            </Flex>
+            <Heading size="md" fontWeight="900" style={{ color: C.warning }} mb={5} display={{ base: 'block', md: 'none' }}>
+              ⭐ {t('sections.sponsored')}
+            </Heading>
+            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={{ base: 2, md: 4 }}>
+              {loadingPromos
+                ? Array.from({ length: 10 }).map((_, i) => (
+                    <Box key={i} rounded="lg" overflow="hidden" border="2px solid" borderColor={C.warning}>
+                      <Skeleton h={{ base: '140px', md: '160px' }} /><Box p={2} bg="white"><Skeleton h="8px" mb={1} /><Skeleton h="8px" w="60%" /></Box>
+                    </Box>
+                  ))
+                : promos.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
+            </SimpleGrid>
+          </Container>
+        </Box>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
           PROMOTIONAL VIDEO CAROUSEL — Auto-rotating featured videos
       ══════════════════════════════════════════════════════════════ */}
       {(() => {
@@ -673,54 +721,6 @@ export default function HomePage() {
           </Box>
         );
       })()}
-
-      {/* ══════════════════════════════════════════════════════════════
-          FEATURED PRODUCTS — Vibrant grid with attention-grabbing design
-      ══════════════════════════════════════════════════════════════ */}
-      {(loadingPromos || promos.length > 0) && (
-        <Box bg={C.orangeLight} py={{ base: 5, md: 7 }} style={{
-          borderBottom: `3px solid ${C.warning}`,
-          borderTop: `4px solid ${C.primary}`
-        }}>
-          <Container>
-            <Flex align="center" justify="space-between" mb={5} display={{ base: 'none', md: 'flex' }}>
-              <HStack spacing={3} align="center">
-                <Heading size="lg" fontWeight="900" style={{
-                  background: `linear-gradient(135deg, ${C.warning} 0%, ${C.accent} 100%)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}>
-                  ⭐ {t('sections.sponsored')}
-                </Heading>
-                <Box rounded="full" px={3} py={1.5} style={{
-                  background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryMid} 100%)`,
-                  border: `2px solid ${C.accent}`
-                }}>
-                  <Text fontSize="11px" fontWeight="800" style={{ color: C.accent }}>🔥 {t('sections.topRated')}</Text>
-                </Box>
-              </HStack>
-              <Button size="sm" fontWeight="700" fontSize="sm"
-                bg={C.warning} color="white" _hover={{ bg: C.warningDark }}
-                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
-                {t('common.seeAll')} →
-              </Button>
-            </Flex>
-            <Heading size="md" fontWeight="900" style={{ color: C.warning }} mb={5} display={{ base: 'block', md: 'none' }}>
-              ⭐ {t('sections.sponsored')}
-            </Heading>
-            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={{ base: 2, md: 4 }}>
-              {loadingPromos
-                ? Array.from({ length: 10 }).map((_, i) => (
-                    <Box key={i} rounded="lg" overflow="hidden" border="2px solid" borderColor={C.warning}>
-                      <Skeleton h={{ base: '140px', md: '160px' }} /><Box p={2} bg="white"><Skeleton h="8px" mb={1} /><Skeleton h="8px" w="60%" /></Box>
-                    </Box>
-                  ))
-                : promos.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
-            </SimpleGrid>
-          </Container>
-        </Box>
-      )}
 
       {/* ══════════════════════════════════════════════════════════════
           PROMOTIONS & DÉSTOCKAGE — Carousel with more products
