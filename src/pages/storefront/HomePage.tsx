@@ -585,7 +585,12 @@ export default function HomePage() {
       ══════════════════════════════════════════════════════════════ */}
       {(() => {
         const [timeLeft, setTimeLeft] = useState(3600);
-        const sideAds = ['/sideads/side1.jfif', '/sideads/side2.jfif', '/sideads/side3.jfif', '/sideads/side4.jfif', '/sideads/side5.jfif', '/sideads/side6.jfif', '/sideads/side7.jfif', '/sideads/side8.jfif', '/sideads/side9.jfif'];
+        const sideAds = [
+          '/sideads/side1.jfif', '/sideads/side2.jfif', '/sideads/side3.jfif', '/sideads/side4.jfif',
+          '/sideads/side5.jfif', '/sideads/side6.jfif', '/sideads/side7.jfif', '/sideads/side8.jfif',
+          '/sideads/side9.jfif', '/sideads/side10.jfif', '/sideads/side11.jfif', '/sideads/side12.jfif',
+          '/sideads/side13.jfif', '/sideads/side14.jfif', '/sideads/side15.jfif', '/sideads/side16.jfif'
+        ];
         const [currentAdIdx, setCurrentAdIdx] = useState(0);
 
         useEffect(() => {
