@@ -962,67 +962,6 @@ export default function HomePage() {
         </Box>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════
-          WHO WE SERVE — Specific business segments with images
-      ══════════════════════════════════════════════════════════════ */}
-      <Box bg="white" py={{ base: 6, md: 8 }} style={{
-        borderBottom: `3px solid ${C.warning}`,
-        borderTop: `4px solid ${C.accent}`
-      }}>
-        <Container>
-          <VStack spacing={3} mb={8} textAlign="center" align="center">
-            <Heading size="lg" fontWeight="900"
-              style={{
-                background: `linear-gradient(135deg, ${C.warning} 0%, ${C.accent} 100%)`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}>
-              🎯 {t('homepage.builtForProfessionals')}
-            </Heading>
-            <Text fontSize="sm" color={C.text} maxW="650px">
-              {t('homepage.builtDesc')}
-            </Text>
-          </VStack>
-          <SimpleGrid columns={{ base: 2, sm: 3, lg: 4 }} spacing={{ base: 3, md: 4 }}>
-            {[
-              { icon: ShoppingCart, title: t('homepage.groceryShops'), desc: t('homepage.retailEssentials'), img: 'https://images.pexels.com/photos/3962286/pexels-photo-3962286.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: Utensils, title: t('homepage.bakeryPastry'), desc: t('homepage.freshDaily'), img: 'https://images.pexels.com/photos/821365/pexels-photo-821365.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: UtensilsCrossed, title: t('homepage.restaurants'), desc: t('homepage.bulkSupplies'), img: 'https://images.pexels.com/photos/1108117/pexels-photo-1108117.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: Coffee, title: t('homepage.cafes'), desc: t('homepage.beverageSolutions'), img: 'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: Building2, title: t('homepage.hotels'), desc: t('homepage.volumeOrders'), img: 'https://images.pexels.com/photos/3992816/pexels-photo-3992816.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: Pill, title: t('homepage.parapharmacies'), desc: t('homepage.supplementsCosmetics'), img: 'https://images.pexels.com/photos/3945683/pexels-photo-3945683.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: Store, title: t('homepage.supermarkets'), desc: t('homepage.highVolume'), img: 'https://images.pexels.com/photos/3962282/pexels-photo-3962282.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: Truck, title: t('homepage.wholesalers'), desc: t('homepage.bulkDistribution'), img: 'https://images.pexels.com/photos/3961964/pexels-photo-3961964.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: Building, title: t('homepage.healthcare'), desc: t('homepage.hospitalSupplies'), img: 'https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: BookOpen, title: t('homepage.schools'), desc: t('homepage.institutionalCatering'), img: 'https://images.pexels.com/photos/3768000/pexels-photo-3768000.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: Navigation, title: t('homepage.foodTrucks'), desc: t('homepage.mobileFoodService'), img: 'https://images.pexels.com/photos/2543269/pexels-photo-2543269.jpeg?auto=compress&cs=tinysrgb&w=600' },
-              { icon: Handshake, title: t('homepage.cooperatives'), desc: t('homepage.memberBasedBuying'), img: 'https://images.pexels.com/photos/4550745/pexels-photo-4550745.jpeg?auto=compress&cs=tinysrgb&w=600' },
-            ].map(({ icon: IconComponent, title, desc, img }, i) => (
-              <Box key={i} rounded="lg" overflow="hidden" bg="white"
-                border="2px solid" borderColor={C.primary}
-                _hover={{ shadow: 'xl', transform: 'translateY(-4px)' }}
-                transition="all 0.2s" cursor="pointer" minH="280px" display="flex" flexDirection="column">
-                <Box h="160px" w="full" overflow="hidden" position="relative" bg={C.bgAlt}>
-                  <Image src={img} alt={title} w="full" h="full" objectFit="cover"
-                    loading="lazy" onError={(e) => e.currentTarget.style.display = 'none'}
-                    _hover={{ transform: 'scale(1.05)' }} transition="transform 0.3s" />
-                  <Box position="absolute" inset={0} style={{
-                    background: `linear-gradient(to bottom, rgba(0,0,0,0) 50%, ${C.primary}40)`
-                  }} />
-                  <Flex position="absolute" top={4} left={4} w={10} h={10} rounded="lg" align="center" justify="center" bg="white" shadow="md">
-                    <IconComponent size={24} color={C.primary} />
-                  </Flex>
-                </Box>
-                <VStack spacing={1} p={4} flex={1} justify="flex-start">
-                  <Text fontSize="sm" fontWeight="900" color={C.primary} textAlign="center">{title}</Text>
-                  <Text fontSize="xs" fontWeight="500" color={C.textMuted} textAlign="center">{desc}</Text>
-                </VStack>
-              </Box>
-            ))}
-          </SimpleGrid>
-        </Container>
-      </Box>
 
       {/* ══════════════════════════════════════════════════════════════
           FOR BUYERS — Dual Value Prop
