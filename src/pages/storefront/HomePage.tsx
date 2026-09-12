@@ -991,48 +991,6 @@ export default function HomePage() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════
-          NEW ARRIVALS — Latest products added to the platform
-      ══════════════════════════════════════════════════════════════ */}
-      {(loadingNew || newArrivals.length > 0) && (
-        <Box bg="white" py={7} style={{
-          borderBottom: `1px solid ${C.border}`,
-          borderTop: `4px solid #0284c7`
-        }}>
-          <Container>
-            <Flex align="center" justify="space-between" mb={5}>
-              <HStack spacing={3}>
-                <Heading size="md" fontWeight="800" style={{
-                  background: `linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}>
-                  🆕 {t('sections.partnerBrands')}
-                </Heading>
-                <Box rounded="md" px={2.5} py={1} style={{ background: '#e0f2fe', border: '1px solid #06b6d4' }}>
-                  <Text fontSize="10px" fontWeight="700" style={{ color: '#0284c7' }}>{t('promotions.limitedTime')}</Text>
-                </Box>
-              </HStack>
-              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
-                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
-                {t('common.seeAll')}
-              </Button>
-            </Flex>
-            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
-              {loadingNew
-                ? Array.from({ length: 10 }).map((_, i) => (
-                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
-                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
-                    </Box>
-                  ))
-                : newArrivals.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
-            </SimpleGrid>
-          </Container>
-        </Box>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════
           PROMOTIONAL VIDEO CAROUSEL — Auto-rotating featured videos
       ══════════════════════════════════════════════════════════════ */}
       {(() => {
@@ -1082,6 +1040,45 @@ export default function HomePage() {
           </Box>
         );
       })()}
+
+      {/* ══════════════════════════════════════════════════════════════
+          NEW ARRIVALS — Latest products added to the platform
+      ══════════════════════════════════════════════════════════════ */}
+      {(loadingNew || newArrivals.length > 0) && (
+        <Box bg="white" py={7} style={{
+          borderBottom: `1px solid ${C.border}`,
+          borderTop: `4px solid #0284c7`
+        }}>
+          <Container>
+            <Flex align="center" justify="space-between" mb={5}>
+              <HStack spacing={3}>
+                <Heading size="md" fontWeight="800" style={{
+                  background: `linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  🆕 {t('sections.partnerBrands')}
+                </Heading>
+              </HStack>
+              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
+                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+                {t('common.seeAll')}
+              </Button>
+            </Flex>
+            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
+              {loadingNew
+                ? Array.from({ length: 10 }).map((_, i) => (
+                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
+                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
+                    </Box>
+                  ))
+                : newArrivals.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
+            </SimpleGrid>
+          </Container>
+        </Box>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════
           FOR BUYERS — Dual Value Prop
