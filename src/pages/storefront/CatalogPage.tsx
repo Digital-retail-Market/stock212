@@ -34,22 +34,10 @@ function CatIcon({ name }: { name: string }) {
   );
 }
 
-const SORT_OPTIONS_AUTH = [
-  { value: 'created_at:desc', label: 'Plus récents' },
-  { value: 'avg_rating:desc', label: 'Mieux notés' },
-  { value: 'price:asc', label: 'Prix croissant' },
-  { value: 'price:desc', label: 'Prix décroissant' },
-];
-
-const SORT_OPTIONS_GUEST = [
-  { value: 'created_at:desc', label: 'Plus récents' },
-  { value: 'avg_rating:desc', label: 'Mieux notés' },
-];
+// Note: SORT_OPTIONS now dynamically populated using i18n in component
 
 const TEMPERATURES = ['ambient', 'refrigerated', 'fresh', 'frozen'];
-const TEMP_LABELS: Record<string, string> = {
-  ambient: 'Ambiant', refrigerated: 'Réfrigéré', fresh: 'Frais', frozen: 'Surgelé',
-};
+// TEMP_LABELS now dynamically generated using i18n
 
 const CERT_OPTIONS = ['Bio', 'Halal', 'Kasher', 'Fairtrade', 'MSC', 'FSC', 'ISO 22000', 'IFS', 'BRC'];
 
@@ -411,7 +399,7 @@ export default function CatalogPage() {
                 <Box px={4} py={3} borderBottom="1px" borderColor="gray.100">
                   <Text fontSize="10px" fontWeight="700" color="gray.400"
                     textTransform="uppercase" letterSpacing="0.08em" mb={2}>
-                    Catégories
+                    {t('catalog.categories')}
                   </Text>
                   <VStack align="stretch" spacing={0}>
                     {roots.map((root) => {
@@ -763,7 +751,7 @@ export default function CatalogPage() {
               <Flex w={16} h={16} bg="gray.100" rounded="xl" align="center" justify="center" mx="auto" mb={3}>
                 <Package size={28} color="#cbd5e1" />
               </Flex>
-              <Text fontSize="sm">Aucun produit EAN trouvé</Text>
+              <Text fontSize="sm">{t('catalog.noProductsEAN')}</Text>
             </Box>
           ) : (
             <VStack spacing={3} align="stretch">
@@ -1051,7 +1039,7 @@ export default function CatalogPage() {
               {/* ── Stats summary ── */}
               <SimpleGrid columns={3} spacing={3}>
                 <Box bg="green.50" rounded="xl" p={4} textAlign="center">
-                  <Text fontSize="10px" color="green.600" fontWeight="700" textTransform="uppercase" letterSpacing="0.06em" mb={1}>Total produits</Text>
+                  <Text fontSize="10px" color="green.600" fontWeight="700" textTransform="uppercase" letterSpacing="0.06em" mb={1}>{t('catalog.totalProducts')}</Text>
                   <Text fontSize="xl" fontWeight="800" color="green.700">{(optResult?.totalProductCost ?? 0).toFixed(2)} MAD</Text>
                 </Box>
                 <Box bg="blue.50" rounded="xl" p={4} textAlign="center">
@@ -1158,7 +1146,7 @@ export default function CatalogPage() {
                           Déplacer <b>{opt.eansToMove.length} article{opt.eansToMove.length > 1 ? 's' : ''}</b> de <b>{opt.dropVendorName}</b> → <b>{opt.absorbVendorName}</b>
                         </Text>
                         <HStack spacing={4} flexWrap="wrap">
-                          <Text fontSize="xs" color="orange.600">Δ produit : +{opt.productCostIncrease.toFixed(2)} MAD</Text>
+                          <Text fontSize="xs" color="orange.600">{t('catalog.productCostIncrease', { amount: opt.productCostIncrease.toFixed(2) })}</Text>
                           <Text fontSize="xs" color="green.600">Économie livraison : −{opt.deliverySaving.toFixed(2)} MAD</Text>
                           <Text fontSize="xs" fontWeight="800" color={opt.netSaving > 0 ? 'green.700' : 'red.600'}>
                             Net : {opt.netSaving > 0 ? '−' : '+'}{Math.abs(opt.netSaving).toFixed(2)} MAD
