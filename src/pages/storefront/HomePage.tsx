@@ -607,52 +607,52 @@ export default function HomePage() {
         const seconds = timeLeft % 60;
 
         return (
-          <Box bg="#dc2626" py={4} px={4} style={{ borderBottom: `3px solid #b91c1c`, borderTop: `3px solid #b91c1c` }}>
-            <Container>
-              <VStack spacing={4} align="stretch">
-                <Flex align="center" justify="space-between" direction={{ base: 'column', md: 'row' }} gap={4}>
-                  <HStack spacing={3}>
-                    <Badge bg="white" color="#dc2626" fontSize="xs" fontWeight="800" px={4} py={2} textTransform="uppercase">
-                      🔥 OFFRE SPÉCIAL 🔥
-                    </Badge>
-                    <Box bg="rgba(255,255,255,0.2)" px={4} py={2} rounded="lg" border="2px solid white">
-                      <Text fontWeight="900" fontSize="lg" color="white">
-                        {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-                      </Text>
-                    </Box>
-                  </HStack>
-                </Flex>
-
-                <Box position="relative" w="full" h={{ base: '120px', sm: '140px', md: '160px' }} overflow="hidden" rounded="lg" style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '3px solid rgba(255,255,255,0.3)'
-                }}>
-                  <style>{`
-                    @keyframes slide-ads {
-                      0% { transform: translateX(0); opacity: 1; }
-                      45% { transform: translateX(0); opacity: 1; }
-                      50% { transform: translateX(100%); opacity: 0; }
-                      51% { transform: translateX(-100%); opacity: 0; }
-                      55% { transform: translateX(0); opacity: 1; }
-                      100% { transform: translateX(0); opacity: 1; }
-                    }
-                    .offre-special-ads {
-                      animation: slide-ads 5s ease-in-out infinite;
-                    }
-                  `}</style>
-                  <Box className="offre-special-ads" w="full" h="full" display="flex" alignItems="center" justifyContent="center" bg="white">
-                    <Image src={sideAds[currentAdIdx]} alt={`Offre ${currentAdIdx + 1}`} maxW="full" maxH="full" objectFit="contain" />
+          <Box bg="#dc2626" py={2} px={0} style={{ borderBottom: `3px solid #b91c1c`, borderTop: `3px solid #b91c1c` }}>
+            <Flex direction="column" gap={2} px={4} py={2}>
+              <Flex align="center" justify="space-between" direction={{ base: 'column', md: 'row' }} gap={2}>
+                <HStack spacing={2}>
+                  <Badge bg="white" color="#dc2626" fontSize="10px" fontWeight="800" px={3} py={1} textTransform="uppercase">
+                    🔥 OFFRE SPÉCIAL 🔥
+                  </Badge>
+                  <Box bg="rgba(255,255,255,0.2)" px={3} py={1} rounded="lg" border="2px solid white">
+                    <Text fontWeight="800" fontSize="sm" color="white">
+                      {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                    </Text>
                   </Box>
-                  <Flex position="absolute" bottom={3} left="50%" transform="translateX(-50%)" gap={1}>
-                    {sideAds.map((_, i) => (
-                      <Box key={i} w="6px" h="6px" rounded="full"
-                        bg={i === currentAdIdx ? 'white' : 'rgba(255,255,255,0.4)'} cursor="pointer"
-                        onClick={() => setCurrentAdIdx(i)} transition="all 0.2s" />
-                    ))}
-                  </Flex>
-                </Box>
-              </VStack>
-            </Container>
+                </HStack>
+              </Flex>
+            </Flex>
+
+            <Box position="relative" w="full" h={{ base: '100px', sm: '120px', md: '140px' }} overflow="hidden" style={{
+              background: 'white'
+            }}>
+              <style>{`
+                @keyframes slide-three-ads {
+                  0% { transform: translateX(0); }
+                  100% { transform: translateX(-calc(33.333% * 3)); }
+                }
+                .offre-special-carousel {
+                  display: flex;
+                  gap: 0;
+                  width: max-content;
+                  animation: slide-three-ads 15s linear infinite;
+                }
+                .offre-ad-item {
+                  flex: 0 0 calc(100% / 3);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  padding: 0;
+                }
+              `}</style>
+              <Box className="offre-special-carousel">
+                {[...sideAds, ...sideAds].map((ad, i) => (
+                  <Box key={i} className="offre-ad-item">
+                    <Image src={ad} alt={`Ad ${i}`} h="full" w="full" objectFit="contain" />
+                  </Box>
+                ))}
+              </Box>
+            </Box>
           </Box>
         );
       })()}
