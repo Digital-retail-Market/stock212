@@ -641,47 +641,50 @@ export default function HomePage() {
       })()}
 
       {/* ══════════════════════════════════════════════════════════════
-          MARQUES DISPONIBLES — Available brands carousel
+          MARQUES DISPONIBLES — Auto-scrolling brands carousel
       ══════════════════════════════════════════════════════════════ */}
-      <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+      <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}`, overflow: 'hidden' }}>
         <Container>
           <Heading size="sm" fontWeight="800" mb={6} textAlign="center" style={{ color: C.textMuted }}>
             {t('sections.partnerBrands')}
           </Heading>
         </Container>
-        <Box display="flex" overflowX="auto" gap={4} px={{ base: 4, md: 6 }} style={{
-          scrollBehavior: 'smooth',
-          scrollbarWidth: 'thin',
-          '&::-webkit-scrollbar': { height: '4px' },
-          '&::-webkit-scrollbar-track': { background: C.bgAlt },
-          '&::-webkit-scrollbar-thumb': { background: C.border, borderRadius: '2px' },
-        }}>
-          {[
-            { name: 'Carolina', logo: '/logos/carolina.jfif' },
-            { name: 'Cosumar', logo: '/logos/cosumar.jfif' },
-            { name: 'Coca-Cola', logo: '/logos/coca.jfif' },
-            { name: 'Nestlé', logo: '/logos/nestle.jfif' },
-            { name: 'Pepsi', logo: '/logos/pepsi.jfif' },
-            { name: 'Lipton', logo: '/logos/lipton.jfif' },
-            { name: 'Central Lait', logo: '/logos/central lait.jfif' },
-            { name: 'Afia', logo: '/logos/afia.jfif' },
-            { name: 'Aïcha', logo: '/logos/aicha.jfif' },
-            { name: 'Jamila', logo: '/logos/jamila.jfif' },
-            { name: 'Bimo', logo: '/logos/bimo.jfif' },
-            { name: 'Bellar', logo: '/logos/bellar.jfif' },
-            { name: 'Oreo', logo: '/logos/oreo.jfif' },
-            { name: 'Sidiali', logo: '/logos/sidiali.jfif' },
-            { name: 'Cristale', logo: '/logos/cristale.jfif' },
-            { name: 'Chergi', logo: '/logos/chergi.jfif' },
-            { name: 'Aïn Saïss', logo: '/logos/ainsaiss.jfif' },
-            { name: 'Jaouda', logo: '/logos/jaouda.jfif' },
-          ].map((brand) => (
-            <Box key={brand.name} flexShrink={0} w="140px">
-              <Image src={brand.logo} alt={brand.name} h="80px" objectFit="contain"
-                filter="grayscale(100%)" _hover={{ filter: 'grayscale(0%)', transform: 'scale(1.05)' }}
-                transition="all 0.2s" cursor="pointer" />
-            </Box>
-          ))}
+        <style>{`
+          @keyframes scroll-brands-loop {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .brands-auto-scroll {
+            display: flex;
+            gap: 3rem;
+            width: max-content;
+            animation: scroll-brands-loop 60s linear infinite;
+          }
+          .brands-auto-scroll:hover {
+            animation-play-state: paused;
+          }
+        `}</style>
+        <Box className="brands-auto-scroll">
+          {(() => {
+            const brands = [
+              { name: 'Carolina', logo: '/logos/carolina.jfif' },
+              { name: 'Cosumar', logo: '/logos/cosumar.jfif' },
+              { name: 'Coca-Cola', logo: '/logos/coca.jfif' },
+              { name: 'Nestlé', logo: '/logos/nestle.jfif' },
+              { name: 'Pepsi', logo: '/logos/pepsi.jfif' },
+              { name: 'Lipton', logo: '/logos/lipton.jfif' },
+              { name: 'Central Lait', logo: '/logos/central lait.jfif' },
+              { name: 'Afia', logo: '/logos/afia.jfif' },
+              { name: 'Aïcha', logo: '/logos/aicha.jfif' },
+              { name: 'Jamila', logo: '/logos/jamila.jfif' },
+            ];
+            return [...brands, ...brands].map((brand, i) => (
+              <Box key={i} flexShrink={0} w="140px">
+                <Image src={brand.logo} alt={brand.name} h="80px" objectFit="contain"
+                  _hover={{ transform: 'scale(1.1)' }} transition="all 0.2s" cursor="pointer" />
+              </Box>
+            ));
+          })()}
         </Box>
       </Box>
 
