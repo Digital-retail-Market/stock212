@@ -18,6 +18,7 @@ import {
   ChevronRight, Lock, Scale, X, FileText, Heart,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useComparator } from '../contexts/ComparatorContext';

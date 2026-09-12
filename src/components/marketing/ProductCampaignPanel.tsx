@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Flex, Text, Badge, VStack,
+  Box, Flex, Text, Badge, VStack, Button,
   useToast, Divider,
 } from '@chakra-ui/react';
 import { Tag, Copy, Check, Layers, Package, Zap } from 'lucide-react';

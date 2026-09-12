@@ -94,8 +94,8 @@ export default function VendorCampaignCreate() {
       cart_cross_sell:    'cart_cross_sell_per_day',
     };
     const key = costKeys[type];
-    if (key) getCreditCost(key).then(cost => { setDailyCredits(cost); setUnitCost(cost); });
-    else { setDailyCredits(0); setUnitCost(0); }
+    if (key) getCreditCost(key).then(cost => { setDailyCredits(cost); });
+    else { setDailyCredits(0); }
 
     // Auto-sélection du placement par défaut selon le type
     const defaultPlacements: Partial<Record<CampaignType, string>> = {
