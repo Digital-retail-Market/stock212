@@ -556,6 +556,40 @@ export default function HomePage() {
         </Container>
       </Box>
 
+      {/* ══════════════════════════════════════════════════════════════
+          CATÉGORIES — deux lignes défilables horizontalement
+      ══════════════════════════════════════════════════════════════ */}
+      <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+        <Container>
+          <Flex align="center" justify="space-between" mb={5}>
+            <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
+              {t('categories.title')}
+            </Heading>
+            <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+              color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
+              rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+              {t('common.seeAll')}
+            </Button>
+          </Flex>
+
+          <Box
+            display="grid"
+            style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 1fr)' }}
+            sx={{
+              gridAutoColumns: { base: '116px', sm: '138px', md: '160px' },
+              '&::-webkit-scrollbar': { display: 'none' },
+            }}
+            gap={{ base: 2, md: 4 }}
+            overflowX="auto"
+            pb={1}
+            scrollbarWidth="none"
+          >
+            {orderedCategories.map((cat) => (
+              <CategoryTile key={cat.id} category={cat} onClick={() => navigate(`/catalog?category=${cat.id}`)} />
+            ))}
+          </Box>
+        </Container>
+      </Box>
 
       {/* ══════════════════════════════════════════════════════════════
           PROMOTIONAL VIDEO CAROUSEL — Auto-rotating featured videos
@@ -829,41 +863,6 @@ export default function HomePage() {
               <Gift size={80} color="white" opacity={0.7} />
             </Flex>
           </Flex>
-        </Container>
-      </Box>
-
-      {/* ══════════════════════════════════════════════════════════════
-          CATÉGORIES — deux lignes défilables horizontalement
-      ══════════════════════════════════════════════════════════════ */}
-      <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
-        <Container>
-          <Flex align="center" justify="space-between" mb={5}>
-            <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
-              {t('categories.title')}
-            </Heading>
-            <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-              color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
-              rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
-              {t('common.seeAll')}
-            </Button>
-          </Flex>
-
-          <Box
-            display="grid"
-            style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 1fr)' }}
-            sx={{
-              gridAutoColumns: { base: '116px', sm: '138px', md: '160px' },
-              '&::-webkit-scrollbar': { display: 'none' },
-            }}
-            gap={{ base: 2, md: 4 }}
-            overflowX="auto"
-            pb={1}
-            scrollbarWidth="none"
-          >
-            {orderedCategories.map((cat) => (
-              <CategoryTile key={cat.id} category={cat} onClick={() => navigate(`/catalog?category=${cat.id}`)} />
-            ))}
-          </Box>
         </Container>
       </Box>
 
