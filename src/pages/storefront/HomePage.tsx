@@ -581,33 +581,78 @@ export default function HomePage() {
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
-          SIDE ADS CAROUSEL — Horizontal promotional banner
+          OFFRE SPÉCIAL — Animated rotating ads with countdown timer
       ══════════════════════════════════════════════════════════════ */}
       {(() => {
-        const [sideAdsIdx, setSideAdsIdx] = useState(0);
+        const [timeLeft, setTimeLeft] = useState(3600);
         const sideAds = ['/sideads/side1.jfif', '/sideads/side2.jfif', '/sideads/side3.jfif', '/sideads/side4.jfif', '/sideads/side5.jfif', '/sideads/side6.jfif', '/sideads/side7.jfif', '/sideads/side8.jfif', '/sideads/side9.jfif'];
+        const [currentAdIdx, setCurrentAdIdx] = useState(0);
 
         useEffect(() => {
-          const interval = setInterval(() => {
-            setSideAdsIdx((prev) => (prev + 1) % sideAds.length);
-          }, 6000);
-          return () => clearInterval(interval);
+          const countdownInterval = setInterval(() => {
+            setTimeLeft((prev) => prev > 0 ? prev - 1 : 3600);
+          }, 1000);
+          return () => clearInterval(countdownInterval);
         }, []);
 
+        useEffect(() => {
+          const adInterval = setInterval(() => {
+            setCurrentAdIdx((prev) => (prev + 1) % sideAds.length);
+          }, 5000);
+          return () => clearInterval(adInterval);
+        }, []);
+
+        const hours = Math.floor(timeLeft / 3600);
+        const minutes = Math.floor((timeLeft % 3600) / 60);
+        const seconds = timeLeft % 60;
+
         return (
-          <Box bg="white" py={2} style={{ borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}` }}>
-            <Box position="relative" w="full" h={{ base: '180px', sm: '220px', md: '280px' }} overflow="hidden">
-              <Image src={sideAds[sideAdsIdx]} alt={`Side Ad ${sideAdsIdx + 1}`} w="full" h="full" objectFit="cover"
-                transition="opacity 0.5s ease-in-out" />
-              <Flex position="absolute" bottom={3} left="50%" transform="translateX(-50%)" gap={1.5}>
-                {sideAds.map((_, i) => (
-                  <Box key={i} w={2} h={2} rounded="full"
-                    bg={i === sideAdsIdx ? C.accent : 'rgba(0,0,0,0.3)'} cursor="pointer"
-                    onClick={() => setSideAdsIdx(i)} transition="all 0.2s"
-                    _hover={{ bg: i === sideAdsIdx ? C.accent : 'rgba(0,0,0,0.6)' }} />
-                ))}
-              </Flex>
-            </Box>
+          <Box bg="#dc2626" py={4} px={4} style={{ borderBottom: `3px solid #b91c1c`, borderTop: `3px solid #b91c1c` }}>
+            <Container>
+              <VStack spacing={4} align="stretch">
+                <Flex align="center" justify="space-between" direction={{ base: 'column', md: 'row' }} gap={4}>
+                  <HStack spacing={3}>
+                    <Badge bg="white" color="#dc2626" fontSize="xs" fontWeight="800" px={4} py={2} textTransform="uppercase">
+                      🔥 OFFRE SPÉCIAL 🔥
+                    </Badge>
+                    <Box bg="rgba(255,255,255,0.2)" px={4} py={2} rounded="lg" border="2px solid white">
+                      <Text fontWeight="900" fontSize="lg" color="white">
+                        {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                      </Text>
+                    </Box>
+                  </HStack>
+                </Flex>
+
+                <Box position="relative" w="full" h={{ base: '200px', sm: '250px', md: '320px' }} overflow="hidden" rounded="lg" style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '3px solid rgba(255,255,255,0.3)'
+                }}>
+                  <style>{`
+                    @keyframes slide-ads {
+                      0% { transform: translateX(0); opacity: 1; }
+                      45% { transform: translateX(0); opacity: 1; }
+                      50% { transform: translateX(100%); opacity: 0; }
+                      51% { transform: translateX(-100%); opacity: 0; }
+                      55% { transform: translateX(0); opacity: 1; }
+                      100% { transform: translateX(0); opacity: 1; }
+                    }
+                    .offre-special-ads {
+                      animation: slide-ads 5s ease-in-out infinite;
+                    }
+                  `}</style>
+                  <Box className="offre-special-ads" w="full" h="full">
+                    <Image src={sideAds[currentAdIdx]} alt={`Offre ${currentAdIdx + 1}`} w="full" h="full" objectFit="cover" />
+                  </Box>
+                  <Flex position="absolute" bottom={3} left="50%" transform="translateX(-50%)" gap={1}>
+                    {sideAds.map((_, i) => (
+                      <Box key={i} w="6px" h="6px" rounded="full"
+                        bg={i === currentAdIdx ? 'white' : 'rgba(255,255,255,0.4)'} cursor="pointer"
+                        onClick={() => setCurrentAdIdx(i)} transition="all 0.2s" />
+                    ))}
+                  </Flex>
+                </Box>
+              </VStack>
+            </Container>
           </Box>
         );
       })()}
