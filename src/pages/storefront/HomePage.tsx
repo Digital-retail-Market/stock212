@@ -1180,116 +1180,51 @@ export default function HomePage() {
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
-          THE CHALLENGE & SOLUTION — Deep dive (at bottom for engaged readers)
+          PROFESSIONAL SOLUTIONS — Image carousel showcase
       ══════════════════════════════════════════════════════════════ */}
-      <Box bg={`linear-gradient(135deg, #fee2e2 0%, #fef3c7 100%)`} py={9}
-        style={{ borderBottom: `3px solid ${C.warning}` }}>
+      <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
         <Container>
-          <VStack spacing={8} align="start">
-            <VStack spacing={2} align="start">
-              <Badge bg={C.warning} color="white" fontSize="xs" fontWeight="700" px={3} py={1}>
-                {t('challenge.title')}
-              </Badge>
-              <Heading size="lg" fontWeight="900" color={C.warning}>
-                {t('challenge.heading')}
-              </Heading>
-              <Text fontSize="md" color={C.text} maxW="600px">
-                {t('challenge.description')}
-              </Text>
-            </VStack>
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="full">
-              <Box p={5} rounded="lg" bg="white" border="2px solid" borderColor={C.warningBorder}
-                _hover={{ shadow: 'md', transform: 'translateY(-2px)' }} transition="all 0.2s">
-                <Heading size="sm" fontWeight="800" color={C.warning} mb={3}>👷 {t('challenge.supplier')}</Heading>
-                <Text fontSize="sm" color={C.text}>
-                  {t('challenge.supplierQuote')}
-                </Text>
-              </Box>
-              <Box p={5} rounded="lg" bg="white" border="2px solid" borderColor={C.warningBorder}
-                _hover={{ shadow: 'md', transform: 'translateY(-2px)' }} transition="all 0.2s">
-                <Heading size="sm" fontWeight="800" color={C.warning} mb={3}>🏢 {t('challenge.brand')}</Heading>
-                <Text fontSize="sm" color={C.text}>
-                  {t('challenge.brandQuote')}
-                </Text>
-              </Box>
-              <Box p={5} rounded="lg" bg="white" border="2px solid" borderColor={C.warningBorder}
-                _hover={{ shadow: 'md', transform: 'translateY(-2px)' }} transition="all 0.2s">
-                <Heading size="sm" fontWeight="800" color={C.warning} mb={3}>🛒 {t('challenge.buyer')}</Heading>
-                <Text fontSize="sm" color={C.text}>
-                  {t('challenge.buyerQuote')}
-                </Text>
-              </Box>
-            </SimpleGrid>
-          </VStack>
+          <Heading size="sm" fontWeight="800" mb={6} textAlign="center" style={{ color: C.textMuted }}>
+            How Stock212 Works for You
+          </Heading>
         </Container>
-      </Box>
-
-      {/* ══════════════════════════════════════════════════════════════
-          OUR SOLUTION — How we fix it
-      ══════════════════════════════════════════════════════════════ */}
-      <Box bg={`linear-gradient(135deg, #dcfce7 0%, #e0f2fe 100%)`} py={9}
-        style={{ borderBottom: `3px solid ${C.success}` }}>
-        <Container>
-          <VStack spacing={8} align="start">
-            <VStack spacing={2} align="start">
-              <Badge bg={C.success} color="white" fontSize="xs" fontWeight="700" px={3} py={1}>
-                ✅ {t('solution.title')}
-              </Badge>
-              <Heading size="lg" fontWeight="900" color={C.success}>
-                {t('solution.heading')}
-              </Heading>
-              <Text fontSize="md" color={C.text} maxW="600px">
-                {t('solution.description')}
-              </Text>
-            </VStack>
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} w="full">
-              <Box p={4} rounded="lg" bg="white" border="2px solid" borderColor={`${C.success}40`}
-                _hover={{ shadow: 'md', borderColor: C.success }} transition="all 0.2s">
-                <HStack spacing={3} mb={2}>
-                  <Flex w={8} h={8} rounded="lg" align="center" justify="center"
-                    style={{ background: '#10b98140' }}>
-                    <CheckCircle size={18} color={C.success} />
-                  </Flex>
-                  <Heading size="xs" fontWeight="800" color={C.success}>{t('solution.truePricing')}</Heading>
-                </HStack>
-                <Text fontSize="sm" color={C.text}>{t('solution.truePricingDesc')}</Text>
-              </Box>
-              <Box p={4} rounded="lg" bg="white" border="2px solid" borderColor="#06b6d440"
-                _hover={{ shadow: 'md', borderColor: '#06b6d4' }} transition="all 0.2s">
-                <HStack spacing={3} mb={2}>
-                  <Flex w={8} h={8} rounded="lg" align="center" justify="center"
-                    style={{ background: '#06b6d440' }}>
-                    <Truck size={18} color="#06b6d4" />
-                  </Flex>
-                  <Heading size="xs" fontWeight="800" color="#06b6d4">{t('solution.verifiedSellers')}</Heading>
-                </HStack>
-                <Text fontSize="sm" color={C.text}>{t('solution.verifiedSellersDesc')}</Text>
-              </Box>
-              <Box p={4} rounded="lg" bg="white" border="2px solid" borderColor="#f5951640"
-                _hover={{ shadow: 'md', borderColor: '#f59516' }} transition="all 0.2s">
-                <HStack spacing={3} mb={2}>
-                  <Flex w={8} h={8} rounded="lg" align="center" justify="center"
-                    style={{ background: '#f5951640' }}>
-                    <Package size={18} color="#f59516" />
-                  </Flex>
-                  <Heading size="xs" fontWeight="800" color="#f59516">{t('solution.traceableLots')}</Heading>
-                </HStack>
-                <Text fontSize="sm" color={C.text}>{t('solution.traceableLotsDesc')}</Text>
-              </Box>
-              <Box p={4} rounded="lg" bg="white" border="2px solid" borderColor="#8b5cf640"
-                _hover={{ shadow: 'md', borderColor: '#8b5cf6' }} transition="all 0.2s">
-                <HStack spacing={3} mb={2}>
-                  <Flex w={8} h={8} rounded="lg" align="center" justify="center"
-                    style={{ background: '#8b5cf640' }}>
-                    <Eye size={18} color="#8b5cf6" />
-                  </Flex>
-                  <Heading size="xs" fontWeight="800" color="#8b5cf6">{t('solution.marketIntel')}</Heading>
-                </HStack>
-                <Text fontSize="sm" color={C.text}>{t('solution.marketIntelDesc')}</Text>
-              </Box>
-            </SimpleGrid>
-          </VStack>
-        </Container>
+        <Box style={{ position: 'relative', overflow: 'hidden', width: '100%' }}>
+          <style>{`
+            @keyframes slide-professional {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+            .professional-carousel {
+              display: flex;
+              gap: 1.5rem;
+              width: max-content;
+              animation: slide-professional 40s linear infinite;
+              padding: 0 1rem;
+            }
+            .professional-carousel:hover {
+              animation-play-state: paused;
+            }
+          `}</style>
+          <Box className="professional-carousel">
+            {(() => {
+              const images = [
+                '/professional/ChatGPT Image Sep 12, 2026, 09_41_56 PM.png',
+                '/professional/ChatGPT Image Sep 12, 2026, 09_43_45 PM.png',
+                '/professional/ChatGPT Image Sep 12, 2026, 10_07_34 PM.png',
+                '/professional/ChatGPT Image Sep 12, 2026, 10_09_04 PM.png',
+                '/professional/ChatGPT Image Sep 12, 2026, 10_11_30 PM.png',
+                '/professional/ChatGPT Image Sep 12, 2026, 10_11_53 PM.png',
+                '/professional/ChatGPT Image Sep 12, 2026, 10_12_04 PM.png',
+              ];
+              return [...images, ...images].map((img, i) => (
+                <Box key={i} flexShrink={0} w={{ base: '280px', sm: '340px', md: '400px' }} rounded="lg" overflow="hidden">
+                  <Image src={img} alt={`Professional solution ${i + 1}`} w="100%" h="auto" objectFit="cover"
+                    _hover={{ transform: 'scale(1.05)' }} transition="all 0.3s" />
+                </Box>
+              ));
+            })()}
+          </Box>
+        </Box>
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
