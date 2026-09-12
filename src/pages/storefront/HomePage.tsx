@@ -675,54 +675,6 @@ export default function HomePage() {
       })()}
 
       {/* ══════════════════════════════════════════════════════════════
-          MARQUES DISPONIBLES — Auto-scrolling brands carousel
-      ══════════════════════════════════════════════════════════════ */}
-      <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}`, overflow: 'hidden' }}>
-        <Container>
-          <Heading size="sm" fontWeight="800" mb={6} textAlign="center" style={{ color: C.textMuted }}>
-            {t('sections.partnerBrands')}
-          </Heading>
-        </Container>
-        <style>{`
-          @keyframes scroll-brands-loop {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-          }
-          .brands-auto-scroll {
-            display: flex;
-            gap: 3rem;
-            width: max-content;
-            animation: scroll-brands-loop 60s linear infinite;
-          }
-          .brands-auto-scroll:hover {
-            animation-play-state: paused;
-          }
-        `}</style>
-        <Box className="brands-auto-scroll">
-          {(() => {
-            const brands = [
-              { name: 'Carolina', logo: '/logos/carolina.jfif' },
-              { name: 'Cosumar', logo: '/logos/cosumar.jfif' },
-              { name: 'Coca-Cola', logo: '/logos/coca.jfif' },
-              { name: 'Nestlé', logo: '/logos/nestle.jfif' },
-              { name: 'Pepsi', logo: '/logos/pepsi.jfif' },
-              { name: 'Lipton', logo: '/logos/lipton.jfif' },
-              { name: 'Central Lait', logo: '/logos/central lait.jfif' },
-              { name: 'Afia', logo: '/logos/afia.jfif' },
-              { name: 'Aïcha', logo: '/logos/aicha.jfif' },
-              { name: 'Jamila', logo: '/logos/jamila.jfif' },
-            ];
-            return [...brands, ...brands].map((brand, i) => (
-              <Box key={i} flexShrink={0} w="140px">
-                <Image src={brand.logo} alt={brand.name} h="80px" objectFit="contain"
-                  _hover={{ transform: 'scale(1.1)' }} transition="all 0.2s" cursor="pointer" />
-              </Box>
-            ));
-          })()}
-        </Box>
-      </Box>
-
-      {/* ══════════════════════════════════════════════════════════════
           FEATURED PRODUCTS — Vibrant grid with attention-grabbing design
       ══════════════════════════════════════════════════════════════ */}
       {(loadingPromos || promos.length > 0) && (
@@ -813,6 +765,54 @@ export default function HomePage() {
           </Container>
         </Box>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          MARQUES DISPONIBLES — Auto-scrolling brands carousel
+      ══════════════════════════════════════════════════════════════ */}
+      <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}`, overflow: 'hidden' }}>
+        <Container>
+          <Heading size="sm" fontWeight="800" mb={6} textAlign="center" style={{ color: C.textMuted }}>
+            {t('sections.partnerBrands')}
+          </Heading>
+        </Container>
+        <style>{`
+          @keyframes scroll-brands-loop {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .brands-auto-scroll {
+            display: flex;
+            gap: 3rem;
+            width: max-content;
+            animation: scroll-brands-loop 60s linear infinite;
+          }
+          .brands-auto-scroll:hover {
+            animation-play-state: paused;
+          }
+        `}</style>
+        <Box className="brands-auto-scroll">
+          {(() => {
+            const brands = [
+              { name: 'Carolina', logo: '/logos/carolina.jfif' },
+              { name: 'Cosumar', logo: '/logos/cosumar.jfif' },
+              { name: 'Coca-Cola', logo: '/logos/coca.jfif' },
+              { name: 'Nestlé', logo: '/logos/nestle.jfif' },
+              { name: 'Pepsi', logo: '/logos/pepsi.jfif' },
+              { name: 'Lipton', logo: '/logos/lipton.jfif' },
+              { name: 'Central Lait', logo: '/logos/central lait.jfif' },
+              { name: 'Afia', logo: '/logos/afia.jfif' },
+              { name: 'Aïcha', logo: '/logos/aicha.jfif' },
+              { name: 'Jamila', logo: '/logos/jamila.jfif' },
+            ];
+            return [...brands, ...brands].map((brand, i) => (
+              <Box key={i} flexShrink={0} w="140px">
+                <Image src={brand.logo} alt={brand.name} h="80px" objectFit="contain"
+                  _hover={{ transform: 'scale(1.1)' }} transition="all 0.2s" cursor="pointer" />
+              </Box>
+            ));
+          })()}
+        </Box>
+      </Box>
 
       {/* ══════════════════════════════════════════════════════════════
           PREMIUM OFFER BANNER — Special pricing offer
