@@ -629,29 +629,33 @@ export default function HomePage() {
               <style>{`
                 @keyframes slide-three-ads {
                   0% { transform: translateX(0); }
-                  100% { transform: translateX(-calc(33.333% * 3)); }
+                  100% { transform: translateX(-${(100 * 9) / 3}%); }
                 }
                 .offre-special-carousel {
                   display: flex;
                   gap: 0;
-                  width: max-content;
+                  width: 300%;
                   animation: slide-three-ads 15s linear infinite;
+                  height: 100%;
                 }
                 .offre-ad-item {
-                  flex: 0 0 calc(100% / 3);
+                  flex: 0 0 33.333%;
                   display: flex;
                   align-items: center;
                   justify-content: center;
                   padding: 0;
+                  min-width: 0;
                 }
               `}</style>
-              <Box className="offre-special-carousel">
-                {[...sideAds, ...sideAds].map((ad, i) => (
-                  <Box key={i} className="offre-ad-item">
-                    <Image src={ad} alt={`Ad ${i}`} h="full" w="full" objectFit="contain" />
-                  </Box>
-                ))}
-              </Box>
+              <Flex w="full" h="full" overflow="hidden">
+                <Box className="offre-special-carousel" w="300%">
+                  {[...sideAds, ...sideAds, ...sideAds].map((ad, i) => (
+                    <Box key={i} className="offre-ad-item" flex="0 0 calc(100% / 9)">
+                      <Image src={ad} alt={`Ad ${i}`} h="100%" w="100%" objectFit="contain" />
+                    </Box>
+                  ))}
+                </Box>
+              </Flex>
             </Box>
           </Box>
         );
