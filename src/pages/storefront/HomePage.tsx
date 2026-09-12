@@ -646,7 +646,7 @@ export default function HomePage() {
       <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
         <Container>
           <Heading size="sm" fontWeight="800" mb={6} textAlign="center" style={{ color: C.textMuted }}>
-            {t('sections.availableBrands')}
+            {t('sections.partnerBrands')}
           </Heading>
         </Container>
         <Box display="flex" overflowX="auto" gap={4} px={{ base: 4, md: 6 }} style={{
