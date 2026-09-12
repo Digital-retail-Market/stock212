@@ -723,6 +723,58 @@ export default function HomePage() {
       })()}
 
       {/* ══════════════════════════════════════════════════════════════
+          PREMIUM OFFER BANNER — Special pricing offer
+      ══════════════════════════════════════════════════════════════ */}
+      <Box
+        bg={`linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%)`}
+        py={{ base: 6, md: 10 }}
+        rounded="xl"
+        mx={{ base: 4, md: 6 }}
+        my={8}
+        position="relative"
+        overflow="hidden"
+        boxShadow="0 12px 32px rgba(124,58,237,0.4)"
+      >
+        <Box position="absolute" top={0} right={0} w="50%" h="full" opacity={0.15}>
+          <Box position="absolute" top="-20%" right="-10%" w="400px" h="400px"
+            rounded="full" style={{ background: 'white' }} />
+        </Box>
+        <Box position="absolute" bottom={0} left={0} w="30%" h="full" opacity={0.1}>
+          <Box position="absolute" bottom="-15%" left="-5%" w="250px" h="250px"
+            rounded="full" style={{ background: 'white' }} />
+        </Box>
+        <Container>
+          <Flex align="center" justify="space-between" gap={6} position="relative" zIndex={2}>
+            <VStack align="start" spacing={4} flex={1}>
+              <Badge bg="white" color="#7c3aed" fontSize="xs" fontWeight="800" px={3} py={1} textTransform="uppercase">
+                🎁 {t('promotions.limitedTime')}
+              </Badge>
+              <Heading size="xl" color="white" fontWeight="900" lineHeight={1.1}>
+                {t('promotions.firstOrderSpecial')}
+              </Heading>
+              <HStack spacing={1} align="baseline">
+                <Text color="white" fontSize={{ base: '2xl', md: '3xl' }} fontWeight="900">15%</Text>
+                <Text color="white" opacity={0.95} fontSize={{ base: 'sm', md: 'md' }} fontWeight="600">{t('promotions.off')} {t('promotions.firstOrderSpecial')}</Text>
+              </HStack>
+              <Text color="white" opacity={0.9} fontSize={{ base: 'xs', md: 'sm' }}>
+                {t('promotions.newWholesaleBuyers')}
+              </Text>
+              <Button size="md" bg="white" color="#7c3aed" fontWeight="800"
+                _hover={{ bg: '#f3f4f6', transform: 'translateY(-2px)' }}
+                transition="all 0.2s" mt={2}
+                rightIcon={<ArrowRight size={16} />}>
+                Use Code: FIRST15
+              </Button>
+            </VStack>
+            <Flex display={{ base: 'none', lg: 'flex' }} align="center" justify="center" w="200px" h="200px"
+              rounded="full" bg="rgba(255,255,255,0.12)" flexShrink={0} border="2px solid" borderColor="rgba(255,255,255,0.2)">
+              <Gift size={80} color="white" opacity={0.7} />
+            </Flex>
+          </Flex>
+        </Container>
+      </Box>
+
+      {/* ══════════════════════════════════════════════════════════════
           PROMOTIONS & DÉSTOCKAGE — Carousel with more products
       ══════════════════════════════════════════════════════════════ */}
       {(loadingPromos || promos.length > 0) && (
@@ -812,58 +864,6 @@ export default function HomePage() {
             ));
           })()}
         </Box>
-      </Box>
-
-      {/* ══════════════════════════════════════════════════════════════
-          PREMIUM OFFER BANNER — Special pricing offer
-      ══════════════════════════════════════════════════════════════ */}
-      <Box
-        bg={`linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%)`}
-        py={{ base: 6, md: 10 }}
-        rounded="xl"
-        mx={{ base: 4, md: 6 }}
-        my={8}
-        position="relative"
-        overflow="hidden"
-        boxShadow="0 12px 32px rgba(124,58,237,0.4)"
-      >
-        <Box position="absolute" top={0} right={0} w="50%" h="full" opacity={0.15}>
-          <Box position="absolute" top="-20%" right="-10%" w="400px" h="400px"
-            rounded="full" style={{ background: 'white' }} />
-        </Box>
-        <Box position="absolute" bottom={0} left={0} w="30%" h="full" opacity={0.1}>
-          <Box position="absolute" bottom="-15%" left="-5%" w="250px" h="250px"
-            rounded="full" style={{ background: 'white' }} />
-        </Box>
-        <Container>
-          <Flex align="center" justify="space-between" gap={6} position="relative" zIndex={2}>
-            <VStack align="start" spacing={4} flex={1}>
-              <Badge bg="white" color="#7c3aed" fontSize="xs" fontWeight="800" px={3} py={1} textTransform="uppercase">
-                🎁 {t('promotions.limitedTime')}
-              </Badge>
-              <Heading size="xl" color="white" fontWeight="900" lineHeight={1.1}>
-                {t('promotions.firstOrderSpecial')}
-              </Heading>
-              <HStack spacing={1} align="baseline">
-                <Text color="white" fontSize={{ base: '2xl', md: '3xl' }} fontWeight="900">15%</Text>
-                <Text color="white" opacity={0.95} fontSize={{ base: 'sm', md: 'md' }} fontWeight="600">{t('promotions.off')} {t('promotions.firstOrderSpecial')}</Text>
-              </HStack>
-              <Text color="white" opacity={0.9} fontSize={{ base: 'xs', md: 'sm' }}>
-                {t('promotions.newWholesaleBuyers')}
-              </Text>
-              <Button size="md" bg="white" color="#7c3aed" fontWeight="800"
-                _hover={{ bg: '#f3f4f6', transform: 'translateY(-2px)' }}
-                transition="all 0.2s" mt={2}
-                rightIcon={<ArrowRight size={16} />}>
-                Use Code: FIRST15
-              </Button>
-            </VStack>
-            <Flex display={{ base: 'none', lg: 'flex' }} align="center" justify="center" w="200px" h="200px"
-              rounded="full" bg="rgba(255,255,255,0.12)" flexShrink={0} border="2px solid" borderColor="rgba(255,255,255,0.2)">
-              <Gift size={80} color="white" opacity={0.7} />
-            </Flex>
-          </Flex>
-        </Container>
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
