@@ -712,38 +712,6 @@ export default function HomePage() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════
-          IMAGE ADS CAROUSEL — Moving promotional ads
-      ══════════════════════════════════════════════════════════════ */}
-      {(() => {
-        const [adsIdx, setAdsIdx] = useState(0);
-        const ads = ['/ads/ads1.jfif', '/ads/ads2.jpg', '/ads/ads3.jpg', '/ads/ads4.jpg', '/ads/ads5.png', '/ads/ads6.png'];
-
-        useEffect(() => {
-          const interval = setInterval(() => {
-            setAdsIdx((prev) => (prev + 1) % ads.length);
-          }, 5000);
-          return () => clearInterval(interval);
-        }, []);
-
-        return (
-          <Box bg="white" py={0} style={{ borderBottom: `1px solid ${C.border}` }}>
-            <Box position="relative" w="full" h={{ base: '200px', sm: '250px', md: '300px' }} overflow="hidden">
-              <Image src={ads[adsIdx]} alt={`Ad ${adsIdx + 1}`} w="full" h="full" objectFit="cover"
-                transition="opacity 0.5s ease-in-out" />
-              <Flex position="absolute" bottom={3} left="50%" transform="translateX(-50%)" gap={1.5}>
-                {ads.map((_, i) => (
-                  <Box key={i} w={2} h={2} rounded="full"
-                    bg={i === adsIdx ? C.accent : 'rgba(255,255,255,0.5)'} cursor="pointer"
-                    onClick={() => setAdsIdx(i)} transition="all 0.2s"
-                    _hover={{ bg: i === adsIdx ? C.accent : 'rgba(255,255,255,0.8)' }} />
-                ))}
-              </Flex>
-            </Box>
-          </Box>
-        );
-      })()}
-
-      {/* ══════════════════════════════════════════════════════════════
           PREMIUM OFFER BANNER — Special pricing offer
       ══════════════════════════════════════════════════════════════ */}
       <Box
@@ -838,6 +806,38 @@ export default function HomePage() {
           </Container>
         </Box>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          IMAGE ADS CAROUSEL — Moving promotional ads with full image display
+      ══════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const [adsIdx, setAdsIdx] = useState(0);
+        const ads = ['/ads/ads1.jfif', '/ads/ads2.jpg', '/ads/ads3.jpg', '/ads/ads4.jpg', '/ads/ads5.png', '/ads/ads6.png'];
+
+        useEffect(() => {
+          const interval = setInterval(() => {
+            setAdsIdx((prev) => (prev + 1) % ads.length);
+          }, 5000);
+          return () => clearInterval(interval);
+        }, []);
+
+        return (
+          <Box bg="white" py={0} style={{ borderBottom: `1px solid ${C.border}` }}>
+            <Box position="relative" w="full" h={{ base: '250px', sm: '350px', md: '450px' }} overflow="hidden" display="flex" alignItems="center" justifyContent="center" bg="#f9fafb">
+              <Image src={ads[adsIdx]} alt={`Ad ${adsIdx + 1}`} w="full" h="full" objectFit="contain"
+                transition="opacity 0.5s ease-in-out" />
+              <Flex position="absolute" bottom={3} left="50%" transform="translateX(-50%)" gap={1.5}>
+                {ads.map((_, i) => (
+                  <Box key={i} w={2} h={2} rounded="full"
+                    bg={i === adsIdx ? C.accent : 'rgba(255,255,255,0.5)'} cursor="pointer"
+                    onClick={() => setAdsIdx(i)} transition="all 0.2s"
+                    _hover={{ bg: i === adsIdx ? C.accent : 'rgba(255,255,255,0.8)' }} />
+                ))}
+              </Flex>
+            </Box>
+          </Box>
+        );
+      })()}
 
       {/* ══════════════════════════════════════════════════════════════
           RÉFÉRENCES DOMINANTES — Grid + Carousel for market leaders
