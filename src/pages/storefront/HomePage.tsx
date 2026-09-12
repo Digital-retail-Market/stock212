@@ -584,43 +584,6 @@ export default function HomePage() {
         </Container>
       </Box>
 
-      {/* ══════════════════════════════════════════════════════════════
-          FLASH DEALS CTA — Eye-catching banner
-      ══════════════════════════════════════════════════════════════ */}
-      <Box bg={C.bg} py={8} style={{ borderBottom: `1px solid ${C.divider}` }}>
-        <Container>
-          <FlashDealsCallout />
-        </Container>
-      </Box>
-
-      {/* ══════════════════════════════════════════════════════════════
-          PROMOTIONAL ACTION CARDS — Jumia-inspired carousel
-      ══════════════════════════════════════════════════════════════ */}
-      <Box bg={C.bgLight} py={8} style={{ borderBottom: `1px solid ${C.divider}` }}>
-        <Container>
-          <SimpleGrid columns={{ base: 2, sm: 3, md: 6 }} spacing={{ base: 2, md: 3 }}>
-            {[
-              { icon: '⚡', title: t('promos.flashSale'), desc: t('promos.upTo50'), cta: t('promos.limitedTime'), bg: `linear-gradient(135deg, ${C.warning} 0%, ${C.primary} 100%)` },
-              { icon: '🚚', title: t('promos.freeShipping'), desc: t('promos.onOrders'), cta: t('promos.todayOnly'), bg: `linear-gradient(135deg, ${C.accent} 0%, ${C.primary} 100%)` },
-              { icon: '✨', title: t('promos.newArrivals'), desc: `${fmtStat(newArrivals.length, '500+')} ${t('common.products')}`, cta: t('promos.explore'), bg: `linear-gradient(135deg, ${C.accent} 0%, ${C.primaryLight} 100%)` },
-              { icon: '💰', title: t('promos.bulkDiscounts'), desc: t('promos.volumeSavings'), cta: t('promos.seePrices'), bg: `linear-gradient(135deg, ${C.success} 0%, ${C.primary} 100%)` },
-              { icon: '✅', title: t('promos.verifiedSellers'), desc: t('promos.trusted'), cta: t('promos.browse'), bg: `linear-gradient(135deg, ${C.info} 0%, ${C.primary} 100%)` },
-              { icon: '🎁', title: t('promos.rewardsProgram'), desc: t('promos.earnPoints'), cta: t('promos.joinNow'), bg: `linear-gradient(135deg, ${C.primary} 0%, ${C.accent} 100%)` },
-            ].map((card, i) => (
-              <Box key={i} p={4} rounded="lg" style={{ background: card.bg }}
-                cursor="pointer" _hover={{ transform: 'translateY(-3px)', shadow: 'md' }} transition="all 0.2s"
-                onClick={() => navigate('/best-deals')}>
-                <VStack spacing={2} align="center" textAlign="center" h="full" justify="center">
-                  <Text fontSize="24px">{card.icon}</Text>
-                  <Heading size="sm" color="white" fontWeight="800">{card.title}</Heading>
-                  <Text fontSize="10px" color="white" opacity={0.9}>{card.desc}</Text>
-                  <Text fontSize="9px" color="white" opacity={0.8} fontWeight="600">{card.cta}</Text>
-                </VStack>
-              </Box>
-            ))}
-          </SimpleGrid>
-        </Container>
-      </Box>
 
       {/* ══════════════════════════════════════════════════════════════
           PROMOTIONAL VIDEO CAROUSEL — Auto-rotating featured videos
