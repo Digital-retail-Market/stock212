@@ -42,7 +42,7 @@ function getApplicableTier(tiers: PriceTier[], qty: number): PriceTier | null {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { activeOrg, user } = useAuth();
+  const { activeOrg } = useAuth();
   const { items, loading, cartId, hasMoqViolation } = useCart();
 
   const [paymentTerms, setPaymentTerms]         = useState('prepayment');
@@ -139,7 +139,6 @@ export default function CheckoutPage() {
     vendorDeliveryCosts[orgId] = effectiveMethod === 'buyer_managed' ? 0 : computeDeliveryFee(cfg, groupSubtotal);
   }
   const totalDeliveryFee = Object.values(vendorDeliveryCosts).reduce((s, f) => s + f, 0);
-  const grandLandedTotal = grandTotal + totalDeliveryFee;
 
   async function placeOrders() {
     if (!activeOrg) return;

@@ -4,7 +4,7 @@ import {
   Box, Flex, Text, Heading, HStack, VStack, Button, Badge,
   SimpleGrid, useToast, NumberInput, NumberInputField,
 } from '@chakra-ui/react';
-import { Gavel, Tag, ChevronRight, Clock } from 'lucide-react';
+import { Gavel, ChevronRight, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import CountdownTimer from './CountdownTimer';

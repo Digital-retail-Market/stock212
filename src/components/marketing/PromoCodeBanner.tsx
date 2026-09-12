@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Flex, Text, HStack, Button, useToast, Tooltip } from '@chakra-ui/react';
+import { Box, Flex, Text, HStack, useToast, Tooltip } from '@chakra-ui/react';
 import { Tag, Copy, Check } from 'lucide-react';
 import type { PromoCampaign } from '../../hooks/useMarketingStorefront';
 

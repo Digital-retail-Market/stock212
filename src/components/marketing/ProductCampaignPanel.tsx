@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Flex, Text, HStack, Button, Badge, VStack,
-  Tooltip, useToast, Divider,
+  Box, Flex, Text, Badge, VStack,
+  useToast, Divider,
 } from '@chakra-ui/react';
 import { Tag, Copy, Check, Layers, Package, Zap } from 'lucide-react';
 import type { ProductCampaigns } from '../../hooks/useMarketingStorefront';
@@ -10,11 +10,10 @@ import type { ProductCampaigns } from '../../hooks/useMarketingStorefront';
 const C = { navy: '#0d1f38', amber: '#c97d1a', amberLight: '#fef9ee', amberBorder: '#f5d78e', border: '#e2e8f0', red: '#dc2626', redLight: '#fef2f2' };
 
 interface Props {
-  productId: string;
   campaigns: ProductCampaigns;
 }
 
-export default function ProductCampaignPanel({ productId, campaigns }: Props) {
+export default function ProductCampaignPanel({ campaigns }: Props) {
   const navigate = useNavigate();
   const toast = useToast();
   const [copied, setCopied] = useState(false);
