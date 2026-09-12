@@ -27,15 +27,15 @@ jobs:
         run: npm run verify
         env:
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          VITE_DEV_BYPASS_AUTH: false
+          VITE_SUPABASE_ANON_KEY: "sb_publishable_47xIXHU0czlGHtepYWSjBw_H1QQWH7O"
+          VITE_DEV_BYPASS_AUTH: "false"
 
       - name: Build project
         run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          VITE_DEV_BYPASS_AUTH: false
+          VITE_SUPABASE_ANON_KEY: "sb_publishable_47xIXHU0czlGHtepYWSjBw_H1QQWH7O"
+          VITE_DEV_BYPASS_AUTH: "false"
 
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v2.1
