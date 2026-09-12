@@ -81,6 +81,7 @@ interface EanGroup {
 }
 
 export default function CatalogPage() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
