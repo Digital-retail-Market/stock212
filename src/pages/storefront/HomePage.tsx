@@ -854,7 +854,7 @@ export default function HomePage() {
       {(() => {
         const [timeLeft, setTimeLeft] = useState(3600);
         const sideAds = [
-          '/sideads/side1.jfif', '/sideads/side4.jfif', '/sideads/side5.jfif', '/sideads/side6.jfif',
+          '/sideads/side1.jfif', '/sideads/side4.jfif', '/sideads/side6.jfif',
           '/sideads/side8.jfif', '/sideads/side10.jfif', '/sideads/side11.jfif', '/sideads/side12.jfif',
           '/sideads/side13.jfif', '/sideads/side14.jfif', '/sideads/side15.jfif', '/sideads/side16.jfif'
         ];
@@ -911,19 +911,20 @@ export default function HomePage() {
                   height: 100%;
                 }
                 .offre-ad-item {
-                  flex: 0 0 33.333%;
+                  flex: 0 0 calc(100% / 11);
                   display: flex;
                   align-items: center;
                   justify-content: center;
                   padding: 0;
                   min-width: 0;
+                  margin: 0;
                 }
               `}</style>
               <Flex w="full" h="full" overflow="hidden">
                 <Box className="offre-special-carousel" w="300%">
                   {[...sideAds, ...sideAds, ...sideAds].map((ad, i) => (
                     <Box key={i} className="offre-ad-item" flex="0 0 calc(100% / 9)">
-                      <Image src={ad} alt={`Ad ${i}`} h="100%" w="100%" objectFit="contain" />
+                      <Image src={ad} alt={`Ad ${i}`} h="100%" w="100%" objectFit="cover" />
                     </Box>
                   ))}
                 </Box>
