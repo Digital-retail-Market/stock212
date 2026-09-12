@@ -411,7 +411,7 @@ export default function HomePage() {
   const [loadingNew, setLoadingNew] = useState(true);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
-  const CAROUSEL_IMAGES = ['/hero-bg.jfif', '/image-2.jfif', '/image-3.jfif'];
+  const CAROUSEL_IMAGES = ['/hero/one.png', '/hero/two.png', '/hero/tree.png'];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -510,46 +510,18 @@ export default function HomePage() {
             '100%': { backgroundPosition: 'center' },
           },
         }}>
-        {/* Light overlay for text readability */}
-        <Box position="absolute" inset={0}
-          bg="linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)" />
-
-        {/* Hero Text Overlay */}
-        <Flex position="absolute" inset={0} align="center" justify="flex-start" pl={{ base: 6, md: 12 }} pr={{ base: 6, md: 8 }}>
-          <VStack spacing={8} align="start" maxW="3xl"
-            bg="rgba(0, 0, 0, 0.3)" p={{ base: 6, md: 8 }} borderRadius="xl">
-            {/* Eyebrow */}
-            <Text fontSize={{ base: 'lg', md: '2xl' }} fontWeight="800" color={C.accent} textTransform="uppercase" letterSpacing="3px">
-              {t('hero.eyebrow')}
-            </Text>
-
-            {/* Main heading */}
-            <Heading as="h1" fontSize={{ base: '32px', md: '52px' }} color="white" lineHeight={1.1} fontWeight="900" letterSpacing="-1px">
-              {t('hero.title1')}<br />
-              {t('hero.title2')}<br />
-              <span style={{ color: C.accent }}>{t('hero.titleAccent')}</span>
-            </Heading>
-
-            {/* Description */}
-            <Text fontSize={{ base: 'md', md: '2xl' }} color="white" lineHeight={1.8} maxW="2xl" fontWeight="500">
-              {t('hero.description', {
-                products: fmtStat(platformCounts.products, '43+'),
-                vendors: fmtStat(platformCounts.vendors, '1+')
-              })}
-            </Text>
-
-            {/* CTA Buttons */}
-            <HStack spacing={4} mt={-4}>
-              <Button bg={C.success} color="white" fontWeight="700" px={8} py={6} fontSize={{ base: 'sm', md: 'md' }}
-                _hover={{ bg: '#128a45' }} transition="all 0.2s">
-                {t('hero.cta')} →
-              </Button>
-              <Button bg="white" color={C.primary} fontWeight="700" px={8} py={6} fontSize={{ base: 'sm', md: 'md' }}
-                _hover={{ bg: C.accentLight }} transition="all 0.2s">
-                {user ? t('hero.secondaryLogged') : t('hero.secondaryAnon')}
-              </Button>
-            </HStack>
-          </VStack>
+        {/* CTA Buttons Only */}
+        <Flex position="absolute" inset={0} align="flex-end" justify="flex-start" pl={{ base: 6, md: 12 }} pb={{ base: 6, md: 8 }} pr={{ base: 6, md: 8 }}>
+          <HStack spacing={4}>
+            <Button bg={C.success} color="white" fontWeight="700" px={8} py={6} fontSize={{ base: 'sm', md: 'md' }}
+              _hover={{ bg: '#128a45' }} transition="all 0.2s">
+              {t('hero.cta')} →
+            </Button>
+            <Button bg="white" color={C.primary} fontWeight="700" px={8} py={6} fontSize={{ base: 'sm', md: 'md' }}
+              _hover={{ bg: C.accentLight }} transition="all 0.2s">
+              {user ? t('hero.secondaryLogged') : t('hero.secondaryAnon')}
+            </Button>
+          </HStack>
         </Flex>
       </Box>
 
