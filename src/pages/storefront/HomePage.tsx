@@ -958,10 +958,10 @@ export default function HomePage() {
         }, []);
 
         return (
-          <Box bg={C.bgLight} py={{ base: 8, md: 12 }} style={{ borderBottom: `1px solid ${C.border}` }}>
+          <Box bg="white" py={{ base: 4, md: 6 }} style={{ borderBottom: `1px solid ${C.border}` }}>
             <Container>
-              <VStack spacing={6} align="stretch">
-                <Box position="relative" w="full" style={{ aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
+              <VStack spacing={3} align="stretch">
+                <Box position="relative" w="full" style={{ aspectRatio: '16/9', maxW: '600px', mx: 'auto', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
                   <iframe
                     width="100%"
                     height="100%"
@@ -974,9 +974,9 @@ export default function HomePage() {
                   />
                 </Box>
 
-                <Flex justify="center" gap={2}>
+                <Flex justify="center" gap={1.5}>
                   {videos.map((_, i) => (
-                    <Box key={i} w={2.5} h={2.5} rounded="full"
+                    <Box key={i} w={2} h={2} rounded="full"
                       bg={i === videoIdx ? C.accent : C.border} cursor="pointer"
                       onClick={() => setVideoIdx(i)} _hover={{ bg: i === videoIdx ? C.accent : C.textMuted }}
                       transition="all 0.2s" />
