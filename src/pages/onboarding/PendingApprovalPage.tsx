@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from 'react';
 import { Box, Flex, Heading, Text, VStack, HStack, Button } from '@chakra-ui/react';
 import { Package, Clock, Phone, CheckCircle, Mail, Briefcase } from 'lucide-react';

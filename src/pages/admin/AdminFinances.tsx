@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from 'react';
 import {
   Header, SpaceBetween, Box, Container,

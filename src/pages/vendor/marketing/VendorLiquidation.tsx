@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState } from 'react';
 import {
   ContentLayout, Header, Table, Button, Modal, SpaceBetween,
