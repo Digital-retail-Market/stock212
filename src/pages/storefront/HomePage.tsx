@@ -901,7 +901,7 @@ export default function HomePage() {
               <style>{`
                 @keyframes slide-three-ads {
                   0% { transform: translateX(0); }
-                  100% { transform: translateX(-${(100 * 9) / 3}%); }
+                  100% { transform: translateX(-100%); }
                 }
                 .offre-special-carousel {
                   display: flex;
