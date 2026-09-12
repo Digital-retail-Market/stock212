@@ -16,6 +16,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Box, Flex, Text, Heading, Button, HStack, VStack, SimpleGrid,
   Image, Badge, Skeleton, IconButton, Progress,
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import type {
   TopBannerCampaign, DealOfDayCampaign, FooterBannerCampaign,
   ExtraRemiseCampaign, CategoryRowCampaign,
@@ -47,12 +49,13 @@ const C = {
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
 function SponsoredBadge() {
+  const { t } = useTranslation();
   return (
     <Box rounded="sm" px={2} py={0.5}
       style={{ background: C.amberLight, border: `1px solid ${C.amberBorder}` }}>
       <Text fontSize="8px" fontWeight="800" letterSpacing="1px"
         textTransform="uppercase" style={{ color: '#92400e' }}>
-        Sponsorisé
+        {t('homepageBlocks.sponsored')}
       </Text>
     </Box>
   );
@@ -62,10 +65,13 @@ function SectionHead({ eyebrow, title, accentColor, right, onAction, actionLabel
   eyebrow?: string; title: string; accentColor?: string;
   right?: React.ReactNode; onAction?: () => void; actionLabel?: string;
 }) {
+  const { t } = useTranslation();
+  const { lang } = useLanguage();
   const accent = accentColor ?? C.amber;
+  const isRTL = lang === 'ar';
   return (
-    <Flex align="center" justify="space-between" mb={6}>
-      <Box style={{ borderLeft: `3px solid ${accent}`, paddingLeft: '14px' }}>
+    <Flex align="center" justify="space-between" mb={6} dir={isRTL ? 'rtl' : 'ltr'}>
+      <Box style={{ borderLeft: isRTL ? 'none' : `3px solid ${accent}`, borderRight: isRTL ? `3px solid ${accent}` : 'none', paddingLeft: isRTL ? '0' : '14px', paddingRight: isRTL ? '14px' : '0' }}>
         {eyebrow && (
           <Text fontSize="10px" fontWeight="800" letterSpacing="2px"
             textTransform="uppercase" mb={0.5} style={{ color: accent }}>
@@ -78,9 +84,10 @@ function SectionHead({ eyebrow, title, accentColor, right, onAction, actionLabel
         {right}
         {onAction && (
           <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-            color={C.slate} rightIcon={<ChevronRight size={13} />}
+            color={C.slate} rightIcon={!isRTL ? <ChevronRight size={13} /> : undefined}
+            leftIcon={isRTL ? <ChevronLeft size={13} /> : undefined}
             _hover={{ color: accent, bg: 'transparent' }} onClick={onAction}>
-            {actionLabel ?? 'Voir tout'}
+            {actionLabel ?? t('common.seeAll')}
           </Button>
         )}
       </HStack>
@@ -115,6 +122,7 @@ function Carousel({ children }: { children: React.ReactNode }) {
 }
 
 function MiniProductCard({ p }: { p: Product }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const first = p.price_tiers?.sort((a, b) => a.qty_min - b.qty_min)[0];
@@ -135,7 +143,7 @@ function MiniProductCard({ p }: { p: Product }) {
       <Box p={3}>
         <Text fontSize="9px" fontWeight="700" noOfLines={1} mb={0.5}
           textTransform="uppercase" letterSpacing="0.6px" style={{ color: C.amber }}>
-          {p.organisations?.name ?? p.brands?.name ?? 'Vendeur'}
+          {p.organisations?.name ?? p.brands?.name ?? t('homepageBlocks.seller')}
         </Text>
         <Text fontWeight="600" color="gray.800" fontSize="xs" noOfLines={2} lineHeight={1.4} mb={1.5}>
           {p.name}
@@ -146,7 +154,7 @@ function MiniProductCard({ p }: { p: Product }) {
             </Text>
           : <HStack spacing={1} cursor="pointer" onClick={e => { e.stopPropagation(); navigate('/auth'); }}>
               <Lock size={9} color={C.muted} />
-              <Text fontSize="9px" fontWeight="600" style={{ color: C.slate }}>Voir le prix</Text>
+              <Text fontSize="9px" fontWeight="600" style={{ color: C.slate }}>{t('homepageBlocks.seePrice')}</Text>
             </HStack>
         }
       </Box>
@@ -242,14 +250,18 @@ export function VentesFlashBlock({ products, flashCount, countdown }: {
   flashCount: number;
   countdown: { h: string; m: string; s: string };
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   if (products.length === 0 && flashCount === 0) return null;
+  const flashTitle = flashCount > 0
+    ? `${t('homepageBlocks.offersOfTheDay')} · ${flashCount} ${flashCount > 1 ? t('homepageBlocks.flashSaleActiveMany', { count: flashCount }) : t('homepageBlocks.flashSaleActive', { count: flashCount })}`
+    : t('homepageBlocks.offersOfTheDay');
   return (
     <Box bg="white" pt={8} pb={6} style={{ borderBottom: `8px solid ${C.bgAlt}` }}>
       <Box maxW="1400px" mx="auto" px={{ base: 4, md: 6 }}>
         <SectionHead
-          eyebrow="Flash Deals"
-          title={flashCount > 0 ? `Offres du jour · ${flashCount} flash sale${flashCount > 1 ? 's' : ''} active${flashCount > 1 ? 's' : ''}` : 'Offres du jour'}
+          eyebrow={t('homepageBlocks.flashDeals')}
+          title={flashTitle}
           onAction={() => navigate('/best-deals')}
           right={
             <Flex align="center" gap={2} rounded="md" px={3} py={1.5}
@@ -275,11 +287,12 @@ export function VentesFlashBlock({ products, flashCount, countdown }: {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function ExtraRemiseBlock({ campaigns }: { campaigns: ExtraRemiseCampaign[] }) {
+  const { t } = useTranslation();
   const items = campaigns.map(c => ({
     label: c.label ?? (c.discount_pct ? `-${c.discount_pct}%` : c.name),
     code: c.code ?? null,
     color: c.color ?? C.teal,
-    desc: c.min_order ? `Dès ${c.min_order} €` : 'Voir les conditions',
+    desc: c.min_order ? `${t('homepageBlocks.description')} ${c.min_order} €` : t('promos.seePrices'),
   }));
 
   return (
@@ -289,7 +302,7 @@ export function ExtraRemiseBlock({ campaigns }: { campaigns: ExtraRemiseCampaign
           <Box w={6} h="2px" rounded="full" style={{ background: C.teal }} />
           <Text fontSize="10px" fontWeight="800" letterSpacing="2px"
             textTransform="uppercase" style={{ color: C.teal }}>
-            Offres &amp; Remises Exclusives
+            {t('homepageBlocks.offersExclusions')}
           </Text>
         </HStack>
         <SimpleGrid columns={{ base: 2, sm: 2, md: 4 }} spacing={3}>
@@ -328,17 +341,18 @@ export function ExtraRemiseBlock({ campaigns }: { campaigns: ExtraRemiseCampaign
 // ═══════════════════════════════════════════════════════════════════════════════
 // 4. RecommandePourVous — RecommandéPourVous
 // ═══════════════════════════════════════════════════════════════════════════════
-export function RecommandePourVous({ products, eyebrow = 'Sélection pour vous', title = 'Recommandé pour vous' }: {
+export function RecommandePourVous({ products, eyebrow, title }: {
   products: Product[]; eyebrow?: string; title?: string;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   if (products.length === 0) return null;
   return (
     <Box bg="white" pt={8} pb={6} style={{ borderBottom: `8px solid ${C.bgAlt}` }}>
       <Box maxW="1400px" mx="auto" px={{ base: 4, md: 6 }}>
         <SectionHead
-          eyebrow={eyebrow}
-          title={title}
+          eyebrow={eyebrow ?? t('homepageBlocks.selection')}
+          title={title ?? t('homepageBlocks.recommendedForYou')}
           accentColor="#6366f1"
           onAction={() => navigate('/catalog')}
           right={
@@ -364,6 +378,7 @@ export function CategoryBlock({ category, products, accentColor, eyebrow }: {
   accentColor?: string;
   eyebrow?: string;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   if (products.length === 0) return null;
   const accent = accentColor ?? C.amber;
@@ -371,7 +386,7 @@ export function CategoryBlock({ category, products, accentColor, eyebrow }: {
     <Box bg="white" pt={8} pb={6} style={{ borderBottom: `8px solid ${C.bgAlt}` }}>
       <Box maxW="1400px" mx="auto" px={{ base: 4, md: 6 }}>
         <SectionHead
-          eyebrow={eyebrow ?? 'Catégorie'}
+          eyebrow={eyebrow ?? t('sections.flashDeals')}
           title={category.name}
           accentColor={accent}
           onAction={() => navigate(`/catalog?category=${category.id}`)}
@@ -406,11 +421,13 @@ export function DealOfDayBlock({ campaign, product }: {
   campaign: DealOfDayCampaign | null;
   product: Product | null;
 }) {
+  const { t } = useTranslation();
+  const { lang } = useLanguage();
   const navigate = useNavigate();
   const { user } = useAuth();
   const countdown = useMidnightCountdown();
+  const isRTL = lang === 'ar';
 
-  // Fallback: use the product from campaign if available, else show a placeholder
   if (!campaign && !product) return null;
 
   const first = product?.price_tiers?.sort((a, b) => a.qty_min - b.qty_min)[0];
@@ -423,7 +440,7 @@ export function DealOfDayBlock({ campaign, product }: {
     <Box py={7} style={{ background: `linear-gradient(135deg, ${C.navy} 0%, #1a3558 100%)`, borderBottom: `8px solid ${C.bgAlt}` }}>
       <Box maxW="1400px" mx="auto" px={{ base: 4, md: 6 }}>
         {/* Header */}
-        <Flex align="center" justify="space-between" mb={6}>
+        <Flex align="center" justify="space-between" mb={6} dir={isRTL ? 'rtl' : 'ltr'}>
           <HStack spacing={3}>
             <Box w={8} h={8} rounded="lg" display="flex" alignItems="center" justifyContent="center"
               style={{ background: C.amber }}>
@@ -431,9 +448,9 @@ export function DealOfDayBlock({ campaign, product }: {
             </Box>
             <Box>
               <Text fontSize="10px" fontWeight="800" letterSpacing="2px"
-                textTransform="uppercase" style={{ color: C.amber }}>Deal of the Day</Text>
+                textTransform="uppercase" style={{ color: C.amber }}>{t('homepageBlocks.dealOfTheDay')}</Text>
               <Text fontWeight="800" color="white" fontSize="lg" lineHeight={1.1}>
-                Offre exclusive 24h
+                {t('homepageBlocks.exclusiveOffer24h')}
               </Text>
             </Box>
           </HStack>
@@ -448,7 +465,7 @@ export function DealOfDayBlock({ campaign, product }: {
 
         {/* Product card */}
         {product && (
-          <Flex gap={6} align="center" flexWrap={{ base: 'wrap', md: 'nowrap' }}>
+          <Flex gap={6} align="center" flexWrap={{ base: 'wrap', md: 'nowrap' }} dir={isRTL ? 'rtl' : 'ltr'}>
             {/* Image */}
             <Box flexShrink={0} w={{ base: 'full', md: '280px' }} h={{ base: '200px', md: '240px' }}
               rounded="xl" overflow="hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
@@ -464,7 +481,7 @@ export function DealOfDayBlock({ campaign, product }: {
               {campaign && <SponsoredBadge />}
               <Text fontSize="10px" fontWeight="700" style={{ color: C.amber }}
                 textTransform="uppercase" letterSpacing="0.6px" mt={2} mb={1}>
-                {product.organisations?.name ?? product.brands?.name ?? 'Vendeur'}
+                {product.organisations?.name ?? product.brands?.name ?? t('homepageBlocks.seller')}
               </Text>
               <Heading color="white" fontWeight="800" size="lg" lineHeight={1.2} mb={3}>
                 {product.name}
@@ -472,7 +489,7 @@ export function DealOfDayBlock({ campaign, product }: {
 
               {discountPct && (
                 <Badge style={{ background: C.red }} color="white" fontSize="sm" px={3} py={1} rounded="md" mb={3}>
-                  -{discountPct}% aujourd'hui seulement
+                  {t('homepageBlocks.discountToday', { discount: discountPct })}
                 </Badge>
               )}
 
@@ -496,7 +513,7 @@ export function DealOfDayBlock({ campaign, product }: {
               ) : (
                 <HStack spacing={1} mb={4}>
                   <Lock size={12} color="rgba(148,163,184,0.7)" />
-                  <Text fontSize="sm" color="gray.400">Connectez-vous pour voir le prix</Text>
+                  <Text fontSize="sm" color="gray.400">{t('homepageBlocks.connectToSeePrice')}</Text>
                 </HStack>
               )}
 
@@ -504,9 +521,9 @@ export function DealOfDayBlock({ campaign, product }: {
               {campaign?.available_qty && (
                 <Box mb={4}>
                   <Flex justify="space-between" mb={1}>
-                    <Text fontSize="xs" color="gray.400">Disponibilité</Text>
+                    <Text fontSize="xs" color="gray.400">{t('homepageBlocks.availability')}</Text>
                     <Text fontSize="xs" fontWeight="700" style={{ color: C.amber }}>
-                      {campaign.available_qty} unités restantes
+                      {t('homepageBlocks.unitsRemaining', { qty: campaign.available_qty })}
                     </Text>
                   </Flex>
                   <Progress value={Math.min(100, (campaign.available_qty / 50) * 100)}
@@ -516,11 +533,12 @@ export function DealOfDayBlock({ campaign, product }: {
               )}
 
               <Button size="md" rounded="md" fontWeight="700"
-                rightIcon={<ShoppingCart size={14} />}
+                rightIcon={!isRTL ? <ShoppingCart size={14} /> : undefined}
+                leftIcon={isRTL ? <ShoppingCart size={14} /> : undefined}
                 onClick={() => navigate(`/product/${product.id}`)}
                 style={{ background: C.amber, color: 'white' }}
                 _hover={{ opacity: 0.9, transform: 'translateY(-1px)' }} transition="all 0.18s">
-                {user ? 'Voir l\'offre' : 'Voir le produit'}
+                {user ? t('homepageBlocks.seeOffer') : t('homepageBlocks.seeProduct')}
               </Button>
             </Box>
           </Flex>
@@ -535,7 +553,10 @@ export function DealOfDayBlock({ campaign, product }: {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function FooterBannerBlock({ campaigns }: { campaigns: FooterBannerCampaign[] }) {
+  const { t } = useTranslation();
+  const { lang } = useLanguage();
   const navigate = useNavigate();
+  const isRTL = lang === 'ar';
   if (campaigns.length === 0) return null;
 
   const s = {
@@ -555,11 +576,11 @@ export function FooterBannerBlock({ campaigns }: { campaigns: FooterBannerCampai
         <Box position="absolute" inset={0}>
           <Image src={s.imageUrl} w="full" h="full" objectFit="cover" />
           <Box position="absolute" inset={0}
-            style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.35) 100%)' }} />
+            style={{ background: isRTL ? 'linear-gradient(to left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.35) 100%)' : 'linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.35) 100%)' }} />
         </Box>
       )}
       <Flex px={{ base: 6, md: 12 }} py={6} align="center" justify="space-between"
-        gap={6} position="relative" zIndex={2} flexWrap="wrap">
+        gap={6} position="relative" zIndex={2} flexWrap="wrap" dir={isRTL ? 'rtl' : 'ltr'}>
         <Box>
           {s.sponsored && <SponsoredBadge />}
           <Heading color="white" fontSize={{ base: 'md', md: 'xl' }} fontWeight="800"
@@ -571,11 +592,12 @@ export function FooterBannerBlock({ campaigns }: { campaigns: FooterBannerCampai
           )}
         </Box>
         <Button size="sm" rounded="md" fontWeight="700"
-          rightIcon={<ArrowRight size={13} />}
+          rightIcon={!isRTL ? <ArrowRight size={13} /> : undefined}
+          leftIcon={isRTL ? <ArrowRight size={13} /> : undefined}
           onClick={() => navigate(s.cta_link)}
           style={{ background: s.accentColor, color: 'white' }}
           _hover={{ opacity: 0.9 }} flexShrink={0}>
-          Découvrir
+          {t('homepageBlocks.discover')}
         </Button>
       </Flex>
     </Box>
@@ -586,6 +608,7 @@ export function FooterBannerBlock({ campaigns }: { campaigns: FooterBannerCampai
 // 8. SearchSponsoredBlock — Search_Sponsored (used in CatalogPage)
 // ═══════════════════════════════════════════════════════════════════════════════
 export function SearchSponsoredBlock({ products }: { products: Product[] }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   if (products.length === 0) return null;
   return (
@@ -593,7 +616,7 @@ export function SearchSponsoredBlock({ products }: { products: Product[] }) {
       <HStack spacing={2} mb={3}>
         <TrendingUp size={14} style={{ color: C.amber }} />
         <Text fontSize="xs" fontWeight="800" style={{ color: '#92400e' }} letterSpacing="0.5px">
-          Produits mis en avant
+          {t('sections.sponsored')}
         </Text>
         <SponsoredBadge />
       </HStack>
@@ -627,6 +650,7 @@ export function SearchSponsoredBlock({ products }: { products: Product[] }) {
 // 10. RFQBoostBlock — RFQ_Boost_Slot
 // ═══════════════════════════════════════════════════════════════════════════════
 export function RFQBoostBlock({ rfqPosts }: { rfqPosts: RFQPost[] }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   if (rfqPosts.length === 0) return null;
@@ -635,14 +659,14 @@ export function RFQBoostBlock({ rfqPosts }: { rfqPosts: RFQPost[] }) {
     <Box py={7} style={{ background: C.bgAlt, borderBottom: `8px solid ${C.bgAlt}` }}>
       <Box maxW="1400px" mx="auto" px={{ base: 4, md: 6 }}>
         <SectionHead
-          eyebrow="Appels d'offres"
-          title="Demandes acheteurs · En attente"
+          eyebrow={t('sections.flashDeals')}
+          title={t('homepageBlocks.buyerRequests')}
           accentColor={C.teal}
           right={
             <Box rounded="sm" px={2.5} py={1}
               style={{ background: C.tealLight, border: `1px solid ${C.tealBorder}` }}>
               <Text fontSize="9px" fontWeight="800" letterSpacing="1px"
-                textTransform="uppercase" style={{ color: C.teal }}>BOOSTÉ</Text>
+                textTransform="uppercase" style={{ color: C.teal }}>{t('homepageBlocks.boosted')}</Text>
             </Box>
           }
         />
@@ -668,12 +692,12 @@ export function RFQBoostBlock({ rfqPosts }: { rfqPosts: RFQPost[] }) {
                 <HStack spacing={1}>
                   <Package size={10} color={C.muted} />
                   <Text fontSize="xs" color="gray.600" fontWeight="500">
-                    Qté : <Text as="span" fontWeight="700">{rfq.quantity.toLocaleString()}</Text>
+                    {t('homepageBlocks.quantity')} : <Text as="span" fontWeight="700">{rfq.quantity.toLocaleString()}</Text>
                   </Text>
                 </HStack>
                 {rfq.desired_price && (
                   <Text fontSize="xs" color="gray.500">
-                    Budget cible : <Text as="span" fontWeight="700" style={{ color: C.teal }}>
+                    {t('homepageBlocks.targetBudget')} : <Text as="span" fontWeight="700" style={{ color: C.teal }}>
                       {rfq.desired_price.toFixed(2)} €
                     </Text>
                   </Text>
@@ -690,7 +714,7 @@ export function RFQBoostBlock({ rfqPosts }: { rfqPosts: RFQPost[] }) {
                 w="full" style={{ background: C.teal, color: 'white' }}
                 _hover={{ opacity: 0.88 }}
                 onClick={() => user ? navigate('/vendor/quotes') : navigate('/auth')}>
-                {user ? 'Répondre à la demande' : 'Connectez-vous pour répondre'}
+                {user ? t('homepageBlocks.respondRequest') : t('homepageBlocks.loginToRespond')}
               </Button>
             </Box>
           ))}
@@ -706,6 +730,7 @@ export function RFQBoostBlock({ rfqPosts }: { rfqPosts: RFQPost[] }) {
 const CAT_ACCENT_COLORS = ['#c97d1a', '#6366f1', '#0f766e', '#be1c1c', '#92400e', '#1e3a8a'];
 
 export function DynamicCategoryRows({ campaigns }: { campaigns: CategoryRowCampaign[] }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [catProducts, setCatProducts] = useState<Record<string, Product[]>>({});
 
@@ -737,7 +762,7 @@ export function DynamicCategoryRows({ campaigns }: { campaigns: CategoryRowCampa
           <Box key={c.id} bg="white" pt={8} pb={6} style={{ borderBottom: `8px solid ${C.bgAlt}` }}>
             <Box maxW="1400px" mx="auto" px={{ base: 4, md: 6 }}>
               <SectionHead
-                eyebrow="Catégorie sponsorisée"
+                eyebrow={t('homepageBlocks.sponsoredCategory')}
                 title={c.headline ?? c.category_name ?? c.name}
                 accentColor={accent}
                 onAction={() => navigate(`/catalog?category=${c.category_id}`)}
