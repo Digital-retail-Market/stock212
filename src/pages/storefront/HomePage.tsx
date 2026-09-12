@@ -623,6 +623,39 @@ export default function HomePage() {
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
+          PROMOTIONAL VIDEO — Featured video section
+      ══════════════════════════════════════════════════════════════ */}
+      <Box bg={C.bgLight} py={{ base: 8, md: 12 }} style={{ borderBottom: `1px solid ${C.border}` }}>
+        <Container>
+          <VStack spacing={6} align="stretch">
+            <VStack spacing={3} align="center" textAlign="center">
+              <Badge colorScheme="orange" fontSize="sm" fontWeight="700" px={3} py={1}>
+                🎬 {t('sections.video') || 'Vidéo Promotionnelle'}
+              </Badge>
+              <Heading size="lg" fontWeight="900" style={{ color: C.primary }}>
+                {t('video.title') || 'Découvrez Stock212'}
+              </Heading>
+              <Text fontSize="md" color={C.textMuted} maxW="2xl">
+                {t('video.description') || 'La plateforme B2B de commerce de gros pour les FMCG en Afrique'}
+              </Text>
+            </VStack>
+            <Box position="relative" w="full" style={{ aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
+              <iframe
+                width="100%"
+                height="100%"
+                src="https://www.youtube.com/embed/0WToWtrcp_Q"
+                title="Stock212 - B2B FMCG Marketplace"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position: 'absolute', top: 0, left: 0 }}
+              />
+            </Box>
+          </VStack>
+        </Container>
+      </Box>
+
+      {/* ══════════════════════════════════════════════════════════════
           MARQUES DISPONIBLES — Available brands carousel
       ══════════════════════════════════════════════════════════════ */}
       <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
