@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
-  ContentLayout, Header, Tabs, Table, Button, Modal, SpaceBetween,
-  Form, FormField, Input, Select, Textarea, Alert, Box, Pagination,
-  ExpandableSection, StatusIndicator,
+  ContentLayout, Header, Table, Button, Modal, SpaceBetween,
+  Form, FormField, Input, Select, Textarea, Box, Pagination,
+  StatusIndicator,
 } from '@cloudscape-design/components';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';

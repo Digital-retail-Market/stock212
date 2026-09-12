@@ -318,7 +318,7 @@ export default function FicheProduitEdit() {
       setCatalogSearching(false);
     }, 350);
     return () => { if (catalogTimerRef.current) clearTimeout(catalogTimerRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [catalogSearch]);
 
   // ── Lookup EAN en temps réel ──────────────────────────────────────────────
@@ -351,7 +351,7 @@ export default function FicheProduitEdit() {
       }
     }, 400);
     return () => { if (eanTimerRef.current) clearTimeout(eanTimerRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [product.ean]);
 
   function importFromRef(ref: EanRefData) {

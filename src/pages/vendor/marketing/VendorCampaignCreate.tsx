@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   ContentLayout, Header, Container, SpaceBetween, Form,
   FormField, Input, Select, DatePicker, Button, Alert,
-  ColumnLayout, Box, Toggle, Textarea,
+  ColumnLayout, Box, Toggle,
 } from '@cloudscape-design/components';
-import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import { createCampaignWithChecks, getSellerBalance, getCreditCost, daysBetween, computeCampaignBudget, formatCredits } from '../../../lib/marketingHelpers';
 import type { CampaignType, CampaignScopeType } from '../../../types/marketing';
@@ -67,7 +66,6 @@ export default function VendorCampaignCreate() {
   const [scopeValue, setScopeValue] = useState('');
   const [metadata, setMetadata] = useState<Record<string, unknown>>({});
   const [balance, setBalance] = useState(0);
-  const [unitCost, setUnitCost] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 

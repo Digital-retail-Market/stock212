@@ -106,7 +106,7 @@ export default function VendorLots() {
 
     // Fetch base prices from price_tiers
     const productIds = [...new Set(rows.map((l) => l.product_id))];
-    let tierMap: Record<string, number> = {};
+    const tierMap: Record<string, number> = {};
 
     if (productIds.length > 0) {
       const { data: tiersData } = await supabase

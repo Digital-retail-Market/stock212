@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ContentLayout, Header, SpaceBetween, Container,
-  ColumnLayout, Box, Button, StatusIndicator, Link,
+  ColumnLayout, Box, Button, StatusIndicator,
 } from '@cloudscape-design/components';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';

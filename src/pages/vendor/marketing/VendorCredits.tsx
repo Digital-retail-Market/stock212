@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ContentLayout, Header, Tabs, Container, SpaceBetween,
-  ColumnLayout, Box, Button, Cards, Alert, Modal,
+  Box, Button, Cards, Alert, Modal,
   Table, StatusIndicator, Pagination,
 } from '@cloudscape-design/components';
 import { supabase } from '../../../lib/supabase';
