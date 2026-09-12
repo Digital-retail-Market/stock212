@@ -640,8 +640,8 @@ export default function HomePage() {
                       animation: slide-ads 5s ease-in-out infinite;
                     }
                   `}</style>
-                  <Box className="offre-special-ads" w="full" h="full">
-                    <Image src={sideAds[currentAdIdx]} alt={`Offre ${currentAdIdx + 1}`} w="full" h="full" objectFit="cover" />
+                  <Box className="offre-special-ads" w="full" h="full" display="flex" alignItems="center" justifyContent="center" bg="white">
+                    <Image src={sideAds[currentAdIdx]} alt={`Offre ${currentAdIdx + 1}`} maxW="full" maxH="full" objectFit="contain" />
                   </Box>
                   <Flex position="absolute" bottom={3} left="50%" transform="translateX(-50%)" gap={1}>
                     {sideAds.map((_, i) => (
