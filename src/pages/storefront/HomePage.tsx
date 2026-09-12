@@ -623,37 +623,55 @@ export default function HomePage() {
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
-          PROMOTIONAL VIDEO — Featured video section
+          PROMOTIONAL VIDEO CAROUSEL — Auto-rotating featured videos
       ══════════════════════════════════════════════════════════════ */}
-      <Box bg={C.bgLight} py={{ base: 8, md: 12 }} style={{ borderBottom: `1px solid ${C.border}` }}>
-        <Container>
-          <VStack spacing={6} align="stretch">
-            <VStack spacing={3} align="center" textAlign="center">
-              <Badge colorScheme="orange" fontSize="sm" fontWeight="700" px={3} py={1}>
-                🎬 {t('sections.video') || 'Vidéo Promotionnelle'}
-              </Badge>
-              <Heading size="lg" fontWeight="900" style={{ color: C.primary }}>
-                {t('video.title') || 'Découvrez Stock212'}
-              </Heading>
-              <Text fontSize="md" color={C.textMuted} maxW="2xl">
-                {t('video.description') || 'La plateforme B2B de commerce de gros pour les FMCG en Afrique'}
-              </Text>
-            </VStack>
-            <Box position="relative" w="full" style={{ aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
-              <iframe
-                width="100%"
-                height="100%"
-                src="https://www.youtube.com/embed/0WToWtrcp_Q"
-                title="Stock212 - B2B FMCG Marketplace"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{ position: 'absolute', top: 0, left: 0 }}
-              />
-            </Box>
-          </VStack>
-        </Container>
-      </Box>
+      {(() => {
+        const [videoIdx, setVideoIdx] = useState(0);
+        const videos = [
+          { id: '0WToWtrcp_Q', title: 'Stock212 - B2B Marketplace' },
+          { id: 'V9kxyPJ0Un4', title: 'Stock212 - Platform Overview' },
+          { id: 'So7DQscUNIE', title: 'Stock212 - B2B Solutions' },
+          { id: 'bFC5gG2Mhzs', title: 'Stock212 - FMCG Platform' },
+          { id: 'sIR5hVMG730', title: 'Stock212 - Africa Commerce' },
+        ];
+
+        useEffect(() => {
+          const interval = setInterval(() => {
+            setVideoIdx((prev) => (prev + 1) % videos.length);
+          }, 15000);
+          return () => clearInterval(interval);
+        }, []);
+
+        return (
+          <Box bg={C.bgLight} py={{ base: 8, md: 12 }} style={{ borderBottom: `1px solid ${C.border}` }}>
+            <Container>
+              <VStack spacing={6} align="stretch">
+                <Box position="relative" w="full" style={{ aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${videos[videoIdx].id}?autoplay=1&mute=1`}
+                    title={videos[videoIdx].title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ position: 'absolute', top: 0, left: 0 }}
+                  />
+                </Box>
+
+                <Flex justify="center" gap={2}>
+                  {videos.map((_, i) => (
+                    <Box key={i} w={2.5} h={2.5} rounded="full"
+                      bg={i === videoIdx ? C.accent : C.border} cursor="pointer"
+                      onClick={() => setVideoIdx(i)} _hover={{ bg: i === videoIdx ? C.accent : C.textMuted }}
+                      transition="all 0.2s" />
+                  ))}
+                </Flex>
+              </VStack>
+            </Container>
+          </Box>
+        );
+      })()}
 
       {/* ══════════════════════════════════════════════════════════════
           MARQUES DISPONIBLES — Available brands carousel
