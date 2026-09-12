@@ -494,6 +494,30 @@ export default function HomePage() {
     <Box bg={C.bg}>
 
       {/* ══════════════════════════════════════════════════════════════
+          PROMO BANNER — Yellow moving text banner below navbar
+      ══════════════════════════════════════════════════════════════ */}
+      <Box bg="#FFD700" py={2} style={{ overflow: 'hidden', borderBottom: '2px solid #FFC700' }}>
+        <style>{`
+          @keyframes marquee-promo {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+          }
+          .promo-marquee {
+            display: flex;
+            white-space: nowrap;
+            animation: marquee-promo 15s linear infinite;
+            font-weight: 700;
+            font-size: 14px;
+            color: #333;
+          }
+        `}</style>
+        <Box className="promo-marquee">
+          <Text as="span" px={4}>✨ New sellers join daily! • Free shipping on orders above 500 MAD • Track all orders in one place • ✨</Text>
+          <Text as="span" px={4}>✨ New sellers join daily! • Free shipping on orders above 500 MAD • Track all orders in one place • ✨</Text>
+        </Box>
+      </Box>
+
+      {/* ══════════════════════════════════════════════════════════════
           HERO — Rotating background images sliding right to left
       ══════════════════════════════════════════════════════════════ */}
       <Box position="relative" overflow="hidden" w="100vw" h={{ base: '300px', sm: '400px', md: '500px', lg: '600px', xl: '700px' }}
@@ -638,57 +662,6 @@ export default function HomePage() {
           </Container>
         </Box>
       )}
-
-      {/* ══════════════════════════════════════════════════════════════
-          PROMOTIONAL VIDEO CAROUSEL — Auto-rotating featured videos
-      ══════════════════════════════════════════════════════════════ */}
-      {(() => {
-        const [videoIdx, setVideoIdx] = useState(0);
-        const videos = [
-          { id: '0WToWtrcp_Q', title: 'Stock212 - B2B Marketplace' },
-          { id: 'V9kxyPJ0Un4', title: 'Stock212 - Platform Overview' },
-          { id: 'So7DQscUNIE', title: 'Stock212 - B2B Solutions' },
-          { id: 'bFC5gG2Mhzs', title: 'Stock212 - FMCG Platform' },
-          { id: 'sIR5hVMG730', title: 'Stock212 - Africa Commerce' },
-        ];
-
-        useEffect(() => {
-          const interval = setInterval(() => {
-            setVideoIdx((prev) => (prev + 1) % videos.length);
-          }, 15000);
-          return () => clearInterval(interval);
-        }, []);
-
-        return (
-          <Box bg={C.bgLight} py={{ base: 8, md: 12 }} style={{ borderBottom: `1px solid ${C.border}` }}>
-            <Container>
-              <VStack spacing={6} align="stretch">
-                <Box position="relative" w="full" style={{ aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src={`https://www.youtube.com/embed/${videos[videoIdx].id}?autoplay=1&mute=1`}
-                    title={videos[videoIdx].title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    style={{ position: 'absolute', top: 0, left: 0 }}
-                  />
-                </Box>
-
-                <Flex justify="center" gap={2}>
-                  {videos.map((_, i) => (
-                    <Box key={i} w={2.5} h={2.5} rounded="full"
-                      bg={i === videoIdx ? C.accent : C.border} cursor="pointer"
-                      onClick={() => setVideoIdx(i)} _hover={{ bg: i === videoIdx ? C.accent : C.textMuted }}
-                      transition="all 0.2s" />
-                  ))}
-                </Flex>
-              </VStack>
-            </Container>
-          </Box>
-        );
-      })()}
 
       {/* ══════════════════════════════════════════════════════════════
           IMAGE ADS CAROUSEL — Moving promotional ads
@@ -964,6 +937,56 @@ export default function HomePage() {
         </Box>
       )}
 
+      {/* ══════════════════════════════════════════════════════════════
+          PROMOTIONAL VIDEO CAROUSEL — Auto-rotating featured videos
+      ══════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const [videoIdx, setVideoIdx] = useState(0);
+        const videos = [
+          { id: '0WToWtrcp_Q', title: 'Stock212 - B2B Marketplace' },
+          { id: 'V9kxyPJ0Un4', title: 'Stock212 - Platform Overview' },
+          { id: 'So7DQscUNIE', title: 'Stock212 - B2B Solutions' },
+          { id: 'bFC5gG2Mhzs', title: 'Stock212 - FMCG Platform' },
+          { id: 'sIR5hVMG730', title: 'Stock212 - Africa Commerce' },
+        ];
+
+        useEffect(() => {
+          const interval = setInterval(() => {
+            setVideoIdx((prev) => (prev + 1) % videos.length);
+          }, 15000);
+          return () => clearInterval(interval);
+        }, []);
+
+        return (
+          <Box bg={C.bgLight} py={{ base: 8, md: 12 }} style={{ borderBottom: `1px solid ${C.border}` }}>
+            <Container>
+              <VStack spacing={6} align="stretch">
+                <Box position="relative" w="full" style={{ aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${videos[videoIdx].id}?autoplay=1&mute=1`}
+                    title={videos[videoIdx].title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ position: 'absolute', top: 0, left: 0 }}
+                  />
+                </Box>
+
+                <Flex justify="center" gap={2}>
+                  {videos.map((_, i) => (
+                    <Box key={i} w={2.5} h={2.5} rounded="full"
+                      bg={i === videoIdx ? C.accent : C.border} cursor="pointer"
+                      onClick={() => setVideoIdx(i)} _hover={{ bg: i === videoIdx ? C.accent : C.textMuted }}
+                      transition="all 0.2s" />
+                  ))}
+                </Flex>
+              </VStack>
+            </Container>
+          </Box>
+        );
+      })()}
 
       {/* ══════════════════════════════════════════════════════════════
           FOR BUYERS — Dual Value Prop
