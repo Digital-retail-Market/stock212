@@ -13,7 +13,7 @@ export function getCategoryLabel(category: Pick<Category, 'name' | 'name_i18n'>,
   try {
     const i18nTranslated = i18n.t(i18nKey, { lng: language });
     if (i18nTranslated && i18nTranslated !== i18nKey) return i18nTranslated;
-  } catch (e) {
+  } catch {
     // Fallback continues
   }
 
@@ -22,7 +22,7 @@ export function getCategoryLabel(category: Pick<Category, 'name' | 'name_i18n'>,
     try {
       const englishTranslated = i18n.t(i18nKey, { lng: 'en' });
       if (englishTranslated && englishTranslated !== i18nKey) return englishTranslated;
-    } catch (e) {
+    } catch {
       // Fallback continues
     }
   }

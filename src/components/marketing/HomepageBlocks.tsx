@@ -18,11 +18,11 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Box, Flex, Text, Heading, Button, HStack, VStack, SimpleGrid,
-  Image, Badge, Skeleton, IconButton, Progress,
+  Box, Flex, Text, Heading, Button, HStack, SimpleGrid,
+  Image, Badge, IconButton, Progress,
 } from '@chakra-ui/react';
 import {
-  ChevronLeft, ChevronRight, Zap, Tag as TagIcon, Gift,
+  ChevronLeft, ChevronRight, Zap,
   Percent, ShoppingCart, Clock, Star, ArrowRight, Lock, Package,
   TrendingUp, MessageSquare,
 } from 'lucide-react';

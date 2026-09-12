@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Image, Flex, Text, Heading } from '@chakra-ui/react';
+import { Box, Image, Flex, Heading } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 
 const BANNER_IMAGES = [
@@ -12,7 +12,6 @@ const BANNER_IMAGES = [
 export function AnimatedBanner() {
   const { t } = useTranslation();
   const [currentImage, setCurrentImage] = useState(0);
-  const [textPosition, setTextPosition] = useState(0);
 
   useEffect(() => {
     const imageInterval = setInterval(() => {
@@ -20,14 +19,6 @@ export function AnimatedBanner() {
     }, 5000); // Change image every 5 seconds
 
     return () => clearInterval(imageInterval);
-  }, []);
-
-  useEffect(() => {
-    const textInterval = setInterval(() => {
-      setTextPosition((prev) => (prev + 1) % 100);
-    }, 50); // Smooth text movement
-
-    return () => clearInterval(textInterval);
   }, []);
 
   return (
