@@ -496,12 +496,12 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════════════════
           HERO — Rotating background images sliding right to left
       ══════════════════════════════════════════════════════════════ */}
-      <Box position="relative" overflow="hidden"
-        minH={{ base: '460px', md: '500px', lg: '560px' }}
+      <Box position="relative" overflow="hidden" w="100vw" h={{ base: '300px', sm: '400px', md: '500px', lg: '600px', xl: '700px' }}
         backgroundImage={`url('${CAROUSEL_IMAGES[currentImageIdx]}')`}
-        backgroundSize="cover"
+        backgroundSize="contain"
         backgroundPosition="center"
-        backgroundAttachment="fixed"
+        backgroundRepeat="no-repeat"
+        backgroundAttachment="scroll"
         transition="background-image 0.8s ease-in-out"
         sx={{
           animation: 'slideIn 0.8s ease-in-out',
@@ -510,14 +510,14 @@ export default function HomePage() {
             '100%': { backgroundPosition: 'center' },
           },
         }}>
-        {/* CTA Buttons Only */}
-        <Flex position="absolute" inset={0} align="flex-end" justify="flex-start" pl={{ base: 6, md: 12 }} pb={{ base: 6, md: 8 }} pr={{ base: 6, md: 8 }}>
-          <HStack spacing={4}>
-            <Button bg={C.success} color="white" fontWeight="700" px={8} py={6} fontSize={{ base: 'sm', md: 'md' }}
+        {/* CTA Buttons - Centered */}
+        <Flex position="absolute" inset={0} align="center" justify="center">
+          <HStack spacing={{ base: 3, md: 4 }}>
+            <Button bg={C.success} color="white" fontWeight="700" px={{ base: 6, md: 8 }} py={{ base: 5, md: 6 }} fontSize={{ base: 'sm', md: 'md' }}
               _hover={{ bg: '#128a45' }} transition="all 0.2s">
               {t('hero.cta')} →
             </Button>
-            <Button bg="white" color={C.primary} fontWeight="700" px={8} py={6} fontSize={{ base: 'sm', md: 'md' }}
+            <Button bg="white" color={C.primary} fontWeight="700" px={{ base: 6, md: 8 }} py={{ base: 5, md: 6 }} fontSize={{ base: 'sm', md: 'md' }}
               _hover={{ bg: C.accentLight }} transition="all 0.2s">
               {user ? t('hero.secondaryLogged') : t('hero.secondaryAnon')}
             </Button>
