@@ -15,7 +15,7 @@ import {
   CheckCircle, Truck, Lock, UserPlus, Scale, MessageSquare,
   ArrowRight, MapPin, AlertTriangle, Layers, Hash, Ruler, Leaf,
   Play, Download, FileDown, Zap, BarChart2, Factory, Tag,
-  ShoppingBag, Beaker, TrendingUp,
+  ShoppingBag, Beaker, TrendingUp, Heart, Share2, Send, Maximize2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -356,25 +356,34 @@ export default function ProductDetailPage() {
     <VStack spacing={0} align="stretch">
 
       {/* Breadcrumb */}
-      <Breadcrumb spacing={2} mb={6}
-        separator={<ChevronRight size={12} color={N.muted} />} fontSize="sm">
+      <Breadcrumb spacing={2} mb={8} mt={2}
+        separator={<ChevronRight size={12} color={N.border} />} fontSize="xs">
         <BreadcrumbItem>
-          <BreadcrumbLink onClick={() => navigate('/')} style={{ color: N.muted }}>Accueil</BreadcrumbLink>
+          <BreadcrumbLink onClick={() => navigate('/')}
+            style={{ color: N.muted }} fontWeight="600"
+            _hover={{ color: N.navy, textDecoration: 'underline' }}>
+            Accueil
+          </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbItem>
-          <BreadcrumbLink onClick={() => navigate('/catalog')} style={{ color: N.muted }}>Catalogue</BreadcrumbLink>
+          <BreadcrumbLink onClick={() => navigate('/catalog')}
+            style={{ color: N.muted }} fontWeight="600"
+            _hover={{ color: N.navy, textDecoration: 'underline' }}>
+            Catalogue
+          </BreadcrumbLink>
         </BreadcrumbItem>
         {product.categories && (
           <BreadcrumbItem>
             <BreadcrumbLink
               onClick={() => navigate(`/catalog?category=${product.category_id}`)}
-              style={{ color: N.muted }}>
+              style={{ color: N.muted }} fontWeight="600"
+              _hover={{ color: N.navy, textDecoration: 'underline' }}>
               {product.categories.name}
             </BreadcrumbLink>
           </BreadcrumbItem>
         )}
         <BreadcrumbItem isCurrentPage>
-          <Text style={{ color: N.navy }} fontWeight="600" noOfLines={1}>{product.name}</Text>
+          <Text style={{ color: N.navy }} fontWeight="700" noOfLines={1}>{product.name}</Text>
         </BreadcrumbItem>
       </Breadcrumb>
 
@@ -427,11 +436,20 @@ export default function ProductDetailPage() {
                 </Button>
               </Box>
             ) : (
-              <Box w="full" h="full" overflow="hidden"
-                sx={{ '& img': { transition: 'transform 0.4s ease', '&:hover': { transform: 'scale(1.04)' } } }}>
+              <Box w="full" h="full" overflow="hidden" position="relative"
+                sx={{ '& img': { transition: 'transform 0.4s ease', '&:hover': { transform: 'scale(1.05)' } } }}>
                 {images[selectedImage] ? (
-                  <Image src={images[selectedImage]!} alt={product.name}
-                    w="full" h="full" objectFit="cover" />
+                  <>
+                    <Image src={images[selectedImage]!} alt={product.name}
+                      w="full" h="full" objectFit="cover" />
+                    <Button position="absolute" bottom={4} right={4} size="sm" rounded="xl"
+                      leftIcon={<Maximize2 size={14} />}
+                      style={{ background: 'rgba(13,31,56,0.75)', color: 'white' }}
+                      _hover={{ background: 'rgba(13,31,56,0.95)' }}
+                      fontWeight="600" fontSize="xs">
+                      Agrandir
+                    </Button>
+                  </>
                 ) : (
                   <Flex w="full" h="full" align="center" justify="center" direction="column" gap={3}>
                     <Package size={52} color="#cbd5e1" />
@@ -508,7 +526,7 @@ export default function ProductDetailPage() {
             <Box bg="white" rounded="2xl" overflow="hidden"
               style={{ border: `1.5px solid ${N.border}`, boxShadow: '0 4px 32px rgba(13,31,56,0.10)' }}>
 
-              {/* 1 — Nom + badges + rating */}
+              {/* 1 — Nom + badges + rating + Share */}
               <Box px={5} pt={5} pb={4} style={{ borderBottom: `1px solid ${N.border}` }}>
                 {product.brands && (
                   <HStack spacing={2} mb={2.5}>
@@ -524,9 +542,25 @@ export default function ProductDetailPage() {
                     </Text>
                   </HStack>
                 )}
-                <Heading as="h1" size="sm" style={{ color: N.navy }} lineHeight={1.3} mb={2.5}>
-                  {product.name}
-                </Heading>
+                <Flex justify="space-between" align="flex-start" gap={2} mb={2.5}>
+                  <Heading as="h1" size="sm" style={{ color: N.navy }} lineHeight={1.3} flex={1}>
+                    {product.name}
+                  </Heading>
+                  <HStack spacing={1} flexShrink={0}>
+                    <Button size="sm" rounded="lg" variant="ghost" p={2}
+                      leftIcon={<Share2 size={14} />}
+                      style={{ color: N.muted }}
+                      _hover={{ color: N.amber, background: N.amber10 }}
+                      title="Partager">
+                    </Button>
+                    <Button size="sm" rounded="lg" variant="ghost" p={2}
+                      leftIcon={<Heart size={14} />}
+                      style={{ color: N.muted }}
+                      _hover={{ color: '#dc2626', background: N.redBg }}
+                      title="Ajouter aux favoris">
+                    </Button>
+                  </HStack>
+                </Flex>
                 <Wrap spacing={1.5} mb={2.5}>
                   {product.categories && (
                     <WrapItem>
@@ -710,24 +744,34 @@ export default function ProductDetailPage() {
                   {sortedTiers.length > 0 ? (
                     <Button leftIcon={<ShoppingCart size={15} />} w="full" rounded="xl" size="lg"
                       isLoading={addingToCart} onClick={() => addToCart()} fontWeight="800"
-                      style={{ background: N.navy, color: 'white' }} _hover={{ opacity: 0.9 }}>
+                      style={{ background: N.navy, color: 'white' }} _hover={{ opacity: 0.85, transform: 'translateY(-1px)' }}
+                      boxShadow="0 4px 16px rgba(13,31,56,0.2)" transition="all 0.2s">
                       Ajouter au panier
                     </Button>
                   ) : (
                     <Button leftIcon={<FileText size={15} />} w="full" rounded="xl" size="lg"
                       onClick={() => navigate('/buyer/quotes')} fontWeight="800"
-                      style={{ background: N.navy, color: 'white' }} _hover={{ opacity: 0.9 }}>
+                      style={{ background: N.navy, color: 'white' }} _hover={{ opacity: 0.85, transform: 'translateY(-1px)' }}
+                      boxShadow="0 4px 16px rgba(13,31,56,0.2)" transition="all 0.2s">
                       Demander un devis
                     </Button>
                   )}
-                  {sortedTiers.length > 0 && (
-                    <Button variant="outline" leftIcon={<FileText size={14} />} w="full" rounded="xl"
-                      onClick={() => navigate('/buyer/quotes')} fontWeight="700" fontSize="sm"
+                  <HStack spacing={2}>
+                    {sortedTiers.length > 0 && (
+                      <Button variant="outline" leftIcon={<FileText size={14} />} flex={1} rounded="xl"
+                        onClick={() => navigate('/buyer/quotes')} fontWeight="700" fontSize="sm"
+                        style={{ borderColor: N.border, color: N.navy }}
+                        _hover={{ borderColor: N.amber, background: N.amber10 }}>
+                        Devis
+                      </Button>
+                    )}
+                    <Button variant="outline" leftIcon={<Send size={14} />} flex={1} rounded="xl"
+                      fontWeight="700" fontSize="sm"
                       style={{ borderColor: N.border, color: N.navy }}
                       _hover={{ borderColor: N.amber, background: N.amber10 }}>
-                      Demander un devis
+                      Contact
                     </Button>
-                  )}
+                  </HStack>
                   <Button variant="ghost" w="full" rounded="xl" fontSize="sm"
                     leftIcon={<Scale size={14} />}
                     style={{ color: hasItem(product.id) ? N.amber : N.muted }}
@@ -747,25 +791,30 @@ export default function ProductDetailPage() {
 
               {/* 5 — Seller footer */}
               {product.organisations && (
-                <Flex px={5} py={3} align="center" gap={3} justify="space-between"
-                  style={{ borderTop: `1px solid ${N.border}`, background: N.bgAlt }}>
-                  <HStack spacing={2} minW={0}>
-                    <Flex w={7} h={7} rounded="lg" align="center" justify="center" flexShrink={0}
-                      style={{ background: N.navy }}>
-                      <Building2 size={13} color="white" />
+                <Flex px={5} py={4} align="center" gap={3} justify="space-between" direction={{ base: 'column', sm: 'row' }}
+                  style={{ borderTop: `1.5px solid ${N.border}`, background: `linear-gradient(135deg, ${N.bgAlt} 0%, rgba(199,125,26,0.02) 100%)` }}>
+                  <HStack spacing={3} minW={0} flex={1}>
+                    <Flex w={9} h={9} rounded="lg" align="center" justify="center" flexShrink={0}
+                      style={{ background: `linear-gradient(135deg, ${N.navy} 0%, ${N.navyMid} 100%)` }}>
+                      <Building2 size={14} color="white" />
                     </Flex>
-                    <Text fontSize="xs" fontWeight="700" style={{ color: N.navy }} noOfLines={1}>
-                      {product.organisations.name}
-                    </Text>
+                    <Box minW={0} flex={1}>
+                      <Text fontSize="10px" fontWeight="700" style={{ color: N.muted }} textTransform="uppercase" letterSpacing="0.05em">
+                        Vendeur
+                      </Text>
+                      <Text fontSize="xs" fontWeight="700" style={{ color: N.navy }} noOfLines={1}>
+                        {product.organisations.name}
+                      </Text>
+                    </Box>
                   </HStack>
-                  <HStack spacing={3} flexShrink={0}>
+                  <HStack spacing={2} flexShrink={0}>
                     <HStack spacing={1}>
-                      <Shield size={11} color="#16a34a" />
+                      <Shield size={12} color="#16a34a" />
                       <Text fontSize="10px" color="green.700" fontWeight="600">Vérifié</Text>
                     </HStack>
                     {product.haccp_compliant && (
                       <HStack spacing={1}>
-                        <CheckCircle size={11} color="#2563eb" />
+                        <CheckCircle size={12} color="#2563eb" />
                         <Text fontSize="10px" color="blue.700" fontWeight="600">HACCP</Text>
                       </HStack>
                     )}
@@ -903,16 +952,18 @@ export default function ProductDetailPage() {
 
       {/* ── Section anchor nav ───────────────────────────────────────────── */}
       <Box position="sticky" top="40px" zIndex={100} bg="white" mt={10}
-        style={{ borderTop: `1px solid ${N.border}`, borderBottom: `1px solid ${N.border}`, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-        <Flex overflowX="auto" h="40px" align="center"
+        style={{ borderTop: `2px solid ${N.border}`, borderBottom: `2px solid ${N.border}`, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+        <Flex overflowX="auto" h="48px" align="center" px={4}
           sx={{ '&::-webkit-scrollbar': { display: 'none' } }}>
-          {sectionNav.map(({ id, label }) => (
+          {sectionNav.map(({ id, label }, idx) => (
             <Box as="a" key={id} href={`#${id}`}
-              px={4} h="40px" display="flex" alignItems="center"
-              whiteSpace="nowrap" fontSize="xs" fontWeight="600"
-              style={{ color: N.muted, borderBottom: '2px solid transparent' }}
+              px={3.5} h="48px" display="flex" alignItems="center" gap={1.5}
+              whiteSpace="nowrap" fontSize="13px" fontWeight="600"
+              style={{ color: N.muted, borderBottom: '3px solid transparent' }}
               _hover={{ color: N.navy, borderBottomColor: N.amber }}
-              transition="all 0.12s">
+              transition="all 0.15s"
+              borderBottomColor="transparent">
+              <Box w={1.5} h={1.5} rounded="full" style={{ background: N.amber }} opacity={0} _hover={{ opacity: 1 }} transition="opacity 0.2s" />
               {label}
             </Box>
           ))}
@@ -1455,20 +1506,19 @@ export default function ProductDetailPage() {
 
       {/* ── Produits similaires ───────────────────────────────────────────── */}
       {similar.length > 0 && (
-        <Box pt={8}>
-          <Flex justify="space-between" align="center" mb={6}>
+        <Box pt={12} pb={8}>
+          <Flex justify="space-between" align="center" mb={7}>
             <Heading size="md" style={{ color: N.navy }}>Produits similaires</Heading>
             {product.category_id && (
               <Button size="sm" rounded="xl" variant="outline" fontWeight="700"
                 rightIcon={<ArrowRight size={13} />}
                 style={{ borderColor: N.border, color: N.navy }}
-                _hover={{ borderColor: N.amber, background: N.amber10 }}
-                onClick={() => navigate(`/catalog?category=${product.category_id}`)}>
+                _hover={{ borderColor: N.amber, background: N.amber10 }}>
                 Voir tout
               </Button>
             )}
           </Flex>
-          <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+          <SimpleGrid columns={{ base: 2, md: 4 }} spacing={5}>
             {similar.map((rec) => {
               const tier = rec.price_tiers?.slice().sort((a, b) => a.qty_min - b.qty_min)[0];
               const reasonLabel: Record<SimilarReason, string> = {
@@ -1477,33 +1527,37 @@ export default function ProductDetailPage() {
               };
               return (
                 <Box key={rec.id} bg="white" rounded="2xl" overflow="hidden"
-                  style={{ border: `1px solid ${N.border}` }} cursor="pointer"
-                  _hover={{ shadow: 'md', transform: 'translateY(-2px)' }} transition="all 0.18s"
+                  style={{ border: `1.5px solid ${N.border}` }} cursor="pointer"
+                  _hover={{ shadow: 'lg', transform: 'translateY(-3px)' }} transition="all 0.2s"
                   onClick={() => navigate(`/product/${rec.id}`)}>
-                  <Box h="145px" style={{ background: N.bgAlt }} overflow="hidden" position="relative">
+                  <Box h="160px" style={{ background: N.bgAlt }} overflow="hidden" position="relative">
                     {rec.images?.[0] ? (
                       <Image src={rec.images[0]} alt={rec.name} w="full" h="full"
-                        objectFit="cover" loading="lazy" />
+                        objectFit="cover" loading="lazy"
+                        transition="transform 0.3s ease" _groupHover={{ transform: 'scale(1.05)' }} />
                     ) : (
                       <Flex w="full" h="full" align="center" justify="center">
-                        <Package size={32} color="#cbd5e1" />
+                        <Package size={36} color="#cbd5e1" />
                       </Flex>
                     )}
-                    <Box position="absolute" top={2} left={2} px={2} py={0.5} rounded="full"
-                      style={{ background: 'rgba(13,31,56,0.75)' }}>
+                    <Box position="absolute" top={3} left={3} px={2.5} py={1} rounded="lg"
+                      style={{ background: `${N.amber}cc`, backdropFilter: 'blur(4px)' }}>
                       <Text fontSize="9px" fontWeight="700" color="white">
                         {reasonLabel[rec._reason]}
                       </Text>
                     </Box>
                   </Box>
-                  <Box p={3.5}>
+                  <Box p={4}>
+                    <Text fontSize="xs" fontWeight="700" style={{ color: N.muted }} mb={1.5} textTransform="uppercase" letterSpacing="0.05em">
+                      {rec.categories?.name || 'Produit'}
+                    </Text>
                     <Text fontSize="sm" fontWeight="700" style={{ color: N.navy }} noOfLines={2}
-                      lineHeight={1.35} mb={1.5}>
+                      lineHeight={1.4} mb={2.5}>
                       {rec.name}
                     </Text>
                     {activeOrg && tier ? (
                       <HStack spacing={1} align="baseline">
-                        <Text fontSize="md" fontWeight="800" style={{ color: N.navy }} fontFamily="mono">
+                        <Text fontSize="lg" fontWeight="800" style={{ color: N.navy }} fontFamily="mono">
                           {tier.unit_price.toFixed(2)}
                         </Text>
                         <Text fontSize="10px" style={{ color: N.muted }}>{rec.currency}/u</Text>
