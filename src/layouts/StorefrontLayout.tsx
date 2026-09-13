@@ -494,19 +494,19 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
   const [promoIdx, setPromoIdx] = useState(0);
 
   const promos = [
-    { text: '🔥 Deals', color: '#dc2626', lang: 'en' },
-    { text: '⚡ Promo', color: '#f59e0b', lang: 'en' },
-    { text: '✨ Offre', color: '#7c3aed', lang: 'fr' },
-    { text: '💎 Flash', color: '#ec4899', lang: 'en' },
-    { text: '🎯 Déstockage', color: '#f59e0b', lang: 'fr' },
-    { text: '🛍️ Soldes', color: '#06b6d4', lang: 'fr' },
-    { text: '🚀 Mega Sale', color: '#dc2626', lang: 'en' },
+    { en: 'DISCOUNT', ar: 'خصم', percent: '30%', color: '#dc2626' },
+    { en: 'SALE', ar: 'تخفيض', percent: '50%', color: '#f59e0b' },
+    { en: 'OFFER', ar: 'عرض', percent: '25%', color: '#7c3aed' },
+    { en: 'FLASH SALE', ar: 'عرض فلاش', percent: '40%', color: '#ec4899' },
+    { en: 'CLEARANCE', ar: 'تصفية', percent: '60%', color: '#f59e0b' },
+    { en: 'PROMOTION', ar: 'ترويج', percent: '35%', color: '#06b6d4' },
+    { en: 'MEGA SALE', ar: 'بيع ضخم', percent: '70%', color: '#dc2626' },
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
       setPromoIdx((prev) => (prev + 1) % promos.length);
-    }, 4000);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -562,18 +562,25 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               spacing={2.5} flexShrink={0}
               _hover={{ opacity: 0.85 }}
               transition="all 0.2s"
-              style={{
-                animation: 'logoFloat 3s ease-in-out infinite'
-              }}
             >
               <style>{`
-                @keyframes logoFloat {
+                @keyframes logoBounce {
                   0%, 100% { transform: translateY(0px); }
-                  50% { transform: translateY(-4px); }
+                  50% { transform: translateY(-5px); }
                 }
-                @keyframes pulseGlow {
-                  0%, 100% { filter: drop-shadow(0 0 0px rgba(59, 130, 246, 0.3)); }
-                  50% { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6)); }
+                @keyframes logoSpin {
+                  0%, 100% { transform: rotateZ(0deg); }
+                  50% { transform: rotateZ(5deg); }
+                }
+                @keyframes messageBlink {
+                  0%, 10% { opacity: 0; }
+                  20%, 80% { opacity: 1; }
+                  90%, 100% { opacity: 0; }
+                }
+                @keyframes hide {
+                  0%, 10% { opacity: 1; }
+                  20%, 80% { opacity: 0; }
+                  90%, 100% { opacity: 1; }
                 }
               `}</style>
               <Image
@@ -583,43 +590,51 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 w="auto"
                 objectFit="contain"
                 style={{
-                  animation: 'pulseGlow 2.5s ease-in-out infinite'
+                  animation: 'logoBounce 2s ease-in-out infinite, logoSpin 3s ease-in-out infinite'
                 }}
               />
-              <Box display={{ base: 'none', sm: 'block' }}>
-                <HStack spacing={2} align="baseline">
-                  <Box>
+              <Box display={{ base: 'none', sm: 'block' }} position="relative">
+                <Box style={{ animation: 'hide 5s infinite' }}>
+                  <Text
+                    fontSize={{ base: 'lg', md: 'xl' }}
+                    fontWeight="800"
+                    letterSpacing="-0.5px"
+                    bgGradient="linear(to-r, blue.700, blue.500)"
+                    bgClip="text"
+                    lineHeight="1"
+                  >
+                    Stock212
+                  </Text>
+                  <Text fontSize="9px" color="gray.400" fontWeight="500" letterSpacing="0.5px" mt="1px">
+                    {t('header.tagline')}
+                  </Text>
+                </Box>
+
+                <VStack
+                  position="absolute" top={0} left={0} spacing={0.5}
+                  style={{ animation: 'messageBlink 5s infinite' }}>
+                  <Text
+                    fontSize={{ base: 'sm', md: 'md' }}
+                    fontWeight="900"
+                    letterSpacing="1px"
+                    style={{ color: promos[promoIdx].color }}>
+                    {promos[promoIdx].en}
+                  </Text>
+                  <HStack spacing={1} align="center" justify="center">
                     <Text
-                      fontSize={{ base: 'lg', md: 'xl' }}
+                      fontSize="10px"
+                      fontWeight="700"
+                      style={{ color: promos[promoIdx].color }}>
+                      {promos[promoIdx].ar}
+                    </Text>
+                    <Text
+                      fontSize="11px"
                       fontWeight="800"
-                      letterSpacing="-0.5px"
-                      bgGradient="linear(to-r, blue.700, blue.500)"
-                      bgClip="text"
-                      lineHeight="1"
-                    >
-                      Stock212
+                      style={{ color: promos[promoIdx].color }}>
+                      {promos[promoIdx].percent}
                     </Text>
-                    <Text fontSize="9px" color="gray.400" fontWeight="500" letterSpacing="0.5px" mt="1px">
-                      {t('header.tagline')}
-                    </Text>
-                  </Box>
-                  <Box
-                    px={2.5} py={1} rounded="lg" style={{
-                      background: promos[promoIdx].color,
-                      animation: 'fadeInOut 0.6s ease-in-out',
-                    }}>
-                    <Text fontSize="10px" fontWeight="700" color="white" whiteSpace="nowrap">
-                      {promos[promoIdx].text}
-                    </Text>
-                  </Box>
-                </HStack>
-                <style>{`
-                  @keyframes fadeInOut {
-                    0% { opacity: 0.5; transform: scale(0.95); }
-                    50% { opacity: 1; transform: scale(1); }
-                    100% { opacity: 0.8; transform: scale(0.98); }
-                  }
-                `}</style>
+                  </HStack>
+                </VStack>
               </Box>
             </HStack>
           </Link>
