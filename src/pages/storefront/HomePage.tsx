@@ -1014,7 +1014,7 @@ export default function HomePage() {
           <Box bg="white" py={{ base: 4, md: 6 }} style={{ borderBottom: `1px solid ${C.border}` }}>
             <Container>
               <VStack spacing={3} align="stretch">
-                <Box position="relative" w="full" style={{ aspectRatio: '16/9', maxW: '600px', mx: 'auto', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                <Box position="relative" w="full" style={{ aspectRatio: '16/9', maxW: '600px', mx: 'auto', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} group>
                   <iframe
                     width="100%"
                     height="100%"
@@ -1025,6 +1025,13 @@ export default function HomePage() {
                     allowFullScreen
                     style={{ position: 'absolute', top: 0, left: 0 }}
                   />
+                  <Box position="absolute" top={2} right={2} opacity={0} _groupHover={{ opacity: 1 }} transition="opacity 0.2s" style={{ zIndex: 10 }}>
+                    <Button size="sm" colorScheme="blackAlpha" variant="solid"
+                      onClick={() => window.open(`https://www.youtube.com/watch?v=${videos[videoIdx].id}`, '_blank')}
+                      title="Watch in Picture-in-Picture">
+                      📺 PiP
+                    </Button>
+                  </Box>
                 </Box>
 
                 <Flex justify="center" gap={1.5}>
