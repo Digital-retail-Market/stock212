@@ -37,20 +37,18 @@ jobs:
           VITE_SUPABASE_ANON_KEY: "sb_publishable_47xIXHU0czlGHtepYWSjBw_H1QQWH7O"
           VITE_DEV_BYPASS_AUTH: "false"
 
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v2.1
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
         with:
-          publish-dir: './dist'
-          production-deploy: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: 'Production deploy: ${{ github.event.head_commit.message }}'
-          enable-pull-request-comment: true
-          enable-commit-comment: true
-          overwrites-pull-request-comment: true
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: './'
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        timeout-minutes: 1
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: "sb_publishable_47xIXHU0czlGHtepYWSjBw_H1QQWH7O"
+          VITE_DEV_BYPASS_AUTH: "false"
 
       - name: Notify Slack (optional)
         if: success()
@@ -59,13 +57,13 @@ jobs:
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
             {
-              "text": "✅ Production deployment successful",
+              "text": "✅ Production deployment successful on Vercel",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "✅ *Production Deploy Successful*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.event.head_commit.message }}"
+                    "text": "✅ *Production Deploy Successful (Vercel)*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref }}\nCommit: ${{ github.event.head_commit.message }}"
                   }
                 }
               ]

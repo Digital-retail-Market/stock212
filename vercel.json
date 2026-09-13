@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm ci",
+  "framework": "vite",
+  "outputDirectory": "dist",
+  "env": {
+    "VITE_SUPABASE_URL": "@supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "VITE_DEV_BYPASS_AUTH": "false"
+  },
+  "buildCache": {
+    "paths": ["node_modules/**", ".next/**", "dist/**"]
+  }
+}
