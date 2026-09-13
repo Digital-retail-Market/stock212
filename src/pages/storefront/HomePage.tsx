@@ -1132,15 +1132,15 @@ export default function HomePage() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════
-          CATEGORY 1: BOISSONS — Most valued products
+          CATEGORY 1: BOISSONS — Most valued products (TOP)
       ══════════════════════════════════════════════════════════════ */}
       {(loadingCat1 || categoryProducts1.length > 0) && (
-        <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+        <Box bg={C.bgAlt} py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
           <Container>
             <Flex align="center" justify="space-between" mb={5}>
               <HStack spacing={3}>
                 <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
-                  🥤 Top Boissons & Rafraîchissements
+                  Top Boissons & Rafraîchissements
                 </Heading>
                 <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
                   <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
