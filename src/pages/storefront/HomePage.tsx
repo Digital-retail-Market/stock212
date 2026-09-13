@@ -487,37 +487,29 @@ export default function HomePage() {
           .then(({ data: brandData }) => setBrands((brandData as Brand[]) ?? []));
       });
 
-    // Category 1: Boissons - Most valuable products
-    supabase.from('products').select('*, organisations(name), price_tiers(*), brands(name)')
+    // Get all active products for category filtering
+    supabase.from('products').select('*, organisations(name), categories(name), price_tiers(*), brands(name)')
       .eq('status', 'active')
-      .ilike('category_id', '%boisson%')
       .order('avg_rating', { ascending: false })
-      .limit(10)
-      .then(({ data }) => { setCategoryProducts1((data as Product[]) ?? []); setLoadingCat1(false); });
+      .limit(100)
+      .then(({ data: allProds }) => {
+        const all = (allProds as Product[]) ?? [];
 
-    // Category 2: Produits laitiers - Most valuable products
-    supabase.from('products').select('*, organisations(name), price_tiers(*), brands(name)')
-      .eq('status', 'active')
-      .ilike('category_id', '%laitier%')
-      .order('avg_rating', { ascending: false })
-      .limit(10)
-      .then(({ data }) => { setCategoryProducts2((data as Product[]) ?? []); setLoadingCat2(false); });
+        // Filter by category name
+        const cat1 = all.filter(p => p.categories?.name?.toLowerCase().includes('boisson')).slice(0, 10);
+        const cat2 = all.filter(p => p.categories?.name?.toLowerCase().includes('laitier')).slice(0, 10);
+        const cat3 = all.filter(p => p.categories?.name?.toLowerCase().includes('épicerie')).slice(0, 10);
+        const cat4 = all.filter(p => p.categories?.name?.toLowerCase().includes('fruit')).slice(0, 10);
 
-    // Category 3: Épicerie sèche - Most valuable products
-    supabase.from('products').select('*, organisations(name), price_tiers(*), brands(name)')
-      .eq('status', 'active')
-      .ilike('category_id', '%épicerie%')
-      .order('avg_rating', { ascending: false })
-      .limit(10)
-      .then(({ data }) => { setCategoryProducts3((data as Product[]) ?? []); setLoadingCat3(false); });
-
-    // Category 4: Fruits & Légumes - Most valuable products
-    supabase.from('products').select('*, organisations(name), price_tiers(*), brands(name)')
-      .eq('status', 'active')
-      .ilike('category_id', '%fruit%')
-      .order('avg_rating', { ascending: false })
-      .limit(10)
-      .then(({ data }) => { setCategoryProducts4((data as Product[]) ?? []); setLoadingCat4(false); });
+        setCategoryProducts1(cat1);
+        setLoadingCat1(false);
+        setCategoryProducts2(cat2);
+        setLoadingCat2(false);
+        setCategoryProducts3(cat3);
+        setLoadingCat3(false);
+        setCategoryProducts4(cat4);
+        setLoadingCat4(false);
+      });
   }, []);
 
   // Sous-catégories triées : celles restockées par ce public en premier, le reste ensuite
