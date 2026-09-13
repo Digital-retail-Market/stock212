@@ -270,9 +270,18 @@ function PromoCard({ product }: { product: Product }) {
           <Text fontSize="8px" fontWeight="800" color="white">{badgeLabel}</Text>
         </Box>
       </Box>
-      <Box h={{ base: '128px', md: '155px' }} overflow="hidden">
+      <Box h={{ base: '128px', md: '155px' }} overflow="hidden" style={{ background: C.bgAlt }}>
         {product.images?.[0] ? (
-          <Image src={product.images[0]} alt={product.name} w="full" h="full" objectFit="cover" />
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            w="full"
+            h="full"
+            objectFit="cover"
+            loading="lazy"
+            transition="transform 0.3s ease"
+            _hover={{ transform: 'scale(1.05)' }}
+          />
         ) : (
           <Flex w="full" h="full" align="center" justify="center" style={{ background: C.bgAlt }}>
             <Text fontWeight="900" fontSize="4xl" lineHeight={1} userSelect="none" style={{ color: '#cbd5e1' }}>
@@ -324,9 +333,18 @@ function MarketLeaderCard({ product }: { product: Product & { brands?: { name: s
           </Box>
         </Box>
       )}
-      <Box h={{ base: '128px', md: '155px' }} overflow="hidden">
+      <Box h={{ base: '128px', md: '155px' }} overflow="hidden" style={{ background: C.bgAlt }}>
         {product.images?.[0] ? (
-          <Image src={product.images[0]} alt={product.name} w="full" h="full" objectFit="cover" />
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            w="full"
+            h="full"
+            objectFit="cover"
+            loading="lazy"
+            transition="transform 0.3s ease"
+            _hover={{ transform: 'scale(1.05)' }}
+          />
         ) : (
           <Flex w="full" h="full" align="center" justify="center" style={{ background: C.bgAlt }}>
             <Text fontWeight="900" fontSize="4xl" lineHeight={1} userSelect="none" style={{ color: '#cbd5e1' }}>
