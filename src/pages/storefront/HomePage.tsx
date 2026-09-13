@@ -819,120 +819,79 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════════════════
           IMAGE ADS CAROUSEL — Moving promotional ads with full image display
       ══════════════════════════════════════════════════════════════ */}
-      {(() => {
-        const [adsIdx, setAdsIdx] = useState(0);
-        const ads = ['/ads/ads1.jfif', '/ads/ads2.jpg', '/ads/ads3.jpg', '/ads/ads4.jpg', '/ads/ads5.png', '/ads/ads6.png'];
-
-        useEffect(() => {
-          const interval = setInterval(() => {
-            setAdsIdx((prev) => (prev + 1) % ads.length);
-          }, 5000);
-          return () => clearInterval(interval);
-        }, []);
-
-        return (
-          <Box bg="white" py={0} style={{ borderBottom: `1px solid ${C.border}` }}>
-            <Box position="relative" w="full" h={{ base: '250px', sm: '350px', md: '450px' }} overflow="hidden" display="flex" alignItems="center" justifyContent="center" bg="#f9fafb">
-              <Image src={ads[adsIdx]} alt={`Ad ${adsIdx + 1}`} w="full" h="full" objectFit="contain"
-                transition="opacity 0.5s ease-in-out" />
-              <Flex position="absolute" bottom={3} left="50%" transform="translateX(-50%)" gap={1.5}>
-                {ads.map((_, i) => (
-                  <Box key={i} w={2} h={2} rounded="full"
-                    bg={i === adsIdx ? C.accent : 'rgba(255,255,255,0.5)'} cursor="pointer"
-                    onClick={() => setAdsIdx(i)} transition="all 0.2s"
-                    _hover={{ bg: i === adsIdx ? C.accent : 'rgba(255,255,255,0.8)' }} />
-                ))}
-              </Flex>
-            </Box>
-          </Box>
-        );
-      })()}
+      <Box bg="white" py={0} style={{ borderBottom: `1px solid ${C.border}` }}>
+        <Box position="relative" w="full" h={{ base: '250px', sm: '350px', md: '450px' }} overflow="hidden" display="flex" alignItems="center" justifyContent="center" bg="#f9fafb">
+          <Image src={['/ads/ads1.jfif', '/ads/ads2.jpg', '/ads/ads3.jpg', '/ads/ads4.jpg', '/ads/ads5.png', '/ads/ads6.png'][currentImageIdx % 6]} alt={`Ad ${(currentImageIdx % 6) + 1}`} w="full" h="full" objectFit="contain"
+            transition="opacity 0.5s ease-in-out" />
+          <Flex position="absolute" bottom={3} left="50%" transform="translateX(-50%)" gap={1.5}>
+            {['/ads/ads1.jfif', '/ads/ads2.jpg', '/ads/ads3.jpg', '/ads/ads4.jpg', '/ads/ads5.png', '/ads/ads6.png'].map((_, i) => (
+              <Box key={i} w={2} h={2} rounded="full"
+                bg={i === (currentImageIdx % 6) ? C.accent : 'rgba(255,255,255,0.5)'} cursor="pointer"
+                onClick={() => setCurrentImageIdx(i)} transition="all 0.2s"
+                _hover={{ bg: i === (currentImageIdx % 6) ? C.accent : 'rgba(255,255,255,0.8)' }} />
+            ))}
+          </Flex>
+        </Box>
+      </Box>
 
       {/* ══════════════════════════════════════════════════════════════
           OFFRE SPÉCIAL — Animated rotating ads with countdown timer
       ══════════════════════════════════════════════════════════════ */}
-      {(() => {
-        const [timeLeft, setTimeLeft] = useState(3600);
-        const sideAds = [
-          '/sideads/side1.jfif', '/sideads/side6.jfif',
-          '/sideads/side11.jfif', '/sideads/side12.jfif',
-          '/sideads/side13.jfif'
-        ];
-        const [currentAdIdx, setCurrentAdIdx] = useState(0);
+      <Box bg="#dc2626" py={2} px={0} style={{ borderBottom: `3px solid #b91c1c`, borderTop: `3px solid #b91c1c` }}>
+        <Flex direction="column" gap={2} px={4} py={2}>
+          <Flex align="center" justify="space-between" direction={{ base: 'column', md: 'row' }} gap={2}>
+            <HStack spacing={2}>
+              <Badge bg="white" color="#dc2626" fontSize="10px" fontWeight="800" px={3} py={1} textTransform="uppercase">
+                🔥 OFFRE SPÉCIAL 🔥
+              </Badge>
+              <Box bg="rgba(255,255,255,0.2)" px={3} py={1} rounded="lg" border="2px solid white">
+                <Text fontWeight="800" fontSize="sm" color="white">
+                  06:30:00
+                </Text>
+              </Box>
+            </HStack>
+          </Flex>
+        </Flex>
 
-        useEffect(() => {
-          const countdownInterval = setInterval(() => {
-            setTimeLeft((prev) => prev > 0 ? prev - 1 : 3600);
-          }, 1000);
-          return () => clearInterval(countdownInterval);
-        }, []);
-
-        useEffect(() => {
-          const adInterval = setInterval(() => {
-            setCurrentAdIdx((prev) => (prev + 1) % sideAds.length);
-          }, 5000);
-          return () => clearInterval(adInterval);
-        }, []);
-
-        const hours = Math.floor(timeLeft / 3600);
-        const minutes = Math.floor((timeLeft % 3600) / 60);
-        const seconds = timeLeft % 60;
-
-        return (
-          <Box bg="#dc2626" py={2} px={0} style={{ borderBottom: `3px solid #b91c1c`, borderTop: `3px solid #b91c1c` }}>
-            <Flex direction="column" gap={2} px={4} py={2}>
-              <Flex align="center" justify="space-between" direction={{ base: 'column', md: 'row' }} gap={2}>
-                <HStack spacing={2}>
-                  <Badge bg="white" color="#dc2626" fontSize="10px" fontWeight="800" px={3} py={1} textTransform="uppercase">
-                    🔥 OFFRE SPÉCIAL 🔥
-                  </Badge>
-                  <Box bg="rgba(255,255,255,0.2)" px={3} py={1} rounded="lg" border="2px solid white">
-                    <Text fontWeight="800" fontSize="sm" color="white">
-                      {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-                    </Text>
+        <Box position="relative" w="full" h={{ base: '100px', sm: '120px', md: '140px' }} overflow="hidden" style={{
+          background: 'white'
+        }}>
+          <style>{`
+            @keyframes slide-three-ads {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-100%); }
+            }
+            .offre-special-carousel {
+              display: flex;
+              gap: 0;
+              width: 300%;
+              animation: slide-three-ads 15s linear infinite;
+              height: 100%;
+            }
+            .offre-ad-item {
+              flex: 0 0 calc(100% / 15);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 0;
+              min-width: 0;
+              margin: 0;
+            }
+          `}</style>
+          <Flex w="full" h="full" overflow="hidden">
+            <Box className="offre-special-carousel" w="300%">
+              {(() => {
+                const sideAds = ['/sideads/side1.jfif', '/sideads/side6.jfif', '/sideads/side11.jfif', '/sideads/side12.jfif', '/sideads/side13.jfif'];
+                return [...sideAds, ...sideAds, ...sideAds].map((ad, i) => (
+                  <Box key={i} className="offre-ad-item" flex="0 0 calc(100% / 15)">
+                    <Image src={ad} alt={`Ad ${i}`} h="100%" w="100%" objectFit="contain" />
                   </Box>
-                </HStack>
-              </Flex>
-            </Flex>
-
-            <Box position="relative" w="full" h={{ base: '100px', sm: '120px', md: '140px' }} overflow="hidden" style={{
-              background: 'white'
-            }}>
-              <style>{`
-                @keyframes slide-three-ads {
-                  0% { transform: translateX(0); }
-                  100% { transform: translateX(-100%); }
-                }
-                .offre-special-carousel {
-                  display: flex;
-                  gap: 0;
-                  width: 300%;
-                  animation: slide-three-ads 15s linear infinite;
-                  height: 100%;
-                }
-                .offre-ad-item {
-                  flex: 0 0 calc(100% / 15);
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  padding: 0;
-                  min-width: 0;
-                  margin: 0;
-                }
-              `}</style>
-              <Flex w="full" h="full" overflow="hidden">
-                <Box className="offre-special-carousel" w="300%">
-                  {[...sideAds, ...sideAds, ...sideAds].map((ad, i) => (
-                    <Box key={i} className="offre-ad-item" flex="0 0 calc(100% / 15)">
-                      <Image src={ad} alt={`Ad ${i}`} h="100%" w="100%" objectFit="contain" />
-                    </Box>
-                  ))}
-                </Box>
-              </Flex>
+                ));
+              })()}
             </Box>
-          </Box>
-        );
-      })()}
+          </Flex>
+        </Box>
+      </Box>
 
       {/* ══════════════════════════════════════════════════════════════
           RÉFÉRENCES DOMINANTES — Grid + Carousel for market leaders
@@ -993,60 +952,40 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════════════════
           PROMOTIONAL VIDEO CAROUSEL — Auto-rotating featured videos
       ══════════════════════════════════════════════════════════════ */}
-      {(() => {
-        const [videoIdx, setVideoIdx] = useState(0);
-        const videos = [
-          { id: '0WToWtrcp_Q', title: 'Stock212 - B2B Marketplace' },
-          { id: 'V9kxyPJ0Un4', title: 'Stock212 - Platform Overview' },
-          { id: 'So7DQscUNIE', title: 'Stock212 - B2B Solutions' },
-          { id: 'bFC5gG2Mhzs', title: 'Stock212 - FMCG Platform' },
-          { id: 'sIR5hVMG730', title: 'Stock212 - Africa Commerce' },
-        ];
+      <Box bg="white" py={{ base: 4, md: 6 }} style={{ borderBottom: `1px solid ${C.border}` }}>
+        <Container>
+          <VStack spacing={3} align="stretch">
+            <Box position="relative" w="full" style={{ aspectRatio: '16/9', maxW: '600px', mx: 'auto', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} group>
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/0WToWtrcp_Q?autoplay=1&mute=1`}
+                title="Stock212 - B2B Marketplace"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position: 'absolute', top: 0, left: 0 }}
+              />
+              <Box position="absolute" top={2} right={2} opacity={0} _groupHover={{ opacity: 1 }} transition="opacity 0.2s" style={{ zIndex: 10 }}>
+                <Button size="sm" colorScheme="blackAlpha" variant="solid"
+                  onClick={() => window.open(`https://www.youtube.com/watch?v=0WToWtrcp_Q`, '_blank')}
+                  title="Watch in Picture-in-Picture">
+                  📺 PiP
+                </Button>
+              </Box>
+            </Box>
 
-        useEffect(() => {
-          const interval = setInterval(() => {
-            setVideoIdx((prev) => (prev + 1) % videos.length);
-          }, 15000);
-          return () => clearInterval(interval);
-        }, []);
-
-        return (
-          <Box bg="white" py={{ base: 4, md: 6 }} style={{ borderBottom: `1px solid ${C.border}` }}>
-            <Container>
-              <VStack spacing={3} align="stretch">
-                <Box position="relative" w="full" style={{ aspectRatio: '16/9', maxW: '600px', mx: 'auto', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} group>
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src={`https://www.youtube.com/embed/${videos[videoIdx].id}?autoplay=1&mute=1`}
-                    title={videos[videoIdx].title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    style={{ position: 'absolute', top: 0, left: 0 }}
-                  />
-                  <Box position="absolute" top={2} right={2} opacity={0} _groupHover={{ opacity: 1 }} transition="opacity 0.2s" style={{ zIndex: 10 }}>
-                    <Button size="sm" colorScheme="blackAlpha" variant="solid"
-                      onClick={() => window.open(`https://www.youtube.com/watch?v=${videos[videoIdx].id}`, '_blank')}
-                      title="Watch in Picture-in-Picture">
-                      📺 PiP
-                    </Button>
-                  </Box>
-                </Box>
-
-                <Flex justify="center" gap={1.5}>
-                  {videos.map((_, i) => (
-                    <Box key={i} w={2} h={2} rounded="full"
-                      bg={i === videoIdx ? C.accent : C.border} cursor="pointer"
-                      onClick={() => setVideoIdx(i)} _hover={{ bg: i === videoIdx ? C.accent : C.textMuted }}
-                      transition="all 0.2s" />
-                  ))}
-                </Flex>
-              </VStack>
-            </Container>
-          </Box>
-        );
-      })()}
+            <Flex justify="center" gap={1.5}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Box key={i} w={2} h={2} rounded="full"
+                  bg={C.border} cursor="pointer"
+                  _hover={{ bg: C.textMuted }}
+                  transition="all 0.2s" />
+              ))}
+            </Flex>
+          </VStack>
+        </Container>
+      </Box>
 
       {/* ══════════════════════════════════════════════════════════════
           NEW ARRIVALS — Latest products added to the platform
