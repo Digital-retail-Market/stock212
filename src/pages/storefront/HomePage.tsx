@@ -567,10 +567,10 @@ export default function HomePage() {
                   <Icon size={{ base: 18, md: 22 }} color="white" />
                 </Flex>
                 <Box minW={0} flex={1}>
-                  <Text fontWeight="900" fontSize={{ base: '20px', sm: '24px', md: '32px' }} style={{ color: C.primary }} lineHeight={1.2}>
+                  <Text fontWeight="900" fontSize={{ base: '14px', sm: '20px', md: '32px' }} style={{ color: C.primary }} lineHeight={1.2}>
                     {v}
                   </Text>
-                  <Text fontSize={{ base: '10px', sm: 'xs', md: 'sm' }} fontWeight="600" mt={{ base: 0.5, md: 1 }} style={{ color: C.textMuted }} noOfLines={2}>
+                  <Text fontSize={{ base: '9px', sm: 'xs', md: 'sm' }} fontWeight="600" mt={{ base: 0.5, md: 1 }} style={{ color: C.textMuted }} noOfLines={2}>
                     {l}
                   </Text>
                 </Box>
