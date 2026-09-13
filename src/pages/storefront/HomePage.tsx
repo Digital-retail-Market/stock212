@@ -420,6 +420,8 @@ export default function HomePage() {
   const [loadingCat3, setLoadingCat3] = useState(true);
   const [categoryProducts4, setCategoryProducts4] = useState<Product[]>([]);
   const [loadingCat4, setLoadingCat4] = useState(true);
+  const [categoryProducts5, setCategoryProducts5] = useState<Product[]>([]);
+  const [loadingCat5, setLoadingCat5] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -500,6 +502,7 @@ export default function HomePage() {
         const cat2 = all.filter(p => p.categories?.name?.toLowerCase().includes('laitier')).slice(0, 10);
         const cat3 = all.filter(p => p.categories?.name?.toLowerCase().includes('épicerie')).slice(0, 10);
         const cat4 = all.filter(p => p.categories?.name?.toLowerCase().includes('fruit')).slice(0, 10);
+        const cat5 = all.filter(p => p.categories?.name?.toLowerCase().includes('biscuit') || p.categories?.name?.toLowerCase().includes('confiserie')).slice(0, 10);
 
         setCategoryProducts1(cat1);
         setLoadingCat1(false);
@@ -509,6 +512,8 @@ export default function HomePage() {
         setLoadingCat3(false);
         setCategoryProducts4(cat4);
         setLoadingCat4(false);
+        setCategoryProducts5(cat5);
+        setLoadingCat5(false);
       });
   }, []);
 
@@ -1189,6 +1194,40 @@ export default function HomePage() {
                     </Box>
                   ))
                 : categoryProducts4.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
+            </SimpleGrid>
+          </Container>
+        </Box>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          CATEGORY 5: BISCUITERIE & CONFISERIE — Most valued products
+      ══════════════════════════════════════════════════════════════ */}
+      {(loadingCat5 || categoryProducts5.length > 0) && (
+        <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+          <Container>
+            <Flex align="center" justify="space-between" mb={5}>
+              <HStack spacing={3}>
+                <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
+                  Biscuiterie & Confiserie
+                </Heading>
+                <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
+                  <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
+                </Box>
+              </HStack>
+              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
+                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+                {t('common.seeAll')}
+              </Button>
+            </Flex>
+            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
+              {loadingCat5
+                ? Array.from({ length: 10 }).map((_, i) => (
+                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
+                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
+                    </Box>
+                  ))
+                : categoryProducts5.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
             </SimpleGrid>
           </Container>
         </Box>
