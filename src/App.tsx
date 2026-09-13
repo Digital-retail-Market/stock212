@@ -30,6 +30,7 @@ const ProductDetailPage    = lazy(() => import('./pages/storefront/ProductDetail
 const HowItWorksPage       = lazy(() => import('./pages/storefront/HowItWorksPage'));
 const ComparatorPage       = lazy(() => import('./pages/storefront/ComparatorPage'));
 const BrandsPage           = lazy(() => import('./pages/storefront/BrandsPage'));
+const MessagesPage         = lazy(() => import('./pages/storefront/MessagesPage'));
 const BoutiquesPage        = lazy(() => import('./pages/storefront/BoutiquesPage'));
 const BoutiquePage         = lazy(() => import('./pages/storefront/BoutiquePage'));
 const BrandPage            = lazy(() => import('./pages/storefront/BrandPage'));
@@ -459,6 +460,14 @@ function AppRoutes() {
         element={
           <StorefrontLayout>
             <BrandPage />
+          </StorefrontLayout>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <StorefrontLayout>
+            <MessagesPage />
           </StorefrontLayout>
         }
       />
