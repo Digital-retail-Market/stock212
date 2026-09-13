@@ -1052,15 +1052,15 @@ export default function HomePage() {
           NEW ARRIVALS — Latest products added to the platform
       ══════════════════════════════════════════════════════════════ */}
       {(loadingNew || newArrivals.length > 0) && (
-        <Box bg="white" py={7} style={{
+        <Box bg="#ecfdf5" py={7} style={{
           borderBottom: `1px solid ${C.border}`,
-          borderTop: `4px solid #0284c7`
+          borderTop: `4px solid #10b981`
         }}>
           <Container>
             <Flex align="center" justify="space-between" mb={5}>
               <HStack spacing={3}>
                 <Heading size="md" fontWeight="800" style={{
-                  background: `linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)`,
+                  background: `linear-gradient(135deg, #059669 0%, #10b981 100%)`,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text'
