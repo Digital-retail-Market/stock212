@@ -710,6 +710,108 @@ export default function HomePage() {
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
+          CATEGORY 1: BOISSONS — Most valued products (TOP)
+      ══════════════════════════════════════════════════════════════ */}
+      {(loadingCat1 || categoryProducts1.length > 0) && (
+        <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+          <Container>
+            <Flex align="center" justify="space-between" mb={5}>
+              <HStack spacing={3}>
+                <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
+                  🥤 Top Boissons & Rafraîchissements
+                </Heading>
+                <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
+                  <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
+                </Box>
+              </HStack>
+              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
+                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+                {t('common.seeAll')}
+              </Button>
+            </Flex>
+            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
+              {loadingCat1
+                ? Array.from({ length: 10 }).map((_, i) => (
+                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
+                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
+                    </Box>
+                  ))
+                : categoryProducts1.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
+            </SimpleGrid>
+          </Container>
+        </Box>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          CATEGORY 2: PRODUITS LAITIERS — Most valued products (TOP)
+      ══════════════════════════════════════════════════════════════ */}
+      {(loadingCat2 || categoryProducts2.length > 0) && (
+        <Box bg={C.bgAlt} py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+          <Container>
+            <Flex align="center" justify="space-between" mb={5}>
+              <HStack spacing={3}>
+                <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
+                  🥛 Top Produits Laitiers
+                </Heading>
+                <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
+                  <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
+                </Box>
+              </HStack>
+              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
+                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+                {t('common.seeAll')}
+              </Button>
+            </Flex>
+            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
+              {loadingCat2
+                ? Array.from({ length: 10 }).map((_, i) => (
+                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
+                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
+                    </Box>
+                  ))
+                : categoryProducts2.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
+            </SimpleGrid>
+          </Container>
+        </Box>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          CATEGORY 5: BISCUITERIE & CONFISERIE — Most valued products (TOP)
+      ══════════════════════════════════════════════════════════════ */}
+      {(loadingCat5 || categoryProducts5.length > 0) && (
+        <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+          <Container>
+            <Flex align="center" justify="space-between" mb={5}>
+              <HStack spacing={3}>
+                <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
+                  🍪 Biscuiterie & Confiserie
+                </Heading>
+                <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
+                  <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
+                </Box>
+              </HStack>
+              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
+                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+                {t('common.seeAll')}
+              </Button>
+            </Flex>
+            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
+              {loadingCat5
+                ? Array.from({ length: 10 }).map((_, i) => (
+                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
+                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
+                    </Box>
+                  ))
+                : categoryProducts5.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
+            </SimpleGrid>
+          </Container>
+        </Box>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
           FEATURED PRODUCTS — Vibrant grid with attention-grabbing design
       ══════════════════════════════════════════════════════════════ */}
       {(loadingPromos || promos.length > 0) && (
@@ -1058,108 +1160,6 @@ export default function HomePage() {
                     </Box>
                   ))
                 : newArrivals.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
-            </SimpleGrid>
-          </Container>
-        </Box>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════
-          CATEGORY 5: BISCUITERIE & CONFISERIE — Most valued products (TOP)
-      ══════════════════════════════════════════════════════════════ */}
-      {(loadingCat5 || categoryProducts5.length > 0) && (
-        <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
-          <Container>
-            <Flex align="center" justify="space-between" mb={5}>
-              <HStack spacing={3}>
-                <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
-                  Biscuiterie & Confiserie
-                </Heading>
-                <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
-                  <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
-                </Box>
-              </HStack>
-              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
-                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
-                {t('common.seeAll')}
-              </Button>
-            </Flex>
-            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
-              {loadingCat5
-                ? Array.from({ length: 10 }).map((_, i) => (
-                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
-                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
-                    </Box>
-                  ))
-                : categoryProducts5.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
-            </SimpleGrid>
-          </Container>
-        </Box>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════
-          CATEGORY 2: PRODUITS LAITIERS — Most valued products (TOP)
-      ══════════════════════════════════════════════════════════════ */}
-      {(loadingCat2 || categoryProducts2.length > 0) && (
-        <Box bg={C.bgAlt} py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
-          <Container>
-            <Flex align="center" justify="space-between" mb={5}>
-              <HStack spacing={3}>
-                <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
-                  Top Produits Laitiers
-                </Heading>
-                <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
-                  <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
-                </Box>
-              </HStack>
-              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
-                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
-                {t('common.seeAll')}
-              </Button>
-            </Flex>
-            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
-              {loadingCat2
-                ? Array.from({ length: 10 }).map((_, i) => (
-                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
-                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
-                    </Box>
-                  ))
-                : categoryProducts2.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
-            </SimpleGrid>
-          </Container>
-        </Box>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════
-          CATEGORY 1: BOISSONS — Most valued products (TOP)
-      ══════════════════════════════════════════════════════════════ */}
-      {(loadingCat1 || categoryProducts1.length > 0) && (
-        <Box bg={C.bgAlt} py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
-          <Container>
-            <Flex align="center" justify="space-between" mb={5}>
-              <HStack spacing={3}>
-                <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
-                  Top Boissons & Rafraîchissements
-                </Heading>
-                <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
-                  <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
-                </Box>
-              </HStack>
-              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
-                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
-                {t('common.seeAll')}
-              </Button>
-            </Flex>
-            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
-              {loadingCat1
-                ? Array.from({ length: 10 }).map((_, i) => (
-                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
-                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
-                    </Box>
-                  ))
-                : categoryProducts1.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
             </SimpleGrid>
           </Container>
         </Box>
