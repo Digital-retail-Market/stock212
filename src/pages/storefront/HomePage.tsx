@@ -557,7 +557,7 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════════════════
           HERO — Rotating background images sliding right to left
       ══════════════════════════════════════════════════════════════ */}
-      <Box position="relative" overflow="hidden" w="100vw" h={{ base: '300px', sm: '400px', md: '500px', lg: '600px', xl: '700px' }}
+      <Box position="relative" overflow="hidden" w="100vw" h={{ base: '420px', sm: '400px', md: '500px', lg: '600px', xl: '700px' }}
         backgroundImage={`url('${CAROUSEL_IMAGES[currentImageIdx]}')`}
         backgroundSize="contain"
         backgroundPosition="center"
@@ -576,25 +576,25 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════════════════════
           KPI BAR — chiffres clés de la plateforme
       ══════════════════════════════════════════════════════════════ */}
-      <Box bg={C.bgAlt} py={{ base: 6, sm: 8, md: 10 }} mt={{ base: -5, md: -8 }} position="relative" zIndex={2}
+      <Box bg={C.bgAlt} py={{ base: 4, sm: 6, md: 8 }} mt={{ base: 0, md: -8 }} position="relative" zIndex={2}
         style={{ borderBottom: `1px solid ${C.divider}` }}>
         <Container>
-          <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} spacing={{ base: 6, sm: 8, md: 10 }}>
+          <SimpleGrid columns={{ base: 3, sm: 3, lg: 3 }} spacing={{ base: 3, sm: 4, md: 8 }}>
             {[
               { icon: Package,     v: fmtStat(platformCounts.products, '10 000+'), l: t('stats.activeProducts') },
               { icon: ShieldCheck, v: fmtStat(platformCounts.vendors, '500+'),     l: t('stats.verifiedVendors') },
               { icon: Truck,       v: fmtStat(platformCounts.delivery, '200+'),    l: t('stats.deliveryPartners') },
             ].map(({ icon: Icon, v, l }) => (
-              <Flex key={l} align="center" gap={{ base: 3, md: 4 }} direction={{ base: 'row' }}>
-                <Flex w={{ base: 10, sm: 11, md: 14 }} h={{ base: 10, sm: 11, md: 14 }} rounded="full" align="center" justify="center"
+              <Flex key={l} align="center" gap={{ base: 2, md: 3 }} direction={{ base: 'column', md: 'row' }} justify="center">
+                <Flex w={{ base: 8, sm: 9, md: 14 }} h={{ base: 8, sm: 9, md: 14 }} rounded="full" align="center" justify="center"
                   flexShrink={0} style={{ background: C.primary }}>
-                  <Icon size={{ base: 18, md: 22 }} color="white" />
+                  <Icon size={{ base: 14, md: 22 }} color="white" />
                 </Flex>
-                <Box minW={0} flex={1}>
-                  <Text fontWeight="900" fontSize={{ base: '14px', sm: '20px', md: '32px' }} style={{ color: C.primary }} lineHeight={1.2}>
+                <Box minW={0} flex={1} textAlign={{ base: 'center', md: 'left' }}>
+                  <Text fontWeight="900" fontSize={{ base: '12px', sm: '16px', md: '28px' }} style={{ color: C.primary }} lineHeight={1.2}>
                     {v}
                   </Text>
-                  <Text fontSize={{ base: '9px', sm: 'xs', md: 'sm' }} fontWeight="600" mt={{ base: 0.5, md: 1 }} style={{ color: C.textMuted }} noOfLines={2}>
+                  <Text fontSize={{ base: '8px', sm: '9px', md: 'sm' }} fontWeight="600" mt={{ base: 0.5, md: 1 }} style={{ color: C.textMuted }} noOfLines={2}>
                     {l}
                   </Text>
                 </Box>
@@ -602,54 +602,6 @@ export default function HomePage() {
             ))}
           </SimpleGrid>
         </Container>
-      </Box>
-
-      {/* ══════════════════════════════════════════════════════════════
-          MARQUES DISPONIBLES — Auto-scrolling brands carousel
-      ══════════════════════════════════════════════════════════════ */}
-      <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}`, overflow: 'hidden' }}>
-        <Container>
-          <Heading size="sm" fontWeight="800" mb={6} textAlign="center" style={{ color: C.textMuted }}>
-            {t('sections.partnerBrands')}
-          </Heading>
-        </Container>
-        <style>{`
-          @keyframes scroll-brands-loop {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-          }
-          .brands-auto-scroll {
-            display: flex;
-            gap: 3rem;
-            width: max-content;
-            animation: scroll-brands-loop 60s linear infinite;
-          }
-          .brands-auto-scroll:hover {
-            animation-play-state: paused;
-          }
-        `}</style>
-        <Box className="brands-auto-scroll">
-          {(() => {
-            const brands = [
-              { name: 'Carolina', logo: '/logos/carolina.jfif' },
-              { name: 'Cosumar', logo: '/logos/cosumar.jfif' },
-              { name: 'Coca-Cola', logo: '/logos/coca.jfif' },
-              { name: 'Nestlé', logo: '/logos/nestle.jfif' },
-              { name: 'Pepsi', logo: '/logos/pepsi.jfif' },
-              { name: 'Lipton', logo: '/logos/lipton.jfif' },
-              { name: 'Central Lait', logo: '/logos/central lait.jfif' },
-              { name: 'Afia', logo: '/logos/afia.jfif' },
-              { name: 'Aïcha', logo: '/logos/aicha.jfif' },
-              { name: 'Jamila', logo: '/logos/jamila.jfif' },
-            ];
-            return [...brands, ...brands].map((brand, i) => (
-              <Box key={i} flexShrink={0} w="140px">
-                <Image src={brand.logo} alt={brand.name} h="80px" objectFit="contain"
-                  _hover={{ transform: 'scale(1.1)' }} transition="all 0.2s" cursor="pointer" />
-              </Box>
-            ));
-          })()}
-        </Box>
       </Box>
 
       {/* ══════════════════════════════════════════════════════════════
