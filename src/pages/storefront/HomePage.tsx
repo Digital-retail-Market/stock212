@@ -412,6 +412,10 @@ export default function HomePage() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
   const CAROUSEL_IMAGES = ['/hero/one.png', '/hero/two.png', '/hero/tree.png'];
+  const [categoryProducts1, setCategoryProducts1] = useState<Product[]>([]);
+  const [loadingCat1, setLoadingCat1] = useState(true);
+  const [categoryProducts2, setCategoryProducts2] = useState<Product[]>([]);
+  const [loadingCat2, setLoadingCat2] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -478,6 +482,22 @@ export default function HomePage() {
         supabase.from('brands').select('*').in('id', brandIds).limit(16)
           .then(({ data: brandData }) => setBrands((brandData as Brand[]) ?? []));
       });
+
+    // Category 1: Boissons - Most valuable products
+    supabase.from('products').select('*, organisations(name), price_tiers(*), brands(name)')
+      .eq('status', 'active')
+      .ilike('category_id', '%boisson%')
+      .order('avg_rating', { ascending: false })
+      .limit(10)
+      .then(({ data }) => { setCategoryProducts1((data as Product[]) ?? []); setLoadingCat1(false); });
+
+    // Category 2: Produits laitiers - Most valuable products
+    supabase.from('products').select('*, organisations(name), price_tiers(*), brands(name)')
+      .eq('status', 'active')
+      .ilike('category_id', '%laitier%')
+      .order('avg_rating', { ascending: false })
+      .limit(10)
+      .then(({ data }) => { setCategoryProducts2((data as Product[]) ?? []); setLoadingCat2(false); });
   }, []);
 
   // Sous-catégories triées : celles restockées par ce public en premier, le reste ensuite
@@ -1021,6 +1041,74 @@ export default function HomePage() {
                     </Box>
                   ))
                 : newArrivals.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
+            </SimpleGrid>
+          </Container>
+        </Box>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          CATEGORY 1: BOISSONS — Most valued products
+      ══════════════════════════════════════════════════════════════ */}
+      {(loadingCat1 || categoryProducts1.length > 0) && (
+        <Box bg="white" py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+          <Container>
+            <Flex align="center" justify="space-between" mb={5}>
+              <HStack spacing={3}>
+                <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
+                  🥤 Top Boissons & Rafraîchissements
+                </Heading>
+                <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
+                  <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
+                </Box>
+              </HStack>
+              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
+                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+                {t('common.seeAll')}
+              </Button>
+            </Flex>
+            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
+              {loadingCat1
+                ? Array.from({ length: 10 }).map((_, i) => (
+                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
+                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
+                    </Box>
+                  ))
+                : categoryProducts1.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
+            </SimpleGrid>
+          </Container>
+        </Box>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          CATEGORY 2: PRODUITS LAITIERS — Most valued products
+      ══════════════════════════════════════════════════════════════ */}
+      {(loadingCat2 || categoryProducts2.length > 0) && (
+        <Box bg={C.bgAlt} py={7} style={{ borderBottom: `1px solid ${C.border}` }}>
+          <Container>
+            <Flex align="center" justify="space-between" mb={5}>
+              <HStack spacing={3}>
+                <Heading size="md" fontWeight="800" style={{ color: C.primary }}>
+                  🥛 Top Produits Laitiers
+                </Heading>
+                <Box rounded="md" px={2.5} py={1} style={{ background: `${C.accent}15`, border: `1px solid ${C.accentBorder}` }}>
+                  <Text fontSize="10px" fontWeight="700" style={{ color: C.accent }}>Best Rated</Text>
+                </Box>
+              </HStack>
+              <Button variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+                color={C.text} _hover={{ color: C.accent, bg: 'transparent' }}
+                rightIcon={<ChevronRight size={13} />} onClick={() => navigate('/catalog')}>
+                {t('common.seeAll')}
+              </Button>
+            </Flex>
+            <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing={4}>
+              {loadingCat2
+                ? Array.from({ length: 10 }).map((_, i) => (
+                    <Box key={i} rounded="lg" overflow="hidden" border="1px solid" borderColor={C.border}>
+                      <Skeleton h="160px" /><Box p={3}><Skeleton h="10px" mb={2} /><Skeleton h="10px" w="60%" /></Box>
+                    </Box>
+                  ))
+                : categoryProducts2.slice(0, 10).map((p) => <PromoCard key={p.id} product={p} />)}
             </SimpleGrid>
           </Container>
         </Box>

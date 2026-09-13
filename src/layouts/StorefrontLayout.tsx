@@ -16,7 +16,7 @@ import {
   Search, ShoppingCart, ChevronDown, Package, Menu as MenuIcon,
   LayoutDashboard, LogOut, Settings, Star, Truck, Phone, Mail,
   Facebook, Twitter, Linkedin, Instagram, Home, Globe,
-  ChevronRight, Lock, Scale, X, FileText, Heart,
+  ChevronRight, Lock, Scale, X, FileText, Heart, Zap,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
@@ -803,6 +803,51 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
               _hover={{ bg: 'gray.100' }}
             />
           </HStack>
+        </Flex>
+
+        {/* Tier 1.5 — Colored Navigation Links (Desktop Storefront) */}
+        <Flex maxW="1400px" mx="auto" px={{ base: 4, md: 6 }} h="48px" align="center" gap={2}
+          display={{ base: 'none', lg: 'flex' }} borderTop="1px solid" borderColor="gray.100" bg="gray.50">
+          <Button
+            variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+            color="white" bg="#0f172a" px={4} rounded="lg"
+            leftIcon={<Package size={15} />}
+            _hover={{ bg: '#1e293b', transform: 'translateY(-1px)' }}
+            onClick={() => navigate('/catalog')}
+            transition="all 0.2s"
+          >
+            {t('nav.catalog')}
+          </Button>
+          <Button
+            variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+            color="white" bg="#dc2626" px={4} rounded="lg"
+            leftIcon={<Truck size={15} />}
+            _hover={{ bg: '#b91c1c', transform: 'translateY(-1px)' }}
+            onClick={() => navigate('/best-deals')}
+            transition="all 0.2s"
+          >
+            {t('nav.bestDeals')}
+          </Button>
+          <Button
+            variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+            color="white" bg="#f59e0b" px={4} rounded="lg"
+            leftIcon={<Zap size={15} />}
+            _hover={{ bg: '#d97706', transform: 'translateY(-1px)' }}
+            onClick={() => navigate('/buyer/destockage')}
+            transition="all 0.2s"
+          >
+            Déstockage
+          </Button>
+          <Button
+            variant="ghost" size="sm" fontWeight="600" fontSize="sm"
+            color="white" bg="#7c3aed" px={4} rounded="lg"
+            leftIcon={<Star size={15} />}
+            _hover={{ bg: '#6d28d9', transform: 'translateY(-1px)' }}
+            onClick={() => navigate('/brands')}
+            transition="all 0.2s"
+          >
+            {t('nav.brands')}
+          </Button>
         </Flex>
       </Box>
 
