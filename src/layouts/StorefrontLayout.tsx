@@ -553,8 +553,8 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         borderBottom="1px solid" borderColor="gray.100"
         boxShadow="0 1px 0 0 #f1f5f9, 0 4px 20px -4px rgba(13,31,56,0.08)">
 
-        {/* Tier 1 — Logo + Search + Actions */}
-        <Flex maxW="1400px" mx="auto" px={{ base: 4, md: 6 }} h={{ base: '60px', md: '68px' }} align="center" gap={{ base: 3, md: 5 }}>
+        {/* Tier 1 — Logo + Navigation Buttons + Search + Auth */}
+        <Flex maxW="1400px" mx="auto" px={{ base: 4, md: 6 }} h={{ base: '60px', md: '68px' }} align="center" gap={{ base: 2, md: 3 }}>
 
           {/* Logo + Brand */}
           <Link to="/">
@@ -639,11 +639,44 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
             </HStack>
           </Link>
 
-          {/* Separator */}
-          <Box display={{ base: 'none', md: 'block' }} w="1px" h="28px" bg="gray.200" flexShrink={0} />
+          {/* Navigation Buttons — before search */}
+          <HStack spacing={1} display={{ base: 'none', lg: 'flex' }} flexShrink={0}>
+            <Button
+              variant="ghost" size="sm" fontWeight="500" fontSize="sm"
+              color="gray.700"
+              _hover={{ bg: 'gray.100', color: 'gray.900' }}
+              onClick={() => navigate('/catalog')}
+            >
+              {t('nav.catalog')}
+            </Button>
+            <Button
+              variant="ghost" size="sm" fontWeight="500" fontSize="sm"
+              color="gray.700"
+              _hover={{ bg: 'gray.100', color: 'gray.900' }}
+              onClick={() => navigate('/best-deals')}
+            >
+              {t('nav.bestDeals')}
+            </Button>
+            <Button
+              variant="ghost" size="sm" fontWeight="500" fontSize="sm"
+              color="gray.700"
+              _hover={{ bg: 'gray.100', color: 'gray.900' }}
+              onClick={() => navigate('/buyer/destockage')}
+            >
+              Déstockage
+            </Button>
+            <Button
+              variant="ghost" size="sm" fontWeight="500" fontSize="sm"
+              color="gray.700"
+              _hover={{ bg: 'gray.100', color: 'gray.900' }}
+              onClick={() => navigate('/brands')}
+            >
+              {t('nav.brands')}
+            </Button>
+          </HStack>
 
-          {/* Search bar — desktop center */}
-          <Box flex={1} maxW="580px" display={{ base: 'none', md: 'block' }}>
+          {/* Search bar — desktop */}
+          <Box flex={1} maxW="480px" display={{ base: 'none', md: 'block' }}>
             <SearchAutocomplete size="md" />
           </Box>
 
@@ -664,8 +697,8 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
             onClick={onMobSearchOpen}
           />
 
-          {/* Right actions */}
-          <HStack spacing={1} flexShrink={0}>
+          {/* Right actions — Login / Signup */}
+          <HStack spacing={2} flexShrink={0} display={{ base: 'none', sm: 'flex' }}>
             {user ? (
               <>
                 <NotificationBell />
@@ -842,20 +875,22 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
                 <Button
                   size="sm" variant="ghost" color="gray.600" fontWeight="500"
                   display={{ base: 'none', sm: 'flex' }}
-                  _hover={{ bg: 'gray.50', color: 'blue.600' }}
+                  leftIcon={<LogOut size={14} />}
+                  _hover={{ bg: 'gray.50', color: 'gray.900' }}
                   onClick={() => navigate('/auth')}
                 >
-                  {t('footer.login')}
+                  Se Connecter
                 </Button>
                 <Button
-                  size="sm" colorScheme="blue" rounded="full" fontWeight="600" px={4}
-                  bgGradient="linear(to-r, blue.600, blue.500)"
-                  _hover={{ bgGradient: 'linear(to-r, blue.700, blue.600)', transform: 'translateY(-1px)' }}
+                  size="sm" colorScheme="blue" rounded="lg" fontWeight="600" px={4}
+                  bg="blue.600" color="white"
+                  leftIcon={<FileText size={14} />}
+                  _hover={{ bg: 'blue.700', transform: 'translateY(-1px)' }}
                   boxShadow="0 2px 8px rgba(37,99,235,0.30)"
                   transition="all 0.15s"
                   onClick={() => navigate('/auth')}
                 >
-                  {t('footer.signUpFree')}
+                  S'inscrire
                 </Button>
               </HStack>
             )}
@@ -874,50 +909,6 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
           </HStack>
         </Flex>
 
-        {/* Tier 1.5 — Colored Navigation Links (Desktop Storefront) */}
-        <Flex maxW="1400px" mx="auto" px={{ base: 4, md: 6 }} h="48px" align="center" gap={2}
-          display={{ base: 'none', lg: 'flex' }} borderTop="1px solid" borderColor="gray.100" bg="gray.50">
-          <Button
-            variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-            color="white" bg="#0f172a" px={4} rounded="lg"
-            leftIcon={<Package size={15} />}
-            _hover={{ bg: '#1e293b', transform: 'translateY(-1px)' }}
-            onClick={() => navigate('/catalog')}
-            transition="all 0.2s"
-          >
-            {t('nav.catalog')}
-          </Button>
-          <Button
-            variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-            color="white" bg="#dc2626" px={4} rounded="lg"
-            leftIcon={<Truck size={15} />}
-            _hover={{ bg: '#b91c1c', transform: 'translateY(-1px)' }}
-            onClick={() => navigate('/best-deals')}
-            transition="all 0.2s"
-          >
-            {t('nav.bestDeals')}
-          </Button>
-          <Button
-            variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-            color="white" bg="#f59e0b" px={4} rounded="lg"
-            leftIcon={<Zap size={15} />}
-            _hover={{ bg: '#d97706', transform: 'translateY(-1px)' }}
-            onClick={() => navigate('/buyer/destockage')}
-            transition="all 0.2s"
-          >
-            Déstockage
-          </Button>
-          <Button
-            variant="ghost" size="sm" fontWeight="600" fontSize="sm"
-            color="white" bg="#7c3aed" px={4} rounded="lg"
-            leftIcon={<Star size={15} />}
-            _hover={{ bg: '#6d28d9', transform: 'translateY(-1px)' }}
-            onClick={() => navigate('/brands')}
-            transition="all 0.2s"
-          >
-            {t('nav.brands')}
-          </Button>
-        </Flex>
       </Box>
 
       {/* Sous-nav acheteur — visible uniquement sur /buyer/* */}
